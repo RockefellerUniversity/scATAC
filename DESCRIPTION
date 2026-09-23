@@ -1,0 +1,15 @@
+Package: MyCoursePackage
+Type: Package
+Title: Template Package for Courses
+Version: 2.0.0
+Author: Matt Paul and Thomas Carroll.
+Maintainer: Thomas Carroll <tc.infomatics@gmail.com>
+Description: Dependency + system-requirements manifest for the course. The course
+    content lives in the flat top-level folders (presentations/, exercises/,
+    descriptions/, data/, imgs/) and is rendered by the compileCourses engine;
+    this thin package exists only to declare the packages the course needs so
+    they can be installed and listed on the front page.
+License: GPL (>= 2)
+Depends: methods, ggplot2
+SystemRequirements: R, RStudio
+biocViews: Training

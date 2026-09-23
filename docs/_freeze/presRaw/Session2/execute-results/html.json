@@ -1,0 +1,15 @@
+{
+  "hash": "ccf4ac27fb93e90bae52a1d0b357c09b",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"My Course Template, Session 2\"\nsubtitle: \" <html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html> Bioinformatics Resource Center - Rockefeller University\"\nauthor:\n  - \"[http://rockefelleruniversity.github.io/RU_course_template/](http://rockefelleruniversity.github.io/RU_course_template/)\"\n  - \"[brc@rockefeller.edu](mailto:brc@rockefeller.edu)\"\n---\n\n\n\n\n::: {.content-hidden when-format=\"revealjs\"}\n# ?? name of course?? (part 2)\n:::\n\n##  Recap\n\n?? can add a recap to link to keypoints in first session??\nSession 1 covered the material below.\n\n- [Materials](Session1.html#materials)\n- [Course materials](Session1.html#course-materials)\n- [Links](Session1.html#links)\n\n## Same stuff\n??More content for second session??\n\n## Time for an exercise!\n\nExercise on functions can be found [here](../../exercises/exercises/MyExercise3_exercise.html)\n\n## Answers to exercise.\n\nAnswers can be found here  [here](../../exercises/answers/MyExercise3_answers.html)\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

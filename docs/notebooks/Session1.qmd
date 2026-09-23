@@ -1,0 +1,185 @@
+---
+title: "My Course Template, Session 1"
+subtitle: " <html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html> Bioinformatics Resource Center - Rockefeller University"
+author:
+  - "[http://rockefelleruniversity.github.io/RU_course_template/](http://rockefelleruniversity.github.io/RU_course_template/)"
+  - "[brc@rockefeller.edu](mailto:brc@rockefeller.edu)"
+---
+
+```{r,include=FALSE,purl=FALSE}
+suppressPackageStartupMessages(require(knitr))
+knitr::opts_chunk$set(echo = TRUE, tidy = T)
+```
+
+::: {.content-hidden when-format="revealjs"}
+# ???My Course name (session1)???
+:::
+
+## Overview
+
+??We often put an overview slide that links to the various parts of the course content to make it easy to navigate — here it links to sections later in this same session??
+
+- [Materials](#materials)
+- [Course materials](#course-materials)
+- [Links](#links)
+- [Section A](#section-a)
+
+# Set Up {background-color="#23373B" .center .middle}
+
+## Materials
+
+??We try to denote each major section of content with these title slides (see above for set up). A level-1 heading (`#`) becomes an inverse section-divider slide; a level-2 heading (`##`) is a normal slide. The hierarchy also drives the single-page version.??
+
+?? Materials just gives the links to download the package. Just ensure links are up to date??
+
+All prerequisites, links to material and slides for this course can be found on github.
+
+* [Intro_To_R_1](https://rockefelleruniversity.github.io/Intro_To_R_1Day/)
+
+Or can be downloaded as a zip archive from here.
+
+* [Download zip](https://github.com/rockefelleruniversity/Intro_To_R_1Day/zipball/master)
+
+## Course materials
+
+?? this slide just shows where thye can get the course content from the download. You do not need to populate these directories. It will be made during compilation??
+
+Once the zip file in unarchived. All presentations as HTML slides and pages, their R code and HTML practical sheets will be available in the directories underneath.
+
+* **docs/presentations/slides/**
+Presentations as an HTML slide show.
+* **docs/presentations/singlepage/**
+Presentations as an HTML single page.
+* **docs/presentations/r_code/**
+R code in presentations.
+* **docs/exercises/**
+Practicals as HTML pages.
+* **docs/answers/**
+Practicals with answers as HTML pages and R code solutions.
+
+## Set the Working directory
+
+Before running any of the code in the practicals or slides we need to set the working directory to the folder we unarchived.
+
+You may navigate to the unarchived RU_Course_help folder in the Rstudio menu.
+
+**Session -> Set Working Directory -> Choose Directory**
+
+or in the console.
+
+```{r setwd_introtoR,eval=F}
+setwd("/PathToMyDownload/RU_Course_template/docs")
+# e.g. setwd("~/Downloads/Intro_To_R_1Day/r_course")
+```
+
+# Another section header {background-color="#23373B" .center .middle}
+
+## Slide Structure
+
+We use a double hash/pound (`##`) for slides, and a single `#` for inverse section-divider slides. Keeping this hierarchy is important: it structures both the slides and the single-page version.
+
+To split content across several slides *under the same title*, put one `##` heading and use a horizontal rule `---` for each continuation slide (do not repeat the heading). On the slides you get multiple slides; on the single page the heading appears once.
+
+## Left/Right alignment
+
+To show things side by side on a slide use a columns container. On the single page the columns simply stack one after the other:
+
+::: {.columns}
+
+::: {.column width="50%"}
+This will be on left of slide
+:::
+
+::: {.column width="50%"}
+This will be on right
+:::
+
+:::
+
+## Data from external sources
+
+everything in the qmd is relative to the inst/extdata directory so you have some data to load in, just put it in the data directory, read it in along the path.
+The structure is maintained for those attending the course and download the package using the instructions. The same rules are followed for imgs and scripts that you may call.
+
+```{r,echo=T}
+Table <- read.table("data/readThisTable.csv",sep=",",header=T)
+```
+
+## Big Processes
+
+If what you want to do is super intense computationally you can use the eval=F arguments to prevent it being done during compilation.
+
+```{r,echo=T, eval=F}
+#Intense computation
+myresult<-10^6 +1
+```
+
+You can then just load in the result of the computation, and keep using the result after that. If you do want them to evaluate the intense computation, then you can hide this intermediate file that you are loading in with echo=F.
+
+```{r,echo=F, eval=T}
+load("data/myresult.RData")
+```
+
+## Links
+
+Links to external sources and other material can be included:
+
+[BRC GitHub](https://github.com/rockefelleruniversity)
+
+The links are also checked to ensure that they work by the link-check action. When you check the GitHub actions if there is a green check, it means that all the links are still valid.
+
+[BRC GitHub](https://github.com/rafelleruniversity)
+
+
+## Section A
+
+When explaining the same topic over multiple slides you can use the same header. This is often useful if you have a large code chunk coupled with a large figure. You can set eval=F, repeat the same code then set eval to TRUE and echo to FALSE
+
+```{r, eval=F}
+
+boxplot(Table[,2:7])
+
+
+```
+
+## Section A
+
+While looking at this in the single page form this should also collapse redundant titles
+
+```{r, eval=T, echo=F}
+boxplot(Table[,2:7])
+
+```
+
+## Section A
+
+While looking at this in the single page form this should also collapse redundant titles. This allows you to repeat it in slides, but have just one title for single page. 
+
+
+## Exercises
+
+The following few slides show you how to structure exercise slides.
+
+We often have several exercise slides per session. So you can just copy and paste and change the directory to the appropriate name. All 3 file types are made from you single exercise qmd.
+
+## Time for an exercise!
+
+??? exercise description here?? [here](../../exercises/exercises/MyExercise1_exercise.html)
+
+## Answers to exercise
+
+Answers can be found [here](../../exercises/answers/MyExercise1_answers.html)
+
+## Exercise again
+
+So we can have some more sections here describing some new important topic
+
+Then more exercises
+
+## Time for an exercise!
+
+??? exercise description here?? [here](../../exercises/exercises/MyExercise2_exercise.html)
+
+## Answers to exercise
+
+Answers can be found [here](../../exercises/answers/MyExercise2_answers.html)

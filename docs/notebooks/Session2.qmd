@@ -1,0 +1,36 @@
+---
+title: "My Course Template, Session 2"
+subtitle: " <html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html> Bioinformatics Resource Center - Rockefeller University"
+author:
+  - "[http://rockefelleruniversity.github.io/RU_course_template/](http://rockefelleruniversity.github.io/RU_course_template/)"
+  - "[brc@rockefeller.edu](mailto:brc@rockefeller.edu)"
+---
+
+```{r setup, include=FALSE, purl=FALSE}
+suppressPackageStartupMessages(require(knitr))
+knitr::opts_chunk$set(echo = TRUE, tidy = T)
+```
+
+::: {.content-hidden when-format="revealjs"}
+# ?? name of course?? (part 2)
+:::
+
+##  Recap
+
+?? can add a recap to link to keypoints in first session??
+Session 1 covered the material below.
+
+- [Materials](Session1.html#materials)
+- [Course materials](Session1.html#course-materials)
+- [Links](Session1.html#links)
+
+## Same stuff
+??More content for second session??
+
+## Time for an exercise!
+
+Exercise on functions can be found [here](../../exercises/exercises/MyExercise3_exercise.html)
+
+## Answers to exercise.
+
+Answers can be found here  [here](../../exercises/answers/MyExercise3_answers.html)

@@ -1,0 +1,32 @@
+## Course Overview
+<br>
+
+?? This Section is used to build the course website ??
+
+?? What is this course about??
+
+?? Break down of course structure. You can look here for guidance: https://rockefelleruniversity.github.io/Intro_To_R_1Day/??
+
+Course material and exercises are available to view as rendered HTML at https://rockefelleruniversity.github.io/RU_Course_template/.
+All material is available to download under GPL v2 license.
+
+<br>
+<br>
+
+## Course Integrity
+**This course is compiled automatically on _`r Sys.Date()`_ **
+<br>
+[![compilation-check](https://github.com/RockefellerUniversity/RU_course_template/actions/workflows/compilation-check.yml/badge.svg)](https://github.com/RockefellerUniversity/RU_course_template/actions/workflows/compilation-check.yml)
+
+
+
+**The course is tested and available on MacOS, Windows and Ubuntu Linux for `r R.Version()$version.string`**
+<br>
+[![OS-check](https://github.com/RockefellerUniversity/RU_course_template/actions/workflows/OS-check.yaml/badge.svg)](https://github.com/RockefellerUniversity/RU_course_template/actions/workflows/OS-check.yaml)
+
+
+**The course is also tested against every major R release since 3.5 (3.5 &rarr; 4.5) on Linux**
+<br>
+[![legacy-R-check](https://github.com/RockefellerUniversity/RU_course_template/actions/workflows/legacy-R-check.yaml/badge.svg)](https://github.com/RockefellerUniversity/RU_course_template/actions/workflows/legacy-R-check.yaml)
+
+Previous versions of this course are listed on the [**releases page**](releases.html).

@@ -539,3 +539,9 @@ We have covered:
 - **Label transfer** — robust cell type annotation from a matched scRNA-seq reference
 
 **Next session: Differential Accessibility & Visualization**
+
+```{r saveForSession4, include=FALSE, purl=FALSE}
+# Checkpoint read by Session 4 (data/pbmc_annotated.rds); sessions render in
+# order within one build. Too large to commit (>100 MB), so it is gitignored.
+saveRDS(pbmc, "data/pbmc_annotated.rds")
+```

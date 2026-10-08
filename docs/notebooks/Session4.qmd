@@ -76,6 +76,19 @@ DefaultAssay(pbmc) <- "peaks"
 Idents(pbmc) <- "predicted.id"
 ```
 
+```{r repointFragments, include=FALSE, purl=FALSE}
+# The saved object records the fragment file's absolute path on the machine that
+# built it. When a copy sits in data/ (CI downloads it there), point the object
+# at that copy so fragment-based steps (CoveragePlot) can find it; otherwise keep
+# the recorded path.
+frag_local <- "data/atac_pbmc_500_nextgem_fragments.tsv.gz"
+if (file.exists(frag_local)) {
+  frags <- UpdatePath(Fragments(pbmc)[[1]], new.path = frag_local)
+  Fragments(pbmc) <- NULL
+  Fragments(pbmc) <- frags
+}
+```
+
 ## Running FindMarkers
 
 We can then look for markers of a specific cell type. The provided group has to be from whichever Idents has been set i.e. if that has been set seurat_clusters, the dent provided would be a cluster number. When you supply 1 ident, it runs a comparison against all other cells. You can do a pairwise comparison by providing ident.1 and ident.2.
@@ -168,7 +181,7 @@ CoveragePlot(
 
 For comparison lets check a known quantitiy: IL1B is a known to be highest in CD14+ Monocytes, but also CD16+ Monocytes and Dendritic cells. This matches the scATAC. 
 
-```{r coveragePlot}
+```{r coveragePlotIL1B}
 CoveragePlot(
   object           = pbmc,
   region           = "IL1B",
@@ -224,7 +237,38 @@ head(top5)
 
 ## Reviewing Cluster Markers
 
-As we did for the single cluster marker results, we can visualize our differntials using Coverage Plots. We can also go back to FeaturePlots and VlnPlots to assess how specific these peaks are. 
+As we did for the single cluster marker results, we can visualize our differentials using Coverage Plots. We can also go back to FeaturePlots and VlnPlots to assess how specific these peaks are.
+
+## Pseudobulk Heatmap of Top Markers
+
+Per-cell heatmaps of peaks are very sparse, so instead we sum each cell type's counts into a **pseudobulk** profile. Each cell type is normalised by its total counts (CPM), so cell types with more cells or deeper sequencing don't look more accessible across the board. Each peak is then z-scored across cell types.
+
+```{r markerHeatmap}
+library(ggplot2)
+
+# Sum raw peak counts per cell type, then CPM-normalise using all peaks
+pb <- AggregateExpression(pbmc, assays = "peaks", group.by = "predicted.id")$peaks
+pb_cpm <- log1p(t(t(pb) / colSums(pb)) * 1e6)
+
+# Keep the top marker peaks and z-score each peak across cell types
+top_peaks <- unique(top5$gene)
+mat <- pb_cpm[top_peaks, ]
+mat <- t(scale(t(mat)))
+
+heat_df <- data.frame(
+  peak      = factor(rep(rownames(mat), ncol(mat)), levels = rev(top_peaks)),
+  cell_type = rep(colnames(mat), each = nrow(mat)),
+  z         = as.vector(mat)
+)
+
+ggplot(heat_df, aes(x = cell_type, y = peak, fill = z)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "steelblue", mid = "white", high = "firebrick") +
+  labs(x = NULL, y = NULL, fill = "Row z-score") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.y = element_text(size = 5))
+```
 
 
 

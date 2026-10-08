@@ -12,3 +12,5 @@ r_course/
 docs/data/atac_pbmc_500_nextgem_*
 # Label-transfer reference (Session 3), ~172 MB: downloaded in CI, never committed.
 docs/data/pbmc_10k_rna.rds
+# Session 3 -> Session 4 checkpoint, ~131 MB: regenerated during the render, never committed.
+docs/data/pbmc_annotated.rds

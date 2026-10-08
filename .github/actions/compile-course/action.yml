@@ -30,6 +30,13 @@ inputs:
       scheduled canary); "false" reuses frozen results for a fast build.
     required: false
     default: 'false'
+  verbose:
+    description: >-
+      "true" shows Quarto/knitr chunk-by-chunk progress and full render errors
+      in the job log. The engine hard-codes quarto_render(quiet = TRUE), which
+      leaves the log silent for the whole render and hides the failing chunk.
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -81,6 +88,13 @@ runs:
       shell: Rscript {0}
       run: |
         require(compileCourses)
+        ## Verbose mode: wrap quarto_render so every engine call runs with
+        ## quiet = FALSE. Done from here because the engine has no option for it.
+        if (as.logical("${{ inputs.verbose }}")) {
+          orig_render <- quarto::quarto_render
+          utils::assignInNamespace("quarto_render",
+            function(..., quiet) orig_render(..., quiet = FALSE), ns = "quarto")
+        }
         compileCourses::compileSingleCourseMaterial(
           repo   = "${{ inputs.repo }}",
           branch = "${{ inputs.branch }}",

@@ -96,7 +96,9 @@ jobs:
     needs: define-docker-info
     ## Bound the job so a hung render (e.g. a stalled download or an
     ## out-of-memory heavy chunk) cannot run to GitHub's 6-hour ceiling.
-    timeout-minutes: 120
+    ## 240: a full (non-frozen) render executes Sessions 2-3 on the real
+    ## dataset, which takes well over an hour on a GitHub runner.
+    timeout-minutes: 240
 
     ## Name shown on the GHA log
     name: ubuntu-latest
@@ -208,6 +210,11 @@ jobs:
           for f in filtered_peak_bc_matrix.h5 singlecell.csv fragments.tsv.gz fragments.tsv.gz.tbi; do
             curl -fsSL --retry 3 -o "docs/data/atac_pbmc_500_nextgem_${f}" "${base}/atac_pbmc_500_nextgem_${f}"
           done
+          ## Annotated 10k PBMC scRNA-seq reference (Signac PBMC vignette) used
+          ## by Session 3's label transfer; ~172 MB, so downloaded, not committed.
+          ## Saved under the name Session 3 reads.
+          curl -fsSL --retry 3 -o docs/data/pbmc_10k_rna.rds \
+            https://signac-objects.s3.amazonaws.com/pbmc_10k_v3.rds
           ls -l docs/data
 
       ## Install the compileCourses engine, install the local package and
@@ -220,6 +227,8 @@ jobs:
           compilecourses-ref: quarto-migration   # Quarto engine branch — pinned during the phased migration; remove at the final cut-over
           ## Publish pipeline: reuse freeze for fast push builds; full canary on cron.
           full-rebuild: ${{ github.event_name == 'schedule' }}
+          ## Show render progress and full errors in the log (engine renders quietly).
+          verbose: true
 
       ## No copy step: compileSingleCourseMaterial renders in place into docs/
       ## (GitHub Pages source), next to the sources, cleaning only the generated

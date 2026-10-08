@@ -87,6 +87,19 @@ pbmc[["lsi"]]
 
 ```
 
+```{r repointFragments, include=FALSE, purl=FALSE}
+# The saved object records the fragment file's absolute path on the machine that
+# built it. When a copy sits in data/ (CI downloads it there), point the object
+# at that copy so fragment-based steps (GeneActivity) can find it; otherwise keep
+# the recorded path.
+frag_local <- "data/atac_pbmc_500_nextgem_fragments.tsv.gz"
+if (file.exists(frag_local)) {
+  frags <- UpdatePath(Fragments(pbmc)[[1]], new.path = frag_local)
+  Fragments(pbmc) <- NULL
+  Fragments(pbmc) <- frags
+}
+```
+
 ## SVD dimensions
 
 `RunSVD()` defaults to 50 dimensions. 
@@ -211,7 +224,7 @@ DimPlot(object = pbmc, label = TRUE) + NoLegend()
 
 There is no single "correct" resolution. The right level of granularity depends on your biological question — coarser for broad lineages, finer for rare subtypes. Try several values and compare cluster stability.
 
-```{r resolutionTuning, eval=FALSE}
+```{r resolutionTuning}
 pbmc <- FindClusters(pbmc, resolution = 0.5)   # coarser
 pbmc <- FindClusters(pbmc, resolution = 2.0)   # finer
 
@@ -399,12 +412,33 @@ Seurat's **label transfer** workflow:
 
 More robust than gene activity alone because it uses the full transcriptomic reference to anchor the mapping.
 
+## Our Reference: 10k PBMC scRNA-seq
+
+We will use an annotated scRNA-seq dataset of ~10,000 human PBMCs (10x Genomics Chromium v3). It is the reference used in the [Signac PBMC vignette](https://stuartlab.org/signac/articles/pbmc_vignette), already processed with Seurat and labelled by cell type.
+
+- Same tissue as our scATAC data (PBMCs), so the cell types should largely overlap.
+- Cell type labels are stored in the `celltype` metadata column.
+- It is ~170 MB, so download it once into your `data/` folder.
+
+```{r downloadReference, eval=FALSE}
+options(timeout = 600)  # the default 60s is too short for a ~170 MB file
+download.file(
+  url      = "https://signac-objects.s3.amazonaws.com/pbmc_10k_v3.rds",
+  destfile = "data/pbmc_10k_rna.rds",
+  mode     = "wb"
+)
+```
+
 ## Finding Transfer Anchors
 
-```{r transferAnchors, eval=FALSE}
-DefaultAssay(pbmc) <- "RNA"
+The 10k PBMC scRNA-seq object was saved with an older version of Seurat. If you see warnings when loading it, run `pbmc_rna <- UpdateSeuratObject(pbmc_rna)`.
+
+```{r transferAnchors}
 
 pbmc_rna <- readRDS("data/pbmc_10k_rna.rds")
+pbmc_rna <- UpdateSeuratObject(pbmc_rna)
+
+DefaultAssay(pbmc) <- "RNA"
 
 transfer.anchors <- FindTransferAnchors(
   reference       = pbmc_rna,
@@ -412,7 +446,7 @@ transfer.anchors <- FindTransferAnchors(
   features        = VariableFeatures(object = pbmc_rna),
   reference.assay = "RNA",
   query.assay     = "RNA",
-  reduction       = "cca"   # canonical correlation analysis
+  reduction       = "cca" 
 )
 ```
 
@@ -422,7 +456,9 @@ CCA identifies cells that are similar in the shared gene space — these become 
 
 ## Transferring Labels
 
-```{r transferLabels, eval=FALSE}
+Once anchors are identified, we can then transfer the labels from the reference to the ATAC dataset we are working with. In *refdata* we provide the label information we want to transfer. We are using Cell Type, but this could be any categorization of the reference data. 
+
+```{r transferLabels}
 celltype.predictions <- TransferData(
   anchorset       = transfer.anchors,
   refdata         = pbmc_rna$celltype,
@@ -431,7 +467,13 @@ celltype.predictions <- TransferData(
 )
 
 pbmc <- AddMetaData(pbmc, metadata = celltype.predictions)
+```
 
+## Transferring Labels
+
+Lets see how this looks.
+
+```{r}
 DimPlot(
   object   = pbmc,
   group.by = "predicted.id",
@@ -442,7 +484,7 @@ DimPlot(
 
 ## Evaluating Label Transfer Quality
 
-```{r evalTransfer, eval=FALSE}
+```{r evalTransfer}
 hist(pbmc$prediction.score.max,
      breaks = 50,
      xlab   = "Max prediction score",
@@ -451,39 +493,49 @@ hist(pbmc$prediction.score.max,
 pbmc$low_confidence <- pbmc$prediction.score.max < 0.5
 table(pbmc$low_confidence)
 ```
+## Evaluating Label Transfer Quality
 
-::: {.callout-tip}
+If these labels were all in a single cluster, or region that could suggest the reference is insufficient or has similar but conflicting labels. 
+
+```{r}
+DimPlot(
+  object   = pbmc,
+  group.by = "low_confidence",
+  label    = TRUE,
+  repel    = TRUE
+) + NoLegend()
+```
+
 ## Interpreting low-confidence predictions
+
 Cells with prediction score < 0.5 may represent:
+
 - Cell types **absent from the reference** (→ may need a broader reference)
 - **Low-quality cells** that survived QC (→ consider removing)
 - **Rare transitional states** between annotated types (→ biologically interesting)
+- *Inappropriate reference* with labels that are not well curated or do not line up with query datas context.  
 
 Cross-reference low-confidence cells with QC metrics before deciding whether to keep or remove them.
-:::
 
-
-
-
-
-# Label transfer from scRNA-seq {background-color="#23373B" .center .middle}
-
-## Label transfer from scRNA-seq
-
-?? Using an annotated scRNA-seq reference to label scATAC cells via gene activity scores and CCA anchors ??
-
-```{r label_transfer, eval=FALSE}
-## ?? e.g. FindTransferAnchors(reduction = "cca") then TransferData(weight.reduction = atac[["lsi"]]) ??
-```
-
-## Assessing transferred labels
-
-?? Prediction scores, agreement with clusters, and when to distrust a transferred label ??
 
 ## Time for an exercise!
 
-Exercise on dimensionality reduction and clustering can be found [here](../../exercises/exercises/Session3_Exercise_exercise.html)
+Session 3 exercises can be found [here](../../exercises/exercises/scATAC_Exercise3_exercise.html)
 
-## Answers to exercise.
+## Answers to exercises
 
-Answers can be found [here](../../exercises/answers/Session3_Exercise_answers.html)
+Answers can be found [here](../../exercises/answers/scATAC_Exercise3_answers.html)
+
+## Session 3 Summary
+
+We have covered:
+
+- **LSI** via `RunSVD()` — the dimensionality reduction workhorse for scATAC-seq
+- **Why component 1 is skipped** — it captures depth, not biology; use `DepthCor()` to confirm
+- **UMAP** — 2D visualisation of the LSI space; always check for depth gradients
+- **Graph-based clustering** — `FindNeighbors()` + `FindClusters()`, tuning resolution
+- **QC as a cyclical process** — revisit after clustering to catch doublets and artefacts
+- **Gene activity matrix** — `GeneActivity()` as a proxy for expression
+- **Label transfer** — robust cell type annotation from a matched scRNA-seq reference
+
+**Next session: Differential Accessibility & Visualization**

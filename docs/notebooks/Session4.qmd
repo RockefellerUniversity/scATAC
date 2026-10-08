@@ -11,44 +11,225 @@ suppressPackageStartupMessages(require(knitr))
 knitr::opts_chunk$set(echo = TRUE, tidy = T)
 ```
 
+
 ::: {.content-hidden when-format="revealjs"}
-# Single-cell ATAC-seq: Differential Accessibility and Visualization
+# Single-Cell ATAC-seq with Signac (Session 4)
 :::
 
 ## Overview
 
-- [Recap](#recap)
-- [Differential accessibility](#differential-accessibility)
-- [Pseudobulk differential accessibility](#pseudobulk-differential-accessibility)
-- [Visualizing regions of interest](#visualizing-regions-of-interest)
+- [Differential Accessibility Analysis](#da-analysis)
+- [FindMarkers for scATAC-seq](#findmarkers)
+- [Pseudobulk Approaches](#pseudobulk)
+- [Coverage Plots](#coverage-plots)
+- [Where to Go Next](#next-steps)
 
-## Recap
+# Differential Accessibility Analysis {background-color="#23373B" .center .middle}
 
-?? Brief recap of Session 3 — LSI, clustering, gene activity scores and label transfer ??
+## What is Differential Accessibility?
 
-- [Session 3](Session3.html)
+Having annotated our clusters, a common next question is:
 
-# Differential accessibility {background-color="#23373B" .center .middle}
+> **Which genomic regions are more accessible in cell type A than cell type B?**
 
-## Differential accessibility
+Differentially accessible (DA) peaks can point to:
 
-?? What question differential accessibility answers, and the choice between cell-level and sample-level (pseudobulk) testing ??
+- **Cell-type-specific regulatory elements** — enhancers and promoters active only in certain populations
+- **Disease-associated regulatory variation** — e.g., patient vs. control chromatin remodelling
+- **State transitions** — peaks gained or lost as cells differentiate
 
-## FindMarkers
+## Considerations for DA Testing in scATAC-seq
 
-?? Cell-level testing between clusters/cell types; choice of test (e.g. LR with fragment-count latent variable) and its tendency to inflate significance by treating cells as replicates ??
+DA testing in scATAC-seq is harder than in scRNA-seq
 
-```{r findmarkers, eval=FALSE}
-## ?? e.g. FindMarkers(test.use = "LR", latent.vars = "nCount_peaks") ??
+| Challenge | Why it matters |
+|---|---|
+| Binary data | Peaks are 0 or 1; count models from RNA-seq do not match this data |
+| High sparsity | Many zeros inflate false positives if not accounted for |
+| Depth confounding | Cells with more fragments appear to have more accessible peaks |
+| Pseudoreplication | Cells from the same individual are not independent observations |
+
+The solution depends on your experimental design — cluster markers within a single sample vs. condition comparisons across multiple donors.
+
+# FindMarkers for scATAC-seq {background-color="#23373B" .center .middle}
+
+## Logistic Regression with Depth as a Covariate
+
+Signac recommends **logistic regression** for single-cell DA testing.
+
+Accessibility is modelled as a binary outcome, with cell type as the predictor and **sequencing depth as a latent variable** to control for depth confounding.
+
+## Lets grab the data
+
+We will make sure we hAve Signac loaded in and the current pbmc object. 
+
+We can set our Idents(). The Idents corresponds to which are the active group being used in our dataset. Often this is cell type labels or clusters. We will set this to "predicted.id".
+
+```{r findMarkersSetup}
+library(Signac)
+library(Seurat)
+
+pbmc <- readRDS("data/pbmc_annotated.rds")
+
+DefaultAssay(pbmc) <- "peaks"
+
+Idents(pbmc) <- "predicted.id"
 ```
 
-## Annotating differential peaks
+## Running FindMarkers
 
-?? Linking differential peaks to nearby genes ??
+We can then look for markers of a specific cell type. The provided group has to be from whichever Idents has been set i.e. if that has been set seurat_clusters, the dent provided would be a cluster number. When you supply 1 ident, it runs a comparison against all other cells. You can do a pairwise comparison by providing ident.1 and ident.2.
 
-```{r closest_feature, eval=FALSE}
-## ?? e.g. Signac::ClosestFeature() ??
+As mentioned we will do logistic regression and add the number of counts per cell as a covariate. 
+
+```{r findMarkers, warning=F}
+da_peaks <- FindMarkers(
+  object      = pbmc,
+  ident.1     = "CD14+ Monocytes",
+  only.pos    = TRUE,         # look for positive markers
+  test.use    = "LR",         # logistic regression
+  latent.vars = "nCount_peaks" # control for depth
+)
+
+head(da_peaks)
 ```
+
+
+## Annotating DA Peaks to Nearest Genes
+
+There are several ways to start functional annotating peaks to genes. The easiest (and often the most parsimonious) is to use the nearest gene. We can do this easily from our DA output. 
+
+```{r interpretDA}
+significant_peaks <- subset(da_peaks,
+                              p_val_adj < 0.05 & avg_log2FC > 0.5)
+
+closest <- ClosestFeature(pbmc, regions = rownames(significant_peaks))
+head(closest[, c("gene_name", "distance", "query_region")])
+```
+
+## Peak proximity
+
+`ClosestFeature()` uses the gene annotation stored in the ChromatinAssay. Peaks more than 100 kb from any gene body are likely distal enhancers — biologically interesting but harder to interpret without co-accessibility or footprinting data.
+
+## So are we happy with this data? 
+
+The top accessible peaks are generally related to genes that are known to be associated with CD14+ Monocytes or more generally immune cell developmental genes.
+
+That said there is a peak/gene that sticks out: FAM174B. The peak is right at the gene so it's likely to be a direct effect. A quick lit review suggests that its associated with golgi and stress. It could be realtively high because Monocytes do a lot of secretion. These cells are supposed to be from a healthy patient but maybe there is some immune activation. 
+
+Often there are a few peaks here and there that could make sense. It is important to rationalize these markers and assess in the context of the all the QC and other markers.
+
+* Do we have a lot of markers that do not make sense?
+* Does it overlap with poor quality cells or doublets?
+
+# Visualizing regions of interest {background-color="#23373B" .center .middle}
+
+Another good check is to visualize the coverage at peaks and genes of interest. Our FAM174B peak overlaps the gene, but visualizing it as a track may be more revealing.
+
+Signac's `CoveragePlot()` generates this directly from the **fragment file** — no BAM file required.
+
+Each track is generated by counting fragments that overlap a position in each cell, normalised by the number of cells in that group. This is equivalent to a pseudo-bulk ATAC-seq track per cell type.
+
+## CoveragePlot at a Gene
+
+The most unique peak region seems to be a little more downstream, so maybe it is actually a specific enhancer. This could be an intronic enhancer??
+
+```{r coveragePlot}
+DefaultAssay(pbmc) <- "peaks"
+
+CoveragePlot(
+  object           = pbmc,
+  region           = "FAM174B",
+  expression.assay = "RNA",
+  extend.upstream   = 500,
+  extend.downstream = 10000
+)
+```
+
+The plot shows, from top to bottom: per-cell-type fragment coverage tracks, the called peaks, and the gene model.
+
+## Lets plot the peak directly
+
+Instead of specifying the gene as a region, we can specify a peak. We will subset our da_peaks to the TRPV4 peak and give that to CoveragePlot. 
+
+```{r}
+
+top_peak <- closest$query_region[closest$gene_name == "TRPV4"][1]
+
+CoveragePlot(
+  object            = pbmc,
+  region            = top_peak,
+  extend.upstream   = 1000,
+  extend.downstream = 1000
+)
+```
+
+## Lets check known quantity
+
+For comparison lets check a known quantitiy: IL1B is a known to be highest in CD14+ Monocytes, but also CD16+ Monocytes and Dendritic cells. This matches the scATAC. 
+
+```{r coveragePlot}
+CoveragePlot(
+  object           = pbmc,
+  region           = "IL1B",
+  expression.assay = "RNA",
+  extend.upstream   = 500,
+  extend.downstream = 10000
+)
+```
+
+## QC and Markers
+
+At this point I would feel happy with the CD14+ Monocyte annotation. A similar review of other markers for other cell types could help. You can also do this at the cluster level to see if the clusters line up. 
+
+Always keep in mind the QC. No matter how late you are in the analysis process you could get indicators of a QC issue, which would prompt you to go back and tweak. 
+## QC and Markers
+
+What to look for as a QC issues is similar to scRNAseq:
+
+* Non-specific markers
+* Uncharacterized markers, markers on non-standard chromosomes/sex chromosomes
+* Stress related markers
+* Housekeeping related markers
+* Markers with low log2FC or driven by very few cells
+
+## Finding All Cluster Markers
+
+It's easy to expand finding markers to all Cell Types using FindAllMarkers. This will run FindMarkers, for every group within Idents. 
+
+```{r allMarkers, warning=F}
+all_markers <- FindAllMarkers(
+  object      = pbmc,
+  only.pos    = TRUE,
+  test.use    = "LR",
+  latent.vars = "nCount_peaks"
+)
+
+head(all_markers)
+```
+
+
+## Finding All Cluster Markers
+
+We can quickly parse these result with dplyr to just grab our top hits for each cell type. 
+
+```{r}
+library(dplyr)
+top5 <- all_markers |>
+  group_by(cluster) |>
+  slice_max(order_by = avg_log2FC, n = 5)
+
+head(top5)
+```
+
+## Reviewing Cluster Markers
+
+As we did for the single cluster marker results, we can visualize our differntials using Coverage Plots. We can also go back to FeaturePlots and VlnPlots to assess how specific these peaks are. 
+
+
+
+
+
 
 # Pseudobulk differential accessibility {background-color="#23373B" .center .middle}
 
@@ -64,19 +245,7 @@ knitr::opts_chunk$set(echo = TRUE, tidy = T)
 
 ?? Where FindMarkers and pseudobulk results agree and disagree; report adjusted p-values ??
 
-# Visualizing regions of interest {background-color="#23373B" .center .middle}
 
-## Coverage plots
-
-?? Visualizing pseudobulk accessibility tracks per group over a region, with gene annotation and peaks ??
-
-```{r coverage_plot, eval=FALSE}
-## ?? e.g. Signac::CoveragePlot(region = ..., extend.upstream = ..., extend.downstream = ...) ??
-```
-
-## Customizing coverage plots
-
-?? Adding peak, link and expression panels; combining tracks ??
 
 ## Time for an exercise!
 

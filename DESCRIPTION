@@ -1,15 +1,21 @@
-Package: MyCoursePackage
+Package: scATAC
 Type: Package
-Title: Template Package for Courses
-Version: 2.0.0
+Title: Single-cell ATAC-seq Analysis in R
+Version: 1.0.0
 Author: Matt Paul and Thomas Carroll.
 Maintainer: Thomas Carroll <tc.infomatics@gmail.com>
-Description: Dependency + system-requirements manifest for the course. The course
-    content lives in the flat top-level folders (presentations/, exercises/,
-    descriptions/, data/, imgs/) and is rendered by the compileCourses engine;
+Description: Dependency + system-requirements manifest for the single-cell
+    ATAC-seq (scATAC-seq) course. The course covers chromatin accessibility
+    concepts, Cell Ranger ATAC outputs and fragment files, Signac/Seurat import,
+    scATAC-specific QC, TF-IDF normalization, LSI dimensionality reduction,
+    clustering, gene activity scores, label transfer from scRNA-seq,
+    differential accessibility and coverage visualization. The course content
+    lives in the flat docs/ folder and is rendered by the compileCourses engine;
     this thin package exists only to declare the packages the course needs so
     they can be installed and listed on the front page.
 License: GPL (>= 2)
 Depends: methods, ggplot2
+Imports: Signac, Seurat, SeuratObject, hdf5r, GenomicRanges, IRanges, 
+AnnotationHub, ensembldb, biovizBase, scDblFinder, SingleCellExperiment, DESeq2
 SystemRequirements: R, RStudio
 biocViews: Training

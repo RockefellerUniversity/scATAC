@@ -160,6 +160,15 @@ jobs:
           key: ${{ env.cache-version }}-${{ runner.os }}-biocdocker-biocbranch-release-r-${{ steps.findrversion.outputs.rversion }}-bioc-${{ steps.findrversion.outputs.biocversionnum }}-${{ hashFiles('.github/depends.Rds') }}
           restore-keys: ${{ env.cache-version }}-${{ runner.os }}-biocdocker-biocbranch-release-r-${{ steps.findrversion.outputs.rversion }}-bioc-${{ steps.findrversion.outputs.biocversionnum }}-
 
+      ## System libraries not shipped in the Bioconductor image. hdf5r (used by
+      ## Seurat::Read10X_h5 to read Cell Ranger .h5 matrices) links against
+      ## libhdf5 both when compiled from source and when installed as a binary.
+      ## The job runs as root inside the container, so no sudo.
+      - name: Install system dependencies
+        run: |
+          apt-get update -y
+          apt-get install -y --no-install-recommends libhdf5-dev
+
       - name: Install dependencies
         run: |
           ## Try installing the package dependencies in steps. First the local
@@ -181,7 +190,25 @@ jobs:
           message(paste('****', Sys.time(), 'installing rcmdcheck and BiocCheck ****'))
           remotes::install_cran("rcmdcheck")
           BiocManager::install("BiocCheck")
+          ## Fail here, with a clear message, rather than mid-render if hdf5r
+          ## did not install or cannot find libhdf5 at load time.
+          if (!requireNamespace("hdf5r", quietly = TRUE)) stop("hdf5r failed to install or load")
+          message("hdf5r ", packageVersion("hdf5r"), " loads OK")
         shell: Rscript {0}
+
+      ## Fetch the public 10x "PBMC 500 (Next GEM)" scATAC outputs that Session 2
+      ## builds its Signac object from. They are too large to commit (the
+      ## fragment file is ~110 MB) and are gitignored, so the render step's
+      ## `git add docs` never picks them up. The engine copies docs/data into its
+      ## build tree, where relative `data/...` paths in the sessions resolve.
+      - name: Download course data
+        run: |
+          base=https://cf.10xgenomics.com/samples/cell-atac/2.0.0/atac_pbmc_500_nextgem
+          mkdir -p docs/data
+          for f in filtered_peak_bc_matrix.h5 singlecell.csv fragments.tsv.gz fragments.tsv.gz.tbi; do
+            curl -fsSL --retry 3 -o "docs/data/atac_pbmc_500_nextgem_${f}" "${base}/atac_pbmc_500_nextgem_${f}"
+          done
+          ls -l docs/data
 
       ## Install the compileCourses engine, install the local package and
       ## render the course. Shared with OS-check and legacy-R-check.

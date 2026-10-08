@@ -1,0 +1,495 @@
+---
+title: "Single-cell ATAC-seq, Session 3"
+subtitle: " <html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html> Bioinformatics Resource Center - Rockefeller University"
+author:
+  - "[http://rockefelleruniversity.github.io/scATAC/](http://rockefelleruniversity.github.io/scATAC/)"
+  - "[brc@rockefeller.edu](mailto:brc@rockefeller.edu)"
+---
+
+```{r setup, include=FALSE, purl=FALSE}
+suppressPackageStartupMessages(require(knitr))
+knitr::opts_chunk$set(echo = TRUE, tidy = T)
+```
+
+::: {.content-hidden when-format="revealjs"}
+# Single-cell ATAC-seq: Dimensionality Reduction and Clustering
+:::
+
+## Recap
+
+Thus far we have covered:
+- Cell Ranger 
+- Importing data into R and Signac
+- Generating QC metrics
+- Deciding on cutoffs
+- Normalization and feature selection
+
+## Overview
+
+- [Latent Semantic Indexing](#latent-semantic-indexing)
+- [Embedding and clustering](#embedding-and-clustering)
+- [Revisiting QC](#revisiting-qc)
+- [Gene activity scores](#gene-activity-scores)
+- [Label transfer from scRNA-seq](#label-transfer-from-scrna-seq)
+
+
+# Latent Semantic Indexing {background-color="#23373B" .center .middle}
+
+## Latent Semantic Indexing
+
+LSI = TF-IDF followed by singular value decomposition (SVD). 
+
+Just as a reminder this helps deal with some of the specifics of scATAC data structure. Thus far we have done TF-IDF which normalizes for per-cell sequencing depth (TF) and up-weights rarer, more informative peaks (IDF).
+
+The next step is SVD. This in place of PCA for scRNAseq.
+
+## Why Can't We Use PCA?
+
+In scRNA-seq, **PCA** is the standard dimensionality reduction step applied after log-normalization.
+
+For scATAC-seq, the TF-IDF matrix is:
+
+- **Non-negative** — values range from 0 upwards
+- **Sparse** — most entries are 0
+- **High-dimensional** — up to ~100,000 peaks
+
+PCA applied directly to TF-IDF data performs poorly because PCA assumes approximately Gaussian-distributed inputs and is sensitive to the distribution of zeros.
+
+## What is SVD doing?
+
+SVD summarises ~100,000 peaks as a few dozen **"accessibility programs"**:
+groups of peaks that tend to open and close together across cells
+(e.g. a set of T-cell enhancers). The top dimensions capture the major axes of chromatin accessibility variation across cells — analogous to principal components.
+
+It splits the TF-IDF matrix into three parts:
+
+| Part | Plain meaning |
+|---|---|
+| **U** | Which peaks make up each program |
+| **Σ** | How much variation each program explains |
+| **V** | How much of each program each cell has |
+
+We keep **V**: each cell becomes ~50 numbers (one per program) instead of
+~100,000 peaks. These are the **LSI components** we use for UMAP and clustering.
+
+For more details on [SVD](https://www.pnas.org/doi/10.1073/pnas.97.18.10101), there is a good explainer for when it was first applied to genomics for microarrays. 
+
+## Running SVD in Signac
+
+Lets start by loading in the object as we left it (or continue from where you were in the session).
+
+```{r runSVD}
+pbmc <- readRDS("data/pbmc_filtered_tfidf.rds")
+
+pbmc <- RunSVD(pbmc)
+
+pbmc[["lsi"]]
+
+```
+
+## SVD dimensions
+
+`RunSVD()` defaults to 50 dimensions. 
+
+* The **first singular vector** in LSI typically is almost always strongly correlated with total fragment count (sequencing depth) rather than meaningful biological variation. This is because cells with high reads tend to have fewer non-zero entries across all peaks.
+* You rarely need all 50 for clustering. 
+
+Dimensions 2–30 are a common working set, but we can always check `DepthCor()` first.
+
+```{r depth_cor, eval=FALSE}
+DepthCor(pbmc)
+```
+
+## Inspecting DepthCor Output
+
+The output is a bar plot showing the Pearson correlation of each LSI component with `log10(nCount_peaks)`.
+
+```{r depthCor}
+DepthCor(pbmc)
+```
+
+::: {.callout-important}
+## What to look for
+- **LSI 1:** correlation close to +/-1 → **always exclude**
+- **Later components:** correlations > 0.75 → may also be depth-driven; consider excluding
+- **Most datasets:** skip LSI 1, use 2–30
+
+Downstream calls that use LSI must specify `dims = 2:N` explicitly.
+:::
+
+
+# UMAP Embedding {background-color="#23373B" .center .middle}
+
+## From LSI to UMAP
+
+::: {.columns}
+
+::: {.column width="50%"}
+**UMAP** projects the high-dimensional LSI space into 2D for visualisation. Compared to t-SNE it generally:
+
+- Preserves more **global structure** (relative position of clusters matters)
+- Runs faster on large datasets
+- Is more reproducible with a fixed seed
+
+We set `seed.use = 42` for reproducibility.
+:::
+
+::: {.column width="50%"}
+```{r runUMAP}
+pbmc <- RunUMAP(
+  object    = pbmc,
+  reduction = "lsi",
+  dims      = 2:30,
+  seed.use  = 42
+)
+
+DimPlot(object = pbmc, label = TRUE) + NoLegend()
+```
+:::
+
+:::
+
+## Interpreting the UMAP
+
+Cells cluster together based on **similarity of their chromatin accessibility profiles**.
+
+Different cell types have distinct combinations of accessible regulatory elements and should separate in UMAP space.
+
+
+## Common UMAP pitfalls: depth gradients
+
+Run this check before trusting the UMAP:
+```{r}
+pbmc2 <- RunUMAP(
+  object    = pbmc,
+  reduction = "lsi",
+  dims      = 1:30,
+  seed.use  = 42
+)
+
+FeaturePlot(pbmc2, features = "nCount_peaks", max.cutoff = "q95")
+```
+
+If you see a smooth gradient of fragment count across the UMAP, LSI component 1 may have been included. Re-run `RunUMAP()` excluding it.
+
+# Graph-Based Clustering {background-color="#23373B" .center .middle}
+
+## Clustering with Seurat
+
+The clustering workflow mirrors scRNA-seq:
+
+1. **Build a k-nearest neighbour (KNN) graph** in LSI space
+2. **Refine with SNN** (shared nearest neighbour)
+3. **Community detection** — Louvain, SLM or Leiden algorithm
+
+Leiden is considered the gold standard these days, but you also need to install the [leiden algorithm outside of R](https://leidenalg.readthedocs.io/en/stable/intro.html). In the Signac vignette they use SLM, so lets go for that.
+
+## Clustering with Seurat
+
+```{r findClusters}
+pbmc <- FindNeighbors(
+  object    = pbmc,
+  reduction = "lsi",
+  dims      = 2:30
+)
+
+pbmc <- FindClusters(
+  object    = pbmc,
+  verbose   = FALSE,
+  algorithm = 3,
+  random.seed = 42
+)
+```
+
+## Clustering with Seurat
+
+```{r}
+DimPlot(object = pbmc, label = TRUE) + NoLegend()
+```
+
+## Tuning the Resolution Parameter
+
+There is no single "correct" resolution. The right level of granularity depends on your biological question — coarser for broad lineages, finer for rare subtypes. Try several values and compare cluster stability.
+
+```{r resolutionTuning, eval=FALSE}
+pbmc <- FindClusters(pbmc, resolution = 0.5)   # coarser
+pbmc <- FindClusters(pbmc, resolution = 2.0)   # finer
+
+p1 <- DimPlot(pbmc, group.by = "peaks_snn_res.0.5", label = TRUE) +
+      ggtitle("Resolution 0.5") + NoLegend()
+p2 <- DimPlot(pbmc, group.by = "peaks_snn_res.2",   label = TRUE) +
+      ggtitle("Resolution 2.0") + NoLegend()
+```
+
+## Tuning the Resolution Parameter
+
+```{r}
+
+p1 + p2
+```
+
+
+# QC Revisited {background-color="#23373B" .center .middle}
+
+## QC is Iterative, Not a Single Step
+
+It is good practice to **re-examine QC metrics in the context of your clusters** after embedding.
+
+Low-quality cells may form isolated clusters or cluster with real cell types but with distinctly worse metrics.
+
+```{r qcOnUMAP1}
+FeaturePlot(
+  object     = pbmc,
+  features   = c("nCount_peaks",
+    "TSS.enrichment",
+    "excl_prop",
+    "nucleosome_signal"),
+  ncol       = 2,
+  max.cutoff = "q95",
+  pt.size = 0.2
+)
+```
+
+## QC is Iterative, Not a Single Step
+
+```{r qcOnUMAP2}
+FeaturePlot(
+  object     = pbmc,
+  features   = c(
+    "pct_reads_in_peaks",
+    "amulet.q",
+    "scDblFinder.score"),
+  ncol       = 2,
+  max.cutoff = "q95",
+  pt.size = 0.2
+)
+```
+
+## QC is Iterative, Not a Single Step
+
+Violin plots split by cluster can also help discern differences. 
+
+```{r qcOnVlnPlot}
+VlnPlot(
+  object     = pbmc,
+  features   = c("nCount_peaks",
+    "TSS.enrichment",
+    "excl_prop",
+    "nucleosome_signal",
+    "pct_reads_in_peaks",
+    "scDblFinder.score",
+    "amulet.q"),
+  split.by = "peaks_snn_res.2",
+  ncol       = 3
+)
+```
+
+## Revisiting doublets and other artefacts
+
+**Doublets** often appear between major clusters in the UMAP.
+
+Signs of a doublet cluster:
+
+- Intermediate accessibility profile
+- Higher fragment count than neighboring clusters
+- Enriched for markers of two different cell types
+
+## Cyclical QC strategy
+
+Let's remember: 
+1. Apply conservative thresholds initially
+2. UMAP and Cluster
+3. Double-check QC metrics on UMAP to see if anything is sticking out
+4. Update filters or remove suspect clusters. Go back to 2, until there are no remaining QC concerns. 
+
+Two to three iterations is common before settling on a final cell set.
+
+## Our data?
+
+We can see some clear separation of some QC metrics across the UMAP. 
+
+There are low counts in one cluster. But the other metrics look pretty okay. 
+
+QC does not have to end here though. We will keep an eye on that cluster as we do check for marker peaks and do cell type annotation. 
+
+# Gene activity scores {background-color="#23373B" .center .middle}
+
+## From Peaks to Genes
+
+We have information about our clusters relating to their QC, but assigning cell type labels will also be informative. Most references for annotation are from RNA-seq data. To assign cell type labels using these references, we use a proxy for gene expression: `GeneActivity()`.
+
+**Idea:** sum the ATAC-seq fragment counts overlapping a window around each gene's body and promoter.
+
+
+::: {.callout-note}
+This is a **proxy** for expression, not true RNA. Accessible chromatin at a gene promoter or body correlates with transcription but does not equal it — especially for genes regulated primarily by distal enhancers.
+:::
+
+## Computing Gene Activity
+
+We generate gene activity scores and add them to our Signac object as a separate assay. We will largely treat this like RNA data. 
+
+```{r geneActivity, eval=FALSE}
+gene.activities <- GeneActivity(pbmc)
+
+pbmc[["RNA"]] <- CreateAssayObject(counts = gene.activities)
+
+pbmc <- NormalizeData(
+  object             = pbmc,
+  assay              = "RNA",
+  normalization.method = "LogNormalize",
+  scale.factor       = median(pbmc$nCount_RNA)
+)
+
+DefaultAssay(pbmc) <- "RNA"
+```
+
+## Using Gene Activity for Annotation
+
+```{r geneActivityViz, eval=FALSE}
+FeaturePlot(
+  object     = pbmc,
+  features   = c(
+    "MS4A1",   # B cells
+    "CD3D",    # T cells
+    "LEF1",    # naive T cells
+    "NKG7",    # NK cells
+    "TREM1",   # monocytes
+    "LYZ"      # monocytes/DCs
+  ),
+  pt.size    = 0.1,
+  max.cutoff = "q95",
+  ncol       = 3
+)
+```
+
+## Strengths and Limitations of Gene Activity
+
+::: {.panel-tabset}
+
+## Strengths
+- Quick, no additional data required
+- Works for well-studied cell types with known marker genes
+- Provides biologically interpretable axes for initial annotation
+- Scales to large datasets (computed from the fragment file directly)
+
+## Limitations
+- Not true gene expression — accessibility ≠ transcription
+- Long genes with many peaks may be systematically over-represented
+- Poorly captures enhancer-regulated genes with distal regulatory elements
+- Noisy for rare or lowly expressed genes
+
+## Best practice
+Use gene activity as a **guide** and confirm with label transfer from a matched scRNA-seq reference where available. The two approaches are complementary.
+
+:::
+
+# Label Transfer from scRNA-seq {background-color="#23373B" .center .middle}
+
+## Leveraging a Reference scRNA-seq Dataset
+
+Seurat's **label transfer** workflow:
+
+1. Uses an annotated scRNA-seq dataset as a **reference**
+2. Maps your scATAC-seq cells onto the reference via shared gene-activity features
+3. Transfers cell type labels plus a per-cell **prediction score** (confidence)
+
+More robust than gene activity alone because it uses the full transcriptomic reference to anchor the mapping.
+
+## Finding Transfer Anchors
+
+```{r transferAnchors, eval=FALSE}
+DefaultAssay(pbmc) <- "RNA"
+
+pbmc_rna <- readRDS("data/pbmc_10k_rna.rds")
+
+transfer.anchors <- FindTransferAnchors(
+  reference       = pbmc_rna,
+  query           = pbmc,
+  features        = VariableFeatures(object = pbmc_rna),
+  reference.assay = "RNA",
+  query.assay     = "RNA",
+  reduction       = "cca"   # canonical correlation analysis
+)
+```
+
+::: {.callout-note}
+CCA identifies cells that are similar in the shared gene space — these become the "anchors" used to transfer information. The gene activity matrix (stored as the "RNA" assay) serves as the bridge between the ATAC query and the RNA reference.
+:::
+
+## Transferring Labels
+
+```{r transferLabels, eval=FALSE}
+celltype.predictions <- TransferData(
+  anchorset       = transfer.anchors,
+  refdata         = pbmc_rna$celltype,
+  weight.reduction = pbmc[["lsi"]],
+  dims            = 2:30
+)
+
+pbmc <- AddMetaData(pbmc, metadata = celltype.predictions)
+
+DimPlot(
+  object   = pbmc,
+  group.by = "predicted.id",
+  label    = TRUE,
+  repel    = TRUE
+) + NoLegend()
+```
+
+## Evaluating Label Transfer Quality
+
+```{r evalTransfer, eval=FALSE}
+hist(pbmc$prediction.score.max,
+     breaks = 50,
+     xlab   = "Max prediction score",
+     main   = "Label transfer confidence")
+
+pbmc$low_confidence <- pbmc$prediction.score.max < 0.5
+table(pbmc$low_confidence)
+```
+
+::: {.callout-tip}
+## Interpreting low-confidence predictions
+Cells with prediction score < 0.5 may represent:
+- Cell types **absent from the reference** (→ may need a broader reference)
+- **Low-quality cells** that survived QC (→ consider removing)
+- **Rare transitional states** between annotated types (→ biologically interesting)
+
+Cross-reference low-confidence cells with QC metrics before deciding whether to keep or remove them.
+:::
+
+
+## Gene activity scores
+
+?? Signac GeneActivity: summing fragments over gene body + promoter to build a proxy RNA-expression matrix ??
+
+```{r gene_activity, eval=FALSE}
+## ?? e.g. Signac::GeneActivity() then add as an "RNA" assay and NormalizeData() ??
+```
+
+## Strengths and limitations
+
+?? Useful for annotation with known markers; limited by distal regulation, gene-dense regions and the loose coupling of accessibility and expression ??
+
+# Label transfer from scRNA-seq {background-color="#23373B" .center .middle}
+
+## Label transfer from scRNA-seq
+
+?? Using an annotated scRNA-seq reference to label scATAC cells via gene activity scores and CCA anchors ??
+
+```{r label_transfer, eval=FALSE}
+## ?? e.g. FindTransferAnchors(reduction = "cca") then TransferData(weight.reduction = atac[["lsi"]]) ??
+```
+
+## Assessing transferred labels
+
+?? Prediction scores, agreement with clusters, and when to distrust a transferred label ??
+
+## Time for an exercise!
+
+Exercise on dimensionality reduction and clustering can be found [here](../../exercises/exercises/Session3_Exercise_exercise.html)
+
+## Answers to exercise.
+
+Answers can be found [here](../../exercises/answers/Session3_Exercise_answers.html)

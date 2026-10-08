@@ -1,0 +1,11 @@
+<br>
+
+#### **Single-cell ATAC-seq, Session 3: Dimensionality Reduction and Clustering**
+
+This session moves from a normalized matrix to annotated clusters of cells.
+
+* Latent Semantic Indexing (LSI) for dimensionality reduction, and why the first component is usually skipped
+* UMAP embedding and graph-based clustering
+* Revisiting QC in light of clustering: analysis as an iterative cycle
+* Gene activity scores as a proxy for expression: strengths and limitations
+* Transferring cell-type labels from a scRNA-seq reference

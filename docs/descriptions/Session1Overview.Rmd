@@ -1,9 +1,10 @@
 <br>
 
-#### **?? My course name?? , Session 1**
+#### **Single-cell ATAC-seq, Session 1: Foundations**
 
-??What am I focusing on in this section. Bullet point lists are good??
+This session introduces the concepts and data structures behind scATAC-seq.
 
-* Course content
-* Building courses
-* Making it look nice
+* A refresher on chromatin accessibility and ATAC-seq
+* The benefits and costs of single-cell resolution
+* Cell Ranger ATAC (and other preprocessor) outputs: fragment files and the peak-by-cell count matrix
+* Importing data with Signac/Seurat: the ChromatinAssay, fragments, annotations and motifs

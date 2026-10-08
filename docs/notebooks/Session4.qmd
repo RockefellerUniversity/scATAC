@@ -1,0 +1,87 @@
+---
+title: "Single-cell ATAC-seq, Session 4"
+subtitle: " <html><div style='float:left'></div><hr color='#EB811B' size=1px width=796px></html> Bioinformatics Resource Center - Rockefeller University"
+author:
+  - "[http://rockefelleruniversity.github.io/scATAC/](http://rockefelleruniversity.github.io/scATAC/)"
+  - "[brc@rockefeller.edu](mailto:brc@rockefeller.edu)"
+---
+
+```{r setup, include=FALSE, purl=FALSE}
+suppressPackageStartupMessages(require(knitr))
+knitr::opts_chunk$set(echo = TRUE, tidy = T)
+```
+
+::: {.content-hidden when-format="revealjs"}
+# Single-cell ATAC-seq: Differential Accessibility and Visualization
+:::
+
+## Overview
+
+- [Recap](#recap)
+- [Differential accessibility](#differential-accessibility)
+- [Pseudobulk differential accessibility](#pseudobulk-differential-accessibility)
+- [Visualizing regions of interest](#visualizing-regions-of-interest)
+
+## Recap
+
+?? Brief recap of Session 3 — LSI, clustering, gene activity scores and label transfer ??
+
+- [Session 3](Session3.html)
+
+# Differential accessibility {background-color="#23373B" .center .middle}
+
+## Differential accessibility
+
+?? What question differential accessibility answers, and the choice between cell-level and sample-level (pseudobulk) testing ??
+
+## FindMarkers
+
+?? Cell-level testing between clusters/cell types; choice of test (e.g. LR with fragment-count latent variable) and its tendency to inflate significance by treating cells as replicates ??
+
+```{r findmarkers, eval=FALSE}
+## ?? e.g. FindMarkers(test.use = "LR", latent.vars = "nCount_peaks") ??
+```
+
+## Annotating differential peaks
+
+?? Linking differential peaks to nearby genes ??
+
+```{r closest_feature, eval=FALSE}
+## ?? e.g. Signac::ClosestFeature() ??
+```
+
+# Pseudobulk differential accessibility {background-color="#23373B" .center .middle}
+
+## Pseudobulk differential accessibility
+
+?? Aggregating counts per sample × cell type so biological replicates are the unit of testing; requires multiple samples per condition ??
+
+```{r pseudobulk, eval=FALSE}
+## ?? e.g. AggregateExpression() then DESeq2 ??
+```
+
+## Comparing approaches
+
+?? Where FindMarkers and pseudobulk results agree and disagree; report adjusted p-values ??
+
+# Visualizing regions of interest {background-color="#23373B" .center .middle}
+
+## Coverage plots
+
+?? Visualizing pseudobulk accessibility tracks per group over a region, with gene annotation and peaks ??
+
+```{r coverage_plot, eval=FALSE}
+## ?? e.g. Signac::CoveragePlot(region = ..., extend.upstream = ..., extend.downstream = ...) ??
+```
+
+## Customizing coverage plots
+
+?? Adding peak, link and expression panels; combining tracks ??
+
+## Time for an exercise!
+
+Exercise on differential accessibility and visualization can be found [here](../../exercises/exercises/Session4_Exercise_exercise.html)
+
+## Answers to exercise.
+
+Answers can be found [here](../../exercises/answers/Session4_Exercise_answers.html)

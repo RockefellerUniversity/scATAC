@@ -1,9 +1,10 @@
 <br>
 
-#### **?? My course name?? , Session 2**
+#### **Single-cell ATAC-seq, Session 2: QC and Preprocessing**
 
-??If you have more sections then do this again. what is session 2 about? keep adding more files if needed??
+This session covers quality control and preprocessing specific to scATAC-seq data.
 
-* Course content
-* Building courses
-* Making it look nice
+* Key scATAC QC metrics: TSS enrichment, nucleosome signal, fraction of reads in peaks (FRiP) and blacklist regions
+* Choosing sensible filtering thresholds
+* TF-IDF normalization, and why sparse accessibility data are normalized differently from scRNA-seq
+* Feature selection: choosing a peak set, re-calling peaks and consensus peak sets

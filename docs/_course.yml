@@ -1,15 +1,25 @@
 Description:
-  CourseName: Course Template
+  CourseName: Single-cell ATAC-seq
   OverviewRmd: CourseOverview.Rmd
 Presentations:
-  - title: Session1
+  - title: Foundations
     PresRmd: Session1.qmd
     PresOverviewRmd: Session1Overview.Rmd
     Exercises:
       - MyExercise1.qmd
       - MyExercise2.qmd
-  - title: Session2
+  - title: QC and Preprocessing
     PresRmd: Session2.qmd
     PresOverviewRmd: Session2Overview.Rmd
     Exercises:
-      - MyExercise3.qmd
+      - Session2_Exercise.qmd
+  - title: Dimensionality Reduction and Clustering
+    PresRmd: Session3.qmd
+    PresOverviewRmd: Session3Overview.Rmd
+    Exercises:
+      - Session3_Exercise.qmd
+  - title: Differential Accessibility and Visualization
+    PresRmd: Session4.qmd
+    PresOverviewRmd: Session4Overview.Rmd
+    Exercises:
+      - Session4_Exercise.qmd

@@ -1,0 +1,36 @@
+---
+title: "Session 2 Exercise: QC and Preprocessing"
+author: "Rockefeller University, Bioinformatics Resource Centre"
+date: "https://rockefelleruniversity.github.io/scATAC/"
+format:
+  html:
+    theme:
+      - cosmo
+      - metropolis-page.scss    # same RU look as the single-page presentations
+    embed-resources: true
+    format-links: false
+    include-before-body: page-logo.html
+params:
+  toMessage: false
+---
+
+```{r, setup,include=FALSE, purl=FALSE}
+toMessage <- ifelse(!is.null(params$toMessage),params$toMessage,FALSE)
+message(toMessage)
+```
+
+
+<p>&nbsp;</p>
+These exercises are about scATAC-seq QC metrics, cell filtering, TF-IDF normalization and feature selection in [Single-cell ATAC-seq](https://rockefelleruniversity.github.io/scATAC/).
+
+**Exercise 1** - **??Ex 1 title??**
+
+- ??What is the first question??
+```{r,echo=toMessage}
+## ?? Solution here — shown only in the answers version (echo=toMessage) ??
+```
+
+- ??What is the second question??
+```{r,echo=toMessage}
+## ?? Solution here ??
+```

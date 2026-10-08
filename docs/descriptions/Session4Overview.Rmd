@@ -1,0 +1,9 @@
+<br>
+
+#### **Single-cell ATAC-seq, Session 4: Differential Accessibility and Visualization**
+
+This session identifies and visualizes regions that differ in accessibility between groups of cells.
+
+* Differential accessibility with FindMarkers
+* Pseudobulk approaches to differential accessibility
+* Visualizing regions of interest with coverage plots

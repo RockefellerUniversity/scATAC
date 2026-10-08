@@ -104,6 +104,19 @@ pbmc <- readRDS("data/pbmc_start.rds")
 
 ```
 
+```{r repointFragments, include=FALSE, purl=FALSE}
+# The saved object records the fragment file's absolute path on the machine that
+# built it. When a copy sits in data/ (CI downloads it there), point the object
+# at that copy so fragment-based steps (TSS enrichment, fragment histogram,
+# AMULET) can find it; otherwise keep the recorded path.
+frag_local <- "data/atac_pbmc_500_nextgem_fragments.tsv.gz"
+if (file.exists(frag_local)) {
+  frags <- UpdatePath(Fragments(pbmc)[[1]], new.path = frag_local)
+  Fragments(pbmc) <- NULL
+  Fragments(pbmc) <- frags
+}
+```
+
 # TSS Enrichment Score {background-color="#23373B" .center .middle}
 
 ## What is TSS Enrichment?
@@ -600,7 +613,7 @@ DensityScatter(
 
 Look for a main cloud of high-quality cells and isolated low-quality populations below/above potential enrichment thresholds.
 
-```{r densityScatter}
+```{r densityScatter2}
 DensityScatter(
   object     = pbmc,
   x          = "nCount_peaks",

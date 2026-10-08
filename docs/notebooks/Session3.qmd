@@ -316,20 +316,22 @@ QC does not have to end here though. We will keep an eye on that cluster as we d
 
 ## From Peaks to Genes
 
-We have information about our clusters relating to their QC, but assigning cell type labels will also be informative. Most references for annotation are from RNA-seq data. To assign cell type labels using these references, we use a proxy for gene expression: `GeneActivity()`.
+We have information about our clusters relating to their QC, but assigning cell type labels will also be informative. Clear cell type identities will indicate pure population. To be able to do this we use a proxy for gene expression: `GeneActivity()`.
 
 **Idea:** sum the ATAC-seq fragment counts overlapping a window around each gene's body and promoter.
 
 
 ::: {.callout-note}
-This is a **proxy** for expression, not true RNA. Accessible chromatin at a gene promoter or body correlates with transcription but does not equal it — especially for genes regulated primarily by distal enhancers.
+This is a **proxy** for expression, not true RNA. Accessible chromatin at a gene promoter or body correlates with transcription but does not equal it — especially for genes regulated primarily by distal enhancers.Typically framgents that overlap 2kb upstream of TSS and whole gene body are counted. 
 :::
 
 ## Computing Gene Activity
 
 We generate gene activity scores and add them to our Signac object as a separate assay. We will largely treat this like RNA data. 
 
-```{r geneActivity, eval=FALSE}
+This step will recount in the context of genes, instead of peaks. This means we will need the fragments file for this.
+
+```{r geneActivity}
 gene.activities <- GeneActivity(pbmc)
 
 pbmc[["RNA"]] <- CreateAssayObject(counts = gene.activities)
@@ -346,7 +348,7 @@ DefaultAssay(pbmc) <- "RNA"
 
 ## Using Gene Activity for Annotation
 
-```{r geneActivityViz, eval=FALSE}
+```{r geneActivityViz}
 FeaturePlot(
   object     = pbmc,
   features   = c(
@@ -365,8 +367,6 @@ FeaturePlot(
 
 ## Strengths and Limitations of Gene Activity
 
-::: {.panel-tabset}
-
 ## Strengths
 - Quick, no additional data required
 - Works for well-studied cell types with known marker genes
@@ -375,16 +375,19 @@ FeaturePlot(
 
 ## Limitations
 - Not true gene expression — accessibility ≠ transcription
-- Long genes with many peaks may be systematically over-represented
+- Long genes with many peaks, or gene dense regions may be systematically over-represented
 - Poorly captures enhancer-regulated genes with distal regulatory elements
 - Noisy for rare or lowly expressed genes
 
 ## Best practice
 Use gene activity as a **guide** and confirm with label transfer from a matched scRNA-seq reference where available. The two approaches are complementary.
 
-:::
 
 # Label Transfer from scRNA-seq {background-color="#23373B" .center .middle}
+
+## Leveraging a Reference scRNA-seq Dataset
+
+There already exist many well documented scRNAseq atlases or well curated datasets for most experimental contexts. We can use our Gene Activity along with Seurats label transfer methodology to be able to use published data to label cells.
 
 ## Leveraging a Reference scRNA-seq Dataset
 
@@ -460,17 +463,8 @@ Cross-reference low-confidence cells with QC metrics before deciding whether to 
 :::
 
 
-## Gene activity scores
 
-?? Signac GeneActivity: summing fragments over gene body + promoter to build a proxy RNA-expression matrix ??
 
-```{r gene_activity, eval=FALSE}
-## ?? e.g. Signac::GeneActivity() then add as an "RNA" assay and NormalizeData() ??
-```
-
-## Strengths and limitations
-
-?? Useful for annotation with known markers; limited by distal regulation, gene-dense regions and the loose coupling of accessibility and expression ??
 
 # Label transfer from scRNA-seq {background-color="#23373B" .center .middle}
 

@@ -59,10 +59,8 @@ jobs:
         config:
           ## snapshot = PPM date roughly contemporary with each R release,
           ## chosen so CRAN package versions are compatible with that R.
-          ## allow-failure: below the current R 4.1 compatibility floor.
-          - { r: '3.5', snapshot: '2019-01-02', allow-failure: true }
-          - { r: '3.6', snapshot: '2020-04-24', allow-failure: true }
-          - { r: '4.0', snapshot: '2021-03-31', allow-failure: true }
+          ## R 4.1 is this course's floor: Signac/Seurat v5/scDblFinder are not
+          ## installable on older R, so the 3.5/3.6/4.0 probes were removed.
           - { r: '4.1', snapshot: '2022-04-21' }
           - { r: '4.2', snapshot: '2023-04-20' }
           - { r: '4.3', snapshot: '2024-04-23' }
@@ -133,10 +131,13 @@ jobs:
         ## legs - install the known set directly instead.
         run: |
           sudo apt-get update -y
+          ## libglpk-dev: igraph (-> bluster -> scDblFinder); libuv1-dev: fs;
+          ## libhdf5-dev: hdf5r.
           sudo apt-get install -y \
             libcurl4-openssl-dev libssl-dev libxml2-dev \
             libfontconfig1-dev libharfbuzz-dev libfribidi-dev \
-            libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
+            libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev \
+            libglpk-dev libuv1-dev libhdf5-dev
 
       ## Install the course dependencies from the version-matched snapshot set
       ## above. On the oldest R legs some current packages may not resolve -
@@ -160,6 +161,21 @@ jobs:
           remotes::install_cran("BiocManager")
         shell: Rscript {0}
 
+      ## Fetch the public 10x PBMC 500 scATAC outputs (fragment file read by
+      ## Session 2-4 fragment-based steps) and the annotated 10k PBMC scRNA-seq
+      ## reference (Session 3 label transfer). Same files as compilation-check;
+      ## gitignored.
+      - name: Download course data
+        run: |
+          base=https://cf.10xgenomics.com/samples/cell-atac/2.0.0/atac_pbmc_500_nextgem
+          mkdir -p docs/data
+          for f in filtered_peak_bc_matrix.h5 singlecell.csv fragments.tsv.gz fragments.tsv.gz.tbi; do
+            curl -fsSL --retry 3 -o "docs/data/atac_pbmc_500_nextgem_${f}" "${base}/atac_pbmc_500_nextgem_${f}"
+          done
+          curl -fsSL --retry 3 -o docs/data/pbmc_10k_rna.rds \
+            https://signac-objects.s3.amazonaws.com/pbmc_10k_v3.rds
+          ls -l docs/data
+
       ## Install the compileCourses engine, install the local package and
       ## render the course. Shared with compilation-check and OS-check.
       - name: Compile course
@@ -170,6 +186,8 @@ jobs:
           compilecourses-ref: quarto-migration   # Quarto engine branch — pinned during the phased migration; remove at the final cut-over
           ## Old-R execution canary: always full-execute (never reuse freeze).
           full-rebuild: true
+          ## Show render progress and full errors in the log (engine renders quietly).
+          verbose: true
 
       - name: Upload check results
         if: failure()

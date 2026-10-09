@@ -105,12 +105,15 @@ jobs:
         ## libuv1-dev provides uv.h, needed to build `fs` from source on the
         ## r-devel leg (no binaries exist for devel, so fs/sass/bslib/rmarkdown
         ## are compiled from source and fail without it).
+        ## libglpk-dev: igraph (-> bluster -> scDblFinder) links against GLPK.
+        ## libhdf5-dev: hdf5r (Seurat::Read10X_h5).
         run: |
           sudo apt-get update -y
           sudo apt-get install -y \
             libcurl4-openssl-dev libssl-dev libxml2-dev libuv1-dev \
             libfontconfig1-dev libharfbuzz-dev libfribidi-dev \
-            libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
+            libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev \
+            libglpk-dev libhdf5-dev
 
       - name: Install macOS system dependencies
         if: matrix.config.os == 'macOS-latest'
@@ -145,6 +148,22 @@ jobs:
         run: BiocManager::install(version = "devel", ask = FALSE)
         shell: Rscript {0}
 
+      ## Fetch the public 10x PBMC 500 scATAC outputs (fragment file read by
+      ## Session 2-4 fragment-based steps) and the annotated 10k PBMC scRNA-seq
+      ## reference (Session 3 label transfer). Same files as compilation-check;
+      ## gitignored. bash on every OS so the same script runs on Windows.
+      - name: Download course data
+        shell: bash
+        run: |
+          base=https://cf.10xgenomics.com/samples/cell-atac/2.0.0/atac_pbmc_500_nextgem
+          mkdir -p docs/data
+          for f in filtered_peak_bc_matrix.h5 singlecell.csv fragments.tsv.gz fragments.tsv.gz.tbi; do
+            curl -fsSL --retry 3 -o "docs/data/atac_pbmc_500_nextgem_${f}" "${base}/atac_pbmc_500_nextgem_${f}"
+          done
+          curl -fsSL --retry 3 -o docs/data/pbmc_10k_rna.rds \
+            https://signac-objects.s3.amazonaws.com/pbmc_10k_v3.rds
+          ls -l docs/data
+
       ## Install the compileCourses engine, install the local package and
       ## render the course. Shared with compilation-check and legacy-R-check.
       - name: Compile course
@@ -156,6 +175,8 @@ jobs:
           compilecourses-version: ${{ matrix.config.r == 'devel' && 'devel' || '' }}
           ## Cross-platform execution canary: always full-execute (never reuse freeze).
           full-rebuild: true
+          ## Show render progress and full errors in the log (engine renders quietly).
+          verbose: true
 
       - name: Upload check results
         if: failure()

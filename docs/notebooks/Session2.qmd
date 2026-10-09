@@ -489,11 +489,14 @@ excl <- reduce(c(
 
 ## AMULET 
 
-Now lets run AMULET. If you run this you will see what we mean by much more heavy duty process. Even on this simple and small dataset it can be >15 minutes. This is a lot longer then scDblFinder at <10s.
+Now lets run AMULET. If you run this you will see what we mean by much more heavy duty process. Even on this simple and small dataset it takes a few minutes. This is a lot longer then scDblFinder at <10s.
+
+We pass `barcodes = colnames(pbmc)` so AMULET only scores our called cells. AMULET compares each cell's number of high-overlap sites with the average across the barcodes it analyses. Including empty droplets and debris, which have few fragments, would lower that average and inflate doublet calls. Restricting to cells is also much faster: the fragment file contains ~220,000 barcodes, but we have 482 cells.
 
 ```{r}
 amu <- amulet(
   frag_path,
+  barcodes         = colnames(pbmc),
   regionsToExclude = excl
 )
 ```

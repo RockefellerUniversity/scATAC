@@ -79,6 +79,10 @@ For more details on [SVD](https://www.pnas.org/doi/10.1073/pnas.97.18.10101), th
 Lets start by loading in the object as we left it (or continue from where you were in the session).
 
 ```{r runSVD}
+library(Signac)
+library(Seurat)
+library(ggplot2)
+
 pbmc <- readRDS("data/pbmc_filtered_tfidf.rds")
 
 pbmc <- RunSVD(pbmc)

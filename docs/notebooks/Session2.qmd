@@ -144,7 +144,7 @@ A key note is that TSSE is calculated slightly differently by different tools. A
 :::
 
 ::: {.column width="50%"}
-![TSS enrichment profile](imgs/tsse.png)
+![TSS enrichment profile](../imgs/tsse.png)
 :::
 
 :::
@@ -629,7 +629,7 @@ DensityScatter(
 
 Lets look at some other examples of PBMC data. This is from a paper comparing  different sequencing technologies. 
 
-![TSS enrichment profile](imgs/examples.png)
+![TSS enrichment profile](../imgs/examples.png)
 
 [(De Rop *et al*, 2023)](https://www.nature.com/articles/s41587-023-01881-x?st_source=ai_overview)
 

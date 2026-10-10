@@ -21,37 +21,23 @@ knitr::opts_chunk$set(echo = TRUE, tidy = T)
 ```
 
 ::: {.content-hidden when-format="revealjs"}
-# ???My Course name (session1)???
+# Single-cell ATAC-seq: Cell Ranger and Data Import to R
 :::
 
-## Overview
-
-??We often put an overview slide that links to the various parts of the course content to make it easy to navigate — here it links to sections later in this same session??
-
-- [Materials](#materials)
-- [Course materials](#course-materials)
-- [Links](#links)
-- [Section A](#section-a)
 
 # Set Up {background-color="#23373B" .center .middle}
 
 ## Materials
 
-??We try to denote each major section of content with these title slides (see above for set up). A level-1 heading (`#`) becomes an inverse section-divider slide; a level-2 heading (`##`) is a normal slide. The hierarchy also drives the single-page version.??
-
-?? Materials just gives the links to download the package. Just ensure links are up to date??
-
 All prerequisites, links to material and slides for this course can be found on github.
 
-* [Intro_To_R_1](https://rockefelleruniversity.github.io/Intro_To_R_1Day/)
+* [scATAC](https://rockefelleruniversity.github.io/scATAC/)
 
 Or can be downloaded as a zip archive from here.
 
-* [Download zip](https://github.com/rockefelleruniversity/Intro_To_R_1Day/zipball/master)
+* [Download zip](https://github.com/rockefelleruniversity/scATAC/zipball/master)
 
 ## Course materials
-
-?? this slide just shows where thye can get the course content from the download. You do not need to populate these directories. It will be made during compilation??
 
 Once the zip file in unarchived. All presentations as HTML slides and pages, their R code and HTML practical sheets will be available in the directories underneath.
 
@@ -81,19 +67,17 @@ setwd("/PathToMyDownload/RU_Course_template/docs")
 # e.g. setwd("~/Downloads/Intro_To_R_1Day/r_course")
 ```
 
-
-
-# Introduction to single cell ATAC sequencing {background-color="#23373B" .center .middle}
-
 ## Overview
 
-- High-throughput Sequencing
-- Emergence of single-cell
-- Differing single-cell assays
-- Differing single-cell technologies
-- Overview of Single-cell sequencing
+- [Introduction to single cell ATAC sequencing](#introduction-to-single-cell-atac-sequencing)
+- [ATAC sequencing](#atac-sequencing)
+- [10x platform](#10x-platform)
+- [Cell Ranger](#cell-ranger)
+- [Cell Ranger Output Files](#cell-ranger-output-files)
+- [Cell Ranger Web Summary](#cell-ranger-web-summary)
+- [Reading data into R with Signac](#reading-data-into-r-with-signac)
 
-
+# Introduction to single cell ATAC sequencing {background-color="#23373B" .center .middle}
 
 ## Sequencing
 
@@ -676,7 +660,7 @@ cellranger-atac mkref --config=/path/to/references/custom_GRCh38.config
 
 ```
 
-# Output files {background-color="#23373B" .center .middle}
+# Cell Ranger Output Files {background-color="#23373B" .center .middle}
 
 
 ## Cell Ranger ATAC outputs
@@ -1019,7 +1003,7 @@ outs/
 :::
 
 
-# Web Summary QC {background-color="#23373B" .center .middle}
+# Cell Ranger Web Summary {background-color="#23373B" .center .middle}
 
 
 ## QC outputs

@@ -1278,7 +1278,7 @@ Bioinformatics Resource Center - Rockefeller University<p></p>
 <p>or in the console.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href></a><span class="fu">setwd</span>(<span class="st">&quot;/PathToMyDownload/RU_Course_template/docs&quot;</span>)</span>
-<span id="cb1-2"><a href></a><span class="co"># e.g. setwd(&quot;~/Downloads/Intro_To_R_1Day/r_course&quot;)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-2"><a href></a><span class="co"># e.g. setwd(&#39;~/Downloads/Intro_To_R_1Day/r_course&#39;)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section></section>
 <section>
@@ -1306,15 +1306,15 @@ Bioinformatics Resource Center - Rockefeller University<p></p>
 <h2>Data from external sources</h2>
 <p>everything in the qmd is relative to the inst/extdata directory so you have some data to load in, just put it in the data directory, read it in along the path. The structure is maintained for those attending the course and download the package using the instructions. The same rules are followed for imgs and scripts that you may call.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href></a>Table <span class="ot">&lt;-</span> <span class="fu">read.table</span>(<span class="st">&quot;data/readThisTable.csv&quot;</span>,<span class="at">sep=</span><span class="st">&quot;,&quot;</span>,<span class="at">header=</span>T)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href></a>Table <span class="ot">&lt;-</span> <span class="fu">read.table</span>(<span class="st">&quot;data/readThisTable.csv&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;,&quot;</span>, <span class="at">header =</span> T)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="big-processes" class="slide level2">
 <h2>Big Processes</h2>
 <p>If what you want to do is super intense computationally you can use the eval=F arguments to prevent it being done during compilation.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href></a><span class="co">#Intense computation</span></span>
-<span id="cb3-2"><a href></a>myresult<span class="ot">&lt;-</span><span class="dv">10</span><span class="sc">^</span><span class="dv">6</span> <span class="sc">+</span><span class="dv">1</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href></a><span class="co"># Intense computation</span></span>
+<span id="cb3-2"><a href></a>myresult <span class="ot">&lt;-</span> <span class="dv">10</span><span class="sc">^</span><span class="dv">6</span> <span class="sc">+</span> <span class="dv">1</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>You can then just load in the result of the computation, and keep using the result after that. If you do want them to evaluate the intense computation, then you can hide this intermediate file that you are loading in with echo=F.</p>
 </section>
@@ -1329,7 +1329,7 @@ Bioinformatics Resource Center - Rockefeller University<p></p>
 <h2>Section A</h2>
 <p>When explaining the same topic over multiple slides you can use the same header. This is often useful if you have a large code chunk coupled with a large figure. You can set eval=F, repeat the same code then set eval to TRUE and echo to FALSE</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href></a><span class="fu">boxplot</span>(Table[,<span class="dv">2</span><span class="sc">:</span><span class="dv">7</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href></a><span class="fu">boxplot</span>(Table[, <span class="dv">2</span><span class="sc">:</span><span class="dv">7</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="section-a-1" class="slide level2">

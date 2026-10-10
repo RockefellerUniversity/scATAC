@@ -3352,16 +3352,16 @@ What to look for
 <div class="cell">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>pbmc <span class="ot">&lt;-</span> <span class="fu">RunUMAP</span>(<span class="at">object =</span> pbmc, <span class="at">reduction =</span> <span class="st">&quot;lsi&quot;</span>, <span class="at">dims =</span> <span class="dv">2</span><span class="sc">:</span><span class="dv">30</span>, <span class="at">seed.use =</span> <span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>23:27:36 UMAP embedding parameters a = 0.9922 b = 1.112</code></pre>
+<pre><code>13:09:53 UMAP embedding parameters a = 0.9922 b = 1.112</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>23:27:36 Read 458 rows and found 29 numeric columns</code></pre>
+<pre><code>13:09:53 Read 458 rows and found 29 numeric columns</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>23:27:36 Using Annoy for neighbor search, n_neighbors = 30</code></pre>
+<pre><code>13:09:53 Using Annoy for neighbor search, n_neighbors = 30</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>23:27:36 Building Annoy index with metric = cosine, n_trees = 50</code></pre>
+<pre><code>13:09:53 Building Annoy index with metric = cosine, n_trees = 50</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>0%   10   20   30   40   50   60   70   80   90   100%</code></pre>
@@ -3371,14 +3371,14 @@ What to look for
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>**************************************************|
-23:27:36 Writing NN index file to temp file /tmp/RtmpMd8KZM/file14286ab9c39d
-23:27:36 Searching Annoy index using 1 thread, search_k = 3000
-23:27:36 Annoy recall = 100%
-23:27:37 Commencing smooth kNN distance calibration using 1 thread with target n_neighbors = 30
-23:27:38 Initializing from normalized Laplacian + noise (using RSpectra)
-23:27:38 Commencing optimization for 500 epochs, with 16890 positive edges
-23:27:38 Using rng type: pcg
-23:27:39 Optimization finished</code></pre>
+13:09:53 Writing NN index file to temp file /tmp/RtmpjXBSBr/file4894c10181e
+13:09:53 Searching Annoy index using 1 thread, search_k = 3000
+13:09:53 Annoy recall = 100%
+13:09:54 Commencing smooth kNN distance calibration using 1 thread with target n_neighbors = 30
+13:09:55 Initializing from normalized Laplacian + noise (using RSpectra)
+13:09:55 Commencing optimization for 500 epochs, with 16890 positive edges
+13:09:55 Using rng type: pcg
+13:09:56 Optimization finished</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">DimPlot</span>(<span class="at">object =</span> pbmc, <span class="at">label =</span> <span class="cn">TRUE</span>) <span class="sc">+</span> <span class="fu">NoLegend</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
@@ -3403,16 +3403,16 @@ What to look for
 <div class="cell">
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>pbmc2 <span class="ot">&lt;-</span> <span class="fu">RunUMAP</span>(<span class="at">object =</span> pbmc, <span class="at">reduction =</span> <span class="st">&quot;lsi&quot;</span>, <span class="at">dims =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>, <span class="at">seed.use =</span> <span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>23:27:40 UMAP embedding parameters a = 0.9922 b = 1.112</code></pre>
+<pre><code>13:09:57 UMAP embedding parameters a = 0.9922 b = 1.112</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>23:27:40 Read 458 rows and found 30 numeric columns</code></pre>
+<pre><code>13:09:57 Read 458 rows and found 30 numeric columns</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>23:27:40 Using Annoy for neighbor search, n_neighbors = 30</code></pre>
+<pre><code>13:09:57 Using Annoy for neighbor search, n_neighbors = 30</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>23:27:40 Building Annoy index with metric = cosine, n_trees = 50</code></pre>
+<pre><code>13:09:57 Building Annoy index with metric = cosine, n_trees = 50</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>0%   10   20   30   40   50   60   70   80   90   100%</code></pre>
@@ -3422,14 +3422,14 @@ What to look for
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>**************************************************|
-23:27:40 Writing NN index file to temp file /tmp/RtmpMd8KZM/file142815b4bab8
-23:27:40 Searching Annoy index using 1 thread, search_k = 3000
-23:27:40 Annoy recall = 100%
-23:27:40 Commencing smooth kNN distance calibration using 1 thread with target n_neighbors = 30
-23:27:41 Initializing from normalized Laplacian + noise (using RSpectra)
-23:27:41 Commencing optimization for 500 epochs, with 17048 positive edges
-23:27:41 Using rng type: pcg
-23:27:42 Optimization finished</code></pre>
+13:09:57 Writing NN index file to temp file /tmp/RtmpjXBSBr/file4895d3bb357
+13:09:57 Searching Annoy index using 1 thread, search_k = 3000
+13:09:57 Annoy recall = 100%
+13:09:58 Commencing smooth kNN distance calibration using 1 thread with target n_neighbors = 30
+13:09:59 Initializing from normalized Laplacian + noise (using RSpectra)
+13:09:59 Commencing optimization for 500 epochs, with 17048 positive edges
+13:09:59 Using rng type: pcg
+13:10:00 Optimization finished</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">FeaturePlot</span>(pbmc2, <span class="at">features =</span> <span class="st">&quot;nCount_peaks&quot;</span>, <span class="at">max.cutoff =</span> <span class="st">&quot;q95&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">

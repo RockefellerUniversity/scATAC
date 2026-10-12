@@ -35,7 +35,7 @@ All prerequisites, links to material and slides for this course can be found on 
 
 Or can be downloaded as a zip archive from here.
 
-* [Download zip](https://github.com/rockefelleruniversity/scATAC/zipball/master)
+* [Download zip](https://github.com/RockefellerUniversity/scATAC/archive/refs/heads/master.zip)
 
 ## Course materials
 
@@ -63,14 +63,13 @@ You may navigate to the unarchived scATAC folder in the Rstudio menu.
 or in the console.
 
 ```{r setwd_introtoR,eval=F}
-setwd("/PathToMyDownload/scATAC/docs")
-# e.g. setwd("~/Downloads/scATAC/r_course")
+setwd("/PathToMyDownload/scATAC-master/docs")
+# e.g. setwd("~/Downloads/scATAC-master/docs")
 ```
 
 ## Overview
 
 - [Introduction to single cell ATAC sequencing](#introduction-to-single-cell-atac-sequencing)
-- [ATAC sequencing](#atac-sequencing)
 - [10x platform](#tenx-platform)
 - [Cell Ranger](#cell-ranger)
 - [Cell Ranger Output Files](#cell-ranger-output-files)
@@ -79,25 +78,49 @@ setwd("/PathToMyDownload/scATAC/docs")
 
 # Introduction to single cell ATAC sequencing {background-color="#23373B" .center .middle}
 
-## Sequencing
+## ATACseq
 
-The emergence of high-throughput sequencing technologies such as 454 (Roche) and Solexa (Illumina) sequencing allowed for the highly parallel short read sequencing of DNA molecules.
+::: {.columns}
 
-- 454 (Roche) ~ 2005
-- Solexa (Illumina)  ~ 2006
+::: {.column width="70%"}
+ATACseq (Assay for Transposase-Accessible Chromatin using sequencing) uses the Tn5 transposase to fragment accessible DNA and add a sequencing adapter to the end of these fragments (called tagmentation).
+
+<br>
+Since the transposase only cuts DNA that is not blocked by nucleosomes or proteins, this generates a map of the accessible/open chromatin genome wide (e.g. promoters and enhancers).
+
+::: {style="font-size: 30%;"}
+source: [ Active Motif](https://www.activemotif.com/catalog/1233/atac-seq-service?srsltid=AU7gw4VmzovGlTISSNIyIQvgYFxdtaTpxkt0jU1eobR2YcCprNn74jIR){target="_blank"}
+:::
+:::
+
+::: {.column width="30%"}
+![](../imgs/atac_summary.png)
+:::
+
+:::
+
+
 
 
 ## Sequencing overview
 
-![](../imgs/wps.png)
 
+The emergence of high-throughput sequencing technologies such as 454 in 2005 (Roche) and Solexa in 2006 (now Illumina) sequencing allowed for the highly parallel short read sequencing of DNA molecules.
+
+Illumina is now the dominant company for short read sequencing with NovaSeq, NextSeq, and MiSeq machines. 
+
+![](../imgs/ngs_wide.png){.nostretch fig-align="center"}
+
+::: {style="font-size: 30%;"}
+source: [Illumina](https://www.illumina.com/documents/products/illumina_sequencing_introduction.pdf){target="_blank"}
+:::
 
 
 ## Sequence files - FastQ
  **FastQ (FASTA with Qualities)**
  
 <div align="center">
-<img src="../imgs/fq1.png" alt="igv" height="200" width="800">
+<img src="../imgs/fastq1.png" height="250" width="600">
 </div>
 
 - "@" followed by identifier.
@@ -111,13 +134,13 @@ The emergence of high-throughput sequencing technologies such as 454 (Roche) and
  **FastQ - Header**
  
 <div align="center">
-<img src="../imgs/fq2.png" alt="igv" height="200" width="800">
+<img src="../imgs/fastq2.png" height="250" width="600">
 </div>
 
-- Header for each read can contain additional information
-    - HS2000-887_89 - Machine name.
-    - 5 - Flowcell lane.
-    - /1 - Read 1 or 2 of pair (here read 1)
+- Header for each read contains additional information
+
+    - @A00519:269:H7FM2DRXX:1:1101:1886:1000 - machine/flowcell/lane/cluster info
+    - 1:N:0:CATCAGTG - Read info (Read 1/2, index, etc.)
     
 
 
@@ -126,7 +149,7 @@ The emergence of high-throughput sequencing technologies such as 454 (Roche) and
 **FastQ - Qualities**
 
 <div align="center">
-<img src="../imgs/fq3.png" alt="igv" height="200" width="800">
+<img src="../imgs/fastq3.png" height="250" width="600">
 </div>
  
 - Qualities follow "+" line.
@@ -138,34 +161,33 @@ The emergence of high-throughput sequencing technologies such as 454 (Roche) and
 
 ## Sequencing use cases
 
-- ChIP-seq - Study transcription factor binding
+- CUT&RUN/ChIP-seq - Study transcription factor binding
 - RNA-seq - Study genome wide transcriptomics
 - Whole Genome/Exome Sequencing - Study genome variation/changes
-- MNAseq/DNAse-seq/ATAC-seq - Study chromatin structure/accessibility
-- CrispR-seq - Study genome wide phenotypes
+- MNase-seq/DNase-seq/ATAC-seq - Study chromatin structure/accessibility
+- CRISPR screens - Study genome wide phenotypes
 - And many more..
 
 
 ## Bulk sequencing methods
 
-Sequencing typically performed on bulk tissue or cells.
+For many years, NGS sequencing was performed on bulk tissue or cells. 
 
-- Tissues - Liver vs Heart
-- Conditions - Cancer vs surrounding normal tissue
-- Treatments - Hep-G2 cells with/without rapamycin 
-- Genetic perturbation - Ikzf WT/KO in B-cells.
+This effectively allows us to understand differences between tissues, conditions (cancer vs healthy), treatments (drug vs control), or genetic perturbations (WT vs KO). 
 
-Analysis of the bulk characteristics of data without understanding of heterogeneity of data.
+However, analysis of the bulk characteristics of data prevents an understanding of the heterogeneity of a sample.
 
 
 ## FACS Cell and Nuclei sorting
 
 Technologies such as TRAP from the Heintz lab or nuclei sorting allow for capture of distinct cell types based on expressed markers.
 
-Pros
+*Pros:*
+
 - Allow for the capture of rare cell populations such as specific neuron types.
 
-Cons
+*Cons:*
+
 - Require known markers for desired cell populations.
 
 
@@ -173,11 +195,13 @@ Cons
 
 With the advent of advanced microfluidics and refined sequencing technologies, single-cell sequencing has emerged as a technology to profile individual cells from a heterogeneous population without prior knowledge of cell populations.
 
-Pros
+*Pros:*
+
 - No prior knowledge of cell populations required.
 - Simultaneously assess profiles of 1000s of cells.
 
-Cons
+*Cons:*
+
 - Low sequencing depth for individual cells (1000s vs millions of reads for bulk). 
 
 
@@ -193,31 +217,7 @@ Single-cell sequencing, as with bulk sequencing, has now been applied to the stu
 - Spatial-seq - Spatial profiling of gene expression.
 
 
-# ATAC sequencing {background-color="#23373B" .center .middle}
 
-## ATACseq
-
-ATACseq (Assay for Transposase-Accessible Chromatin using sequencing) uses a transposase to efficiently fragment accessible DNA prior to sequencing. The result provides a method to map the accessible/open chromatin genome wide.
-
-
-<div align="center">
-<img src="../imgs/ATACseqP.jpeg" alt="offset" height="300" width="600">
-</div>
-
-
-## ATACseq, MNaseseq and DNaseseq
-
-<div align="center">
-<img src="../imgs/mnATAC.jpg" alt="offset" height="250" width="500">
-</div>
-
-::: {style="font-size: 80%;"}
-* DNaseseq - Enzymatic digestion to extract signal from open chromatin around transcription factor binding sites.
-
-* MNaseseq - Enzymatic digestion to extract signal representing nucleosome positioning.
-
-* ATACseq - Uses transposases and offers a method to simultaneously extract signal from transcription factors binding sites and nucleosome positions from a single sample.
-:::
 
 # 10x platform {#tenx-platform background-color="#23373B" .center .middle}
 
@@ -227,18 +227,40 @@ ATACseq (Assay for Transposase-Accessible Chromatin using sequencing) uses a tra
 - sci-ATAC-seq - Combinatorial Indexing 
 - BD Rhapsody - microwell based
 
-10x is the most popular and is known to produce high quality data. Combinatorial methods scale better, don't require specialized equipment, and are more cost effective. 
+10x is the most popular and is known to produce high quality data. 
+
+Combinatorial methods scale better, don't require specialized equipment, and are more cost effective. Though they lack a developed commercial product right now for scATAC.  
 
 
 ## The 10x Genomics system  - Gel beads
 
-<br>
-<br>
-![](./../imgs/10_atac_bead.png){.nostretch width=70% fig-align="center"}
+::: {.columns}
+
+::: {.column width="40%"}
+
+10x relies on gel beads that are coated with oligos containing: 
+
+- the Illumina P5 sequence
+- a 16 bp barcode
+- Read 1N, which is the sequence added by Tn5 during tagmentation 
 
 ::: {style="font-size: 30%;"}
 source: [ 10x scATAC User Guide](https://cdn.10xgenomics.com/image/upload/v1728078402/support-documents/CG000496_Chromium_NextGEM_SingleCell_ATAC_ReagentKits_v2_UserGuide_RevC.pdf.pdf){target="_blank"}
 :::
+:::
+
+::: {.column width="60%"}
+![](./../imgs/10_atac_bead.png){.nostretch fig-align="center" style="max-width: none; max-height: none; width: 100%;"}
+
+:::
+
+:::
+
+
+
+
+
+
 
 ## The 10x Genomics system - Microfluidics
 
@@ -246,9 +268,9 @@ source: [ 10x scATAC User Guide](https://cdn.10xgenomics.com/image/upload/v17280
 
 ::: {.column width="40%"}
 ::: {style="font-size: 90%;"}
-- DNA within nuclei are fragmented in bulk with transposase
-- Nuclei are combined with beads
-- Beads + nuclei are partitioned into Gel Beads-in-emulsion (GEMs) by oil
+- DNA within nuclei is fragmented in bulk with transposase
+- Nuclei are loaded onto a 10x chip with gel beads (targeting 500–10k nuclei per channel)
+- Beads + nuclei are partitioned by oil into Gel Beads-in-EMulsions (GEMs)
 :::
 :::
 
@@ -270,7 +292,8 @@ source: [ 10x scATAC User Guide](https://cdn.10xgenomics.com/image/upload/v17280
 ::: {style="font-size: 90%;"}
 <br>
 <br>
-- Inside the GEM, the P5 primer and the cell barcode are added to each read
+- Inside the GEM, the P5 sequence and the cell barcode are added to each fragment through binding of the bead's Read1N to the Tn5 adapter followed by linear amplification.  
+
 :::
 :::
 
@@ -292,7 +315,7 @@ source: [ 10x scATAC User Guide](https://cdn.10xgenomics.com/image/upload/v17280
 ::: {style="font-size: 90%;"}
 <br>
 <br>
-- The GEMs are then chemically broken, and the P7 primer and sample index are added in bulk.
+- The GEMs are then chemically broken, and the P7 sequence and sample index are added in bulk via the Read 2N Tn5 adapter sequence by PCR.
 :::
 :::
 
@@ -306,7 +329,7 @@ source: [ 10x scATAC User Guide](https://cdn.10xgenomics.com/image/upload/v17280
 source: [ 10x scATAC User Guide](https://cdn.10xgenomics.com/image/upload/v1728078402/support-documents/CG000496_Chromium_NextGEM_SingleCell_ATAC_ReagentKits_v2_UserGuide_RevC.pdf.pdf){target="_blank"}
 :::
 
-## The 10x sequence reads
+## Download PBMC data from 10x
 
 Today we will be looking at data from 500 Peripheral Blood Mononuclear Cells (PBMC) downloaded from the 10x website ([link to dataset](https://www.10xgenomics.com/datasets/500-peripheral-blood-mononuclear-cells-pbm-cs-from-a-healthy-donor-next-gem-v-1-1-1-1-standard-2-0-0){target="_blank"}).
 
@@ -317,7 +340,7 @@ wget https://cf.10xgenomics.com/samples/cell-atac/2.0.0/atac_pbmc_500_nextgem/at
 <br>
 <br>
 
-Unpack this folder
+Unpack this folder, which contains the FASTQ files. 
 
 ```{shell, eval=FALSE}
 tar -xvf atac_pbmc_500_nextgem_fastqs.tar 
@@ -420,7 +443,8 @@ atac_pbmc_500_nextgem_fastqs/
 Similar to standard ATAC sequencing data, the next steps are to align the data to a reference genome and call peaks. Single cell ATAC requires the additional steps of identifying cells and summarizing data to a peak matrix.
 
 Options for these steps include:
-- cellranger-atac count aligns to a reference (uses BWA), generates fragments, and calls peaks on all cells
+
+- Cell Ranger ATAC (from 10x) aligns to a reference (uses BWA), generates fragments, and calls peaks using fragments pooled from all barcodes.
 - chromap is another scATAC-centric software to get fragments (cell and peak calling done manually)
 - custom alignment  
 :::
@@ -430,7 +454,7 @@ Options for these steps include:
 
 ## Cell Ranger ATAC
 
-Cell Ranger ATAC is the typical approach we use to process 10x data. The default settings are pretty good. This is an intensive program, so we will not be running this locally on your laptops. Instead we run it on remote systems, like the HPC.
+Cell Ranger ATAC is the typical approach we use to process 10x data that works well out of the box. This is an intensive program, so we will not be running this locally on your laptops. Instead we run it on remote systems, like the HPC.
 
 If you are working with your own data, the data will often be provided as the Cell Ranger output by the Genomics/Bioinformatics teams, like here at Rockefeller University. 
 
@@ -441,7 +465,7 @@ If you are working with your own data, the data will often be provided as the Ce
 
 ::: {.column width="50%"}
 
-Cell Ranger is a suite of tools for single cell processing and analysis available from 10X Genomics. It performs key processing steps and is also the first chance to delve into your data sets QC. 
+Cell Ranger is a suite of tools for single cell processing and analysis available from 10X Genomics. It performs key processing steps and is also the first chance to delve into your data set's QC. 
 <br>
 <br>
 In this session we will give a brief overview of running this tool and then dive deeper into interpreting the outputs.
@@ -455,11 +479,11 @@ In this session we will give a brief overview of running this tool and then dive
 
 ## Do I need to run this?
 
-- Often genomics centers will run it for you and deliver mtx/hdf5 files (i.e. here at Rockefeller)
+- Often genomics centers will run it for you and deliver mtx/hdf5 files (e.g. here at Rockefeller)
 
 - Why run Cell Ranger yourself?:
   * You want to integrate data sets, but they were processed by different versions of Cell Ranger
-  * You may want to change Cell Ranger parameters (i.e. supply your own peak set or force an expected cell number)
+  * You may want to change Cell Ranger parameters (e.g. supply your own peak set or force an expected cell number)
   * Most commonly you want to reanalyze a published data set
 
 
@@ -500,7 +524,8 @@ wget -O cellranger-atac-2.2.0.tar.gz "https://cf.10xgenomics.com/releases/cell-a
 
 Download reference genome for Cell Ranger i.e. Human genome (GRCh38)
 
-DOUG: explain ARC genome
+Below we download the reference from 10x designed for multiome analysis (ATAC + RNA, referred to on 10x as the *ARC* pipeline). It is also used for cellranger-atac, and contains elements that are specific to ATAC analysis, such as genome alignment, TSS enrichment, and motifs.
+
 ```{shell, eval=FALSE}
 wget "https://cf.10xgenomics.com/supp/cell-arc/refdata-cellranger-arc-GRCh38-2024-A.tar.gz"
 ```
@@ -532,7 +557,7 @@ export PATH=/PATH_TO_CELLRANGER_DIRECTORY/cellranger-atac-2.2.0:$PATH
 Now we have the downloaded Cell Ranger software and the reference we can start the processing of our fastQ files.
  <br>
  <br>
-With the Cell Ranger software and pre-built reference files, we can generate fragment and count from our directory of FASTQ files.
+With the Cell Ranger software and pre-built reference files, we can generate fragments and counts from our directory of FASTQ files.
 
 ## Running Cell Ranger ATAC count
 
@@ -554,7 +579,7 @@ cellranger-atac count --id=pbmc_500 \
 
 ## Working with custom genomes
 
-If you are working with a genome which is not Human and/or mouse you will need to find another source for your Cell Ranger reference.
+If you are working with a genome which is not human or mouse you will need to find another source for your Cell Ranger reference.
 
 - Luckily many references are pre-built by other consortiums.
 - We can build our own references using other tools in Cell Ranger using the *mkref* functions.
@@ -578,14 +603,14 @@ To create your own references you will need two additional files.
     - Lines following contain contig sequence
 
 <div align="center">
-<img src="../imgs/fasta.png" alt="igv" height="300" width="600">
+<img src="../imgs/fasta.png" height="300" width="600">
 </div>
 
 
 ## GTF (Gene Transfer Format)
 
  <div align="center">
-<img src="../imgs/gff.png" alt="igv" height="150" width="700">
+<img src="../imgs/gff.png" height="150" width="700">
 </div>
 
 - Stores position, feature (exon) and meta-feature (transcript/gene) information.
@@ -595,7 +620,7 @@ To create your own references you will need two additional files.
 ## Filter GTF
 
 ::: {style="font-size: 80%;"}
-An optional step is to clean up the GTF and remove unwanted or low confident annotations. This can be done manually by filtering the GTF *gene_biotype* column to key types, such as 'protein_coding' and 'lncRNA'. 
+An optional step is to clean up the GTF and remove unwanted or low-confidence annotations. This can be done manually by filtering the GTF *gene_biotype* column to key types, such as 'protein_coding' and 'lncRNA'. 
 
 GTF files can be read into or exported from R using the *import* and *export* functions from the rtracklayer package. 
 
@@ -609,7 +634,7 @@ GTF files can be read into or exported from R using the *import* and *export* fu
 ::: {style="font-size: 80%;"}
 Following filtering of your GTF to the required biotypes, we can use the Cell Ranger ATAC mkref tool to create our custom reference.
 
-This requires a config file with key:value pairs. The *non_nuclear_contigs* pair indicates which contigs are not part of nuclear genome and and reads aligning to them will be excluded from peak calling. 
+This requires a config file with key:value pairs. The *non_nuclear_contigs* pair indicates which contigs are not part of nuclear genome and reads aligning to them will be excluded from peak calling. 
 
 The *input_motifs* pair is optional and will trigger an additional TF enrichment analysis.
 :::
@@ -629,7 +654,7 @@ The *input_motifs* pair is optional and will trigger an additional TF enrichment
 
 ## Run Cell Ranger mkref 
 
-The key:value pairs in the previous slide is saved as a file called **custom_GRCh38.config** and it is included in the *cellranger-atac mkref* function call. 
+The key:value pairs in the previous slide are saved as a file called **custom_GRCh38.config** and it is included in the *cellranger-atac mkref* function call. 
 ```{shell, eval=FALSE}
 
 cellranger-atac mkref --config=/path/to/references/custom_GRCh38.config
@@ -796,7 +821,7 @@ outs/
 ::: {style="font-size: 80%;"}
 - [**fragments.tsv.gz/fragments.tsv.gz.tbi**: location of each fragment]{style="color: grey;"}
 - [**filtered_peak_bc_matrix.h5**: count matrix with peaks as the rows and the cell barcodes as the columns]{style="color: grey;"}
-- **singlecell.csv** contains metadata per cell (TSS_fragments, mitochondrial fragments, etc.)
+- **singlecell.csv** contains metadata per barcode (TSS_fragments, mitochondrial fragments, etc.)
 
 :::
 
@@ -844,7 +869,7 @@ outs/
 ::: {style="font-size: 80%;"}
 - [**fragments.tsv.gz/fragments.tsv.gz.tbi**: location of each fragment]{style="color: grey;"}
 - [**filtered_peak_bc_matrix.h5**: count matrix with peaks as the rows and the cell barcodes as the columns]{style="color: grey;"}
-- [**singlecell.csv** contains metadata per cell (TSS_fragments, mitochondrial fragments, etc.)]{style="color: grey;"}
+- [**singlecell.csv** contains metadata per barcode (TSS_fragments, mitochondrial fragments, etc.)]{style="color: grey;"}
 - **cloupe.cloupe**: allows for quick visualization within the [10X Loupe browser software](https://www.10xgenomics.com/support/software/loupe-browser/latest){target="_blank"}
 :::
 
@@ -891,7 +916,7 @@ outs/
 ::: {style="font-size: 80%;"}
 - [**fragments.tsv.gz/fragments.tsv.gz.tbi**: location of each fragment]{style="color: grey;"}
 - [**filtered_peak_bc_matrix.h5**: count matrix with peaks as the rows and the cell barcodes as the columns]{style="color: grey;"}
-- [**singlecell.csv** contains metadata per cell (TSS_fragments, mitochondrial fragments, etc.)]{style="color: grey;"}
+- [**singlecell.csv** contains metadata per barcode (TSS_fragments, mitochondrial fragments, etc.)]{style="color: grey;"}
 - [**cloupe.cloupe**: allows for quick visualization within the [10X Loupe browser software](https://www.10xgenomics.com/support/software/loupe-browser/latest){target="_blank"}]{style="color: grey;"}
 - **web_summary.html**: QC summary that is often your first look at data quality
   + very important output and the focus of the next section
@@ -984,7 +1009,7 @@ outs/
 
 ## QC outputs
 
-Assessment of the overall quality of a scATAC-seq experiment after Cell Ranger can give our first chance to dig into the quality of your dataset and gain insight into any issues we might face in data analysis.
+Assessment of the overall quality of a scATAC-seq experiment after Cell Ranger gives us our first chance to dig into the quality of the dataset and gain insight into any issues we might face in data analysis.
 
 
 
@@ -1009,7 +1034,7 @@ There are many potential issues which can arise in scATAC-seq data including:
 :::
 
 ::: {.column width="50%"}
-![](../imgs/scATAC_bad_cells.png){width=40% fig-align="center"}
+![](../imgs/scATAC_bad_cells.png){width=37% fig-align="center"}
 :::
 
 :::
@@ -1037,9 +1062,8 @@ Metrics include:
 While it often takes a deeper look into the results to understand QC issues, the Cell Ranger summary can give our first insight into key issues we might face.
 
 <br>
-<br>
 
-We will be looking at the web summary generated from a PBMC dataset with ~500 cells from a healthy human donor. The full experiment details can be found on the 10X website [here](https://www.10xgenomics.com/datasets/500-peripheral-blood-mononuclear-cells-pbm-cs-from-a-healthy-donor-next-gem-v-1-1-1-1-standard-2-0-0){target="_blank"} and the web summary is in the course materials [here](../data/web_summary_pbmc500.html){target="_blank"}.
+We will be going through the web summary generated from our [PBMC dataset](https://www.10xgenomics.com/datasets/500-peripheral-blood-mononuclear-cells-pbm-cs-from-a-healthy-donor-next-gem-v-1-1-1-1-standard-2-0-0){target="_blank"}. The web summary is also in the 'data' folder of the course materials [(link to report)](../../data/web_summary_pbmc500.html){target="_blank"}.
 
 
 ## Web Summary overview
@@ -1056,6 +1080,8 @@ It prominently displays warnings at the top to indicate metrics outside the expe
 <br>
 <br>
 The summary also contains useful information on the input files and the versions used in this analysis for later reproducibility.
+
+[Here's a link](https://cdn.10xgenomics.com/image/upload/v1660261285/support-documents/CG000202_TechnicalNote_InterpretingCellRangerATACWebSummaryFiles_RevB.pdf){target="_blank"} to a useful document from 10x explaining this summary in detail. 
 :::
 
 :::
@@ -1067,7 +1093,7 @@ The summary also contains useful information on the input files and the versions
 :::
 
 ::: {.absolute bottom="0" left="0" style="font-size: 30%;"}
-[link to full summary](../data/web_summary_pbmc500.html){target="_blank"}
+[link to full summary](../../data/web_summary_pbmc500.html){target="_blank"}
 :::
 
 ## Sample Summary
@@ -1077,7 +1103,7 @@ As most people do not run Cell Ranger themselves this is important to check it m
 
 ![](../imgs/CopyOfwebsum1.png){width=40% fig-align="center"}
 
-- Sample ID - Sample name (Assigned in **cellranger-atac count**)
+- Sample ID - Sample name (assigned in **cellranger-atac count**)
 - Chemistry - The 10x chemistry used
 - Reference path - path on system to pre-built reference file from command
 - Pipeline Version - Version of Cell Ranger used
@@ -1092,7 +1118,7 @@ The **Sequencing** panel highlights information on the quality of the Illumina s
 
 - Sequenced read pairs - Total read pairs
 - Valid barcodes - fraction of read pairs that match an expected 10x barcode from the whitelist (> 75%)
-- Q30 bases - percent of bases with Q-score > 30 
+- Q30 bases - percent of bases with Q-score > 30 (>65%)
 
 
 
@@ -1106,11 +1132,11 @@ The **Cells** panel highlights some of the most important metrics, including som
 
 
 
-- Estimated Number of Cells - Total number of barcodes associated to at least one cell.
+- Estimated Number of Cells - Total number of barcodes associated to at least one cell (500-10k).
 - Mean raw read pairs per cell -  Total sequenced read pairs divided by number of cells
-- Fraction of high-quality fragments in cells - fraction of high quality fragments (map to genome, mapQ > 30, no chimeric or duplicate) with valid cell barcode (>40%)
-- Fraction of transposition events in peaks in cells - fraction of Tn5 cut sites (fragment ends) that come from a valid cell barcode and fall within a peak (>15%)
-- Median fragments per Cell - Median number of fragments per valid cell barcode
+- Fraction of high-quality fragments in cells - fraction of high quality fragments (map to genome, mapQ > 30, no chimeric or duplicate) with a called cell barcode (>40%)
+- Fraction of transposition events in peaks in cells - fraction of Tn5 cut sites (fragment ends) from called cell barcodes that fall within a peak (>15%)
+- Median fragments per Cell - Median number of fragments per called cell barcode
 :::
 
 
@@ -1153,7 +1179,7 @@ The **Cells** panel also includes an interactive knee plot:
 
 Cell Ranger ATAC uses a two step process to define cell-associated barcodes
 
-- First, problematic barcodes are removed (e.g. one nucleus split across multiple barcodes").
+- First, problematic barcodes are removed (e.g. one nucleus split across multiple barcodes).
 - Second, a model is fitted to separate signal from noise.
 - A detailed explanation is [here](https://www.10xgenomics.com/support/software/cell-ranger-atac/latest/algorithms-overview/algorithms-overview#cell-calling-a2c13c){target="_blank"}
 
@@ -1226,7 +1252,7 @@ This is indicated in the plots below:
 ## Cell Clustering Panel
 
 ::: {style="font-size: 90%;"}
-The **Cell Clustering** panel shows t-SNE plot with basic clustering of peak counts from valid cell barcodes.
+The **Cell Clustering** panel shows a t-SNE plot with basic clustering of peak counts from valid cell barcodes.
 
 Assuming different cell types are expected, we would hope to see separation between clusters. We will do a more in depth clustering analysis later on, but the lack of any cluster separation here can be an early indication of QC issues. 
 
@@ -1249,10 +1275,10 @@ With a reasonable number of fragments per cell, we expect the fraction of duplic
 The **Mapping** panel shows the mapping rate (ideally > 85%) and the percent of unmapped reads (<5%), in addition to a few key ATAC-seq metrics. 
 
 - Fragments in nucleosome-free regions - percent of fragments passing all mapping filters with length < 124 bases (>40%)
-- Fragments flanking a single nucleosome - fragments between 124 and 296 bases (i.e. the first bump in the plot below). This should be lower than nucleosome-free, but still a meaningful number of reads to indicate expected chromatin structure. 
+- Fragments flanking a single nucleosome - fragments between 124 and 296 bases (i.e. the second bump in the plot below). This should be lower than nucleosome-free, but still a meaningful number of reads to indicate expected chromatin structure. 
 :::
 
-![](../imgs/webSumm_mapping.png){fig-align="center" style="max-width: none; max-height: none; width: 70%;"}
+![](../imgs/webSumm_mapping.png){fig-align="center" style="max-width: none; max-height: none; width: 65%;"}
 
 
 ## Targeting Panel
@@ -1260,7 +1286,7 @@ The **Mapping** panel shows the mapping rate (ideally > 85%) and the percent of 
 ::: {style="font-size: 90%;"}
 The **Targeting** panel shows information related to the pile-up of reads across the genome. 
 
-- Cell ranger ATAC calls peaks with all fragments that have a valid barcode, including those from empty droplets. 
+- Cell Ranger ATAC calls peaks with all fragments that have a valid barcode, including those from empty droplets. 
 - With the _--peaks_ option on _cellranger-atac count_, a bed file of user-provided peaks can be used as well. 
 - We would hope for >45k peaks that cover between 2-20% of the genome. With only 500 cells, our example is a little low, but more cells would likely help here. 
 
@@ -1309,7 +1335,7 @@ Oftentimes we can employ strategies to get meaningful insights from problematic 
 
 ## Next steps
 
-Fingers crossed there's no QC issues. 
+Fingers crossed there are no QC issues. 
 
 Often at this step we wouldn't make any decisions unless there is a clear complete failure. This is an important first step in setting expectations/preparing for what you may need to do for the dataset.
 
@@ -1336,8 +1362,9 @@ Other popular options include:
 
 Both have advantages handling large data compared to Signac.
 
-DOUG: ArchR better links to EpiRegulon and has maybe has better documentation (snapatac too)
-QC concepts would be the same so emphasize that 
+<br>
+
+**Importantly**, the QC concepts and decision points that we will discuss today will be similar no matter which software you choose.  
 
 ::: {.absolute bottom="0" left="0" style="font-size: 30%;"}
 [Granja et al., Nat Genetics, 2021 ](https://www.nature.com/articles/s41588-021-00790-6){target="_blank"}
@@ -1410,53 +1437,51 @@ library(Seurat)
 
 ```
 
-## Reading data into Signac
+## Reading into Signac - Metadata
 
 The *singlecell.csv* file is then read in as a dataframe that has the barcodes as rows and metadata categories as columns. 
 
 This dataframe has metadata for all barcodes (not just called cells) and a 'NO_BARCODE' row showing the number of read pairs with no associated barcode. 
 ```{r,echo=T}
 metadata <- read.csv(
-  file = "../data/pbmc500_singlecell.csv",
+  file = "data/pbmc500_singlecell.csv",
   header = TRUE,
   row.names = 1
 )
-metadata[1:3, ]
+metadata[1:3, 1:4]
 
 ```
 
 
-## Reading data into Signac
+## Reading into Signac - Peak counts
 
-The *filtered_peak_bc_matrix.h5* file contains the peak counts per cell, and we read it in with the Seurat *Read10X_h5* function, and subset to the standard chromosomes.
+The *filtered_peak_bc_matrix.h5* file contains the peak counts per cell, and we read it in with the Seurat *Read10X_h5* function. While not completely necessary, here we will subset to the standard chromosomes.
 
 This creates a sparse matrix object with the peak counts.
 
 ```{r,echo=T}
-counts <- Read10X_h5(filename = "../data/pbmc500_filtered_peak_bc_matrix.h5")
+counts <- Read10X_h5(filename = "data/pbmc500_filtered_peak_bc_matrix.h5")
 std_chr   <- paste0("chr", c(1:22, "X", "Y"))
 peak_chr  <- as.character(seqnames(StringToGRanges(rownames(counts), sep = c(":", "-"))))
 counts    <- counts[peak_chr %in% std_chr, ]
-counts[1:5, 1:3]
+counts[1:5, 1:2]
 ```
 
-## Reading data into Signac
+## Reading into Signac - ChromatinAssay object
 
-The counts and a path to the fragments file are provided to the *CreateChromatinAssay* function from **Signac** to create a *ChromatinAssay* object.
+The counts and a path to the fragments file are provided to the *CreateChromatinAssay* function from Signac to create a **ChromatinAssay** object.
 
 We can set the 'min.cells' and 'min.features' arguments to filter out low quality peaks and cells. 
 
 ```{r,echo=F, eval=T}
-pbmc <- readRDS("../data/pbmc_start.rds")
+pbmc <- readRDS("data/pbmc_start.rds")
 ```
 
 ```{r,echo=T, eval=F}
-# NOTE: need signac v1.16 to correctly read this in
-
 chrom_assay <- CreateChromatinAssay(
   counts = counts,
   sep = c(":", "-"),
-  fragments = "../data/pbmc500_fragments.tsv.gz",
+  fragments = "data/pbmc500_fragments.tsv.gz",
   min.cells = 10,
   min.features = 200
 )
@@ -1469,9 +1494,9 @@ class(pbmc@assays$peaks)
 ```
 
 
-## Reading data into Signac
+## Create Seurat object
 
-Finally, the *ChromatinAssay* object and the metadata dataframe are used to create a Seurat object with an assay called 'peaks' that contains our peak counts. 
+Finally, the ChromatinAssay object and the metadata dataframe are used to create a Seurat object with an assay called 'peaks' that contains our peak counts. 
 
 Only metadata from the cells in the *chrom_assay* object will be carried into the Seurat object. 
 
@@ -1489,16 +1514,54 @@ pbmc
 pbmc
 ```
 
+## Seurat object for scATAC/Signac
+
+This Seurat object can be handled like any other, with a few additional pieces of information specific to scATAC-seq.
+
+Seurat object accessor functions will work as expected: 
+```{r,echo=T, eval=T}
+Assays(pbmc)
+DefaultAssay(pbmc)
+Layers(pbmc)
+```
+
+## Seurat object for scATAC/Signac
+
+There are functions to access pieces of the ChromatinAssay object, where much of the scATAC-specific information is kept. Detailed information on this data structure and how to interact with it can be found [here](https://stuartlab.org/signac/articles/data_structures){target="_blank"}. 
+
+For example, our peak ranges can be pulled out with the *granges* function. 
+```{r,echo=T, eval=T}
+Signac::granges(pbmc)
+```
+
+## Fragment information 
+
+The individual fragment information is not kept in memory within the Seurat object, but the *Fragments* function returns a list of **Fragment** objects that contain key information, including the following:
+
+- the path to the fragment file
+- an md5 hashes of the fragment file and index
+- the cell barcodes associated with these fragments
+
+These can be accessed with the *GetFragmentData* function.
+
+```{r,echo=T, eval=T}
+frags <- Fragments(pbmc)  
+
+GetFragmentData(frags[[1]], "path")
+```
+
 ## Updating the fragments path 
 
-The individual fragment information is not kept in memory within the object, but there is a pointer to the file path we provided.
+Importantly, there is a pointer to the file path we provided, and if the fragment file has moved we would need to update that pointer with the *UpdatePath* function. 
 
-If the fragment file has moved, we would need to update that pointer with the *UpdatePath* function. 
+Any function that requires access to the actual fragments will fail if the pointer is wrong (TSS enrichment, peak calling). 
+
+You can download the **fragments file and the index** used in this course and update the path to align your object with your system ([link to dataset files](https://www.10xgenomics.com/datasets/500-peripheral-blood-mononuclear-cells-pbm-cs-from-a-healthy-donor-next-gem-v-1-1-1-1-standard-2-0-0){target="_blank"}).    
+
 ```{r,echo=T, eval=F}
-frags <- Fragments(pbmc)  
 frags_updated <- UpdatePath(
   frags[[1]],
-  new.path = "~/Downloads/pbmc500_fragments.tsv.gz"
+  new.path = "~/Downloads/atac_pbmc_500_nextgem_fragments.tsv.gz"
 )
 Fragments(pbmc) <- NULL
 Fragments(pbmc) <- frags_updated
@@ -1506,40 +1569,22 @@ Fragments(pbmc) <- frags_updated
 
 ## Updating the fragments path 
 
-The fragment object contains the md5 hash of the file, so if the fragments file is different from the current pointer, you will get an error. 
+The fragment object contains the md5 hash of the file, so if the file at the new path isn't identical to the original, you will get an error. 
 ```{r, echo=T, eval=F}
 frags_updated_bad <- UpdatePath(
   frags[[1]],
-  new.path = "~/Downloads/atac_pbmc_500_nextgem_fragments.tsv.gz"
+  new.path = "~/Downloads/different_pbmc500_fragments.tsv.gz"
 )
 ```
 
-![](../imgs/fragment_error.png){.nostretch fig-align="left" width="70%"}
-
-## Exercises
-
-The following few slides show you how to structure exercise slides.
-
-We often have several exercise slides per session. So you can just copy and paste and change the directory to the appropriate name. All 3 file types are made from you single exercise qmd.
+![](../imgs/fragment_error.png){.nostretch fig-align="left" width="80%"}
 
 ## Time for an exercise!
 
-??? exercise description here?? [here](../../exercises/exercises/MyExercise1_exercise.html){target="_blank"}
+There are a few exercises to gain some familiarity with the Signac object [here](../../exercises/exercises/Session1_Exercise_exercise.html){target="_blank"}
 
 ## Answers to exercise
 
-Answers can be found [here](../../exercises/answers/MyExercise1_answers.html){target="_blank"}
+Answers can be found [here](../../exercises/answers/Session1_Exercise_answers.html){target="_blank"}
 
-## Exercise again
 
-So we can have some more sections here describing some new important topic
-
-Then more exercises
-
-## Time for an exercise!
-
-??? exercise description here?? [here](../../exercises/exercises/MyExercise2_exercise.html){target="_blank"}
-
-## Answers to exercise
-
-Answers can be found [here](../../exercises/answers/MyExercise2_answers.html){target="_blank"}

@@ -17,20 +17,327 @@ params:
 ```{r, setup,include=FALSE, purl=FALSE}
 toMessage <- ifelse(!is.null(params$toMessage),params$toMessage,FALSE)
 message(toMessage)
+## Temporarily skip all code in the exercises so the course renders quickly on
+## GitHub; solution code is still shown (echo) but not run. Remove to re-enable.
+knitr::opts_chunk$set(eval = FALSE)
 ```
 
 
 <p>&nbsp;</p>
 These exercises are about LSI, UMAP, clustering, gene activity scores and label transfer in [Single-cell ATAC-seq](https://rockefelleruniversity.github.io/scATAC/).
 
-**Exercise 1** - **??Ex 1 title??**
+We carry on with the E18 mouse brain dataset from the Session 2 exercise. Start from your filtered, TF-IDF normalized object (or load ours below).
 
-- ??What is the first question??
-```{r,echo=toMessage}
-## ?? Solution here — shown only in the answers version (echo=toMessage) ??
+Developing brain is very different from blood. Rather than a handful of distinct, well-separated cell types, there is a **continuum**: progenitors in the ventricular zone become intermediate progenitors and then neurons as they migrate outwards. Keep that in mind when you judge your clusters.
+
+**Exercise 1** - **LSI**
+
+- Load the object from the Session 2 exercise and run SVD. Which LSI components should you drop? Check with `DepthCor()`.
+```{r ex1_svd,echo=toMessage}
+library(Signac)
+library(Seurat)
+library(ggplot2)
+
+brain <- readRDS("data/brain_filtered_tfidf.rds")
+
+brain <- RunSVD(brain)
+DepthCor(brain)
+
+## LSI 1 tracks sequencing depth, as in the PBMC data, so we drop it. Check
+## whether any later component is also strongly depth-correlated (|r| > ~0.5).
 ```
 
-- ??What is the second question??
-```{r,echo=toMessage}
-## ?? Solution here ??
+```{r repointFragments, include=FALSE, purl=FALSE}
+# The saved object records the fragment file's absolute path on the machine that
+# built it. When a copy sits in data/ (CI downloads it there), point the object
+# at that copy so fragment-based steps (GeneActivity) can find it.
+frag_local <- "data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz"
+if (file.exists(frag_local)) {
+  frags <- UpdatePath(Fragments(brain)[[1]], new.path = frag_local)
+  Fragments(brain) <- NULL
+  Fragments(brain) <- frags
+}
+```
+
+**Exercise 2** - **UMAP**
+
+- Run UMAP on LSI components 2:30 (seed 42) and plot it.
+```{r ex2_umap,echo=toMessage}
+brain <- RunUMAP(
+  object    = brain,
+  reduction = "lsi",
+  dims      = 2:30,
+  seed.use  = 42
+)
+DimPlot(brain) + NoLegend()
+```
+
+- Now run it again *including* LSI 1 and colour both UMAPs by nCount_peaks. What changes?
+```{r ex2_depth,echo=toMessage}
+brain_lsi1 <- RunUMAP(
+  object    = brain,
+  reduction = "lsi",
+  dims      = 1:30,
+  seed.use  = 42
+)
+
+FeaturePlot(brain,      features = "nCount_peaks", max.cutoff = "q95") + ggtitle("LSI 2:30") |
+FeaturePlot(brain_lsi1, features = "nCount_peaks", max.cutoff = "q95") + ggtitle("LSI 1:30")
+
+rm(brain_lsi1)
+```
+
+**Exercise 3** - **Clustering**
+
+- Build the neighbour graph on LSI 2:30 and cluster with the SLM algorithm (seed 42) at the default resolution. How many clusters do you get?
+```{r ex3_clust,echo=toMessage}
+brain <- FindNeighbors(
+  object    = brain,
+  reduction = "lsi",
+  dims      = 2:30
+)
+brain <- FindClusters(
+  object      = brain,
+  algorithm   = 3,
+  resolution  = 0.8,
+  random.seed = 42,
+  verbose     = FALSE
+)
+
+length(levels(brain$seurat_clusters))
+DimPlot(brain, label = TRUE) + NoLegend()
+```
+
+- Try a coarser (0.4) and a finer (1.5) resolution. Given that this tissue is a developmental continuum, what resolution would you pick, and why is there no single right answer?
+```{r ex3_res,echo=toMessage}
+brain <- FindClusters(brain, algorithm = 3, resolution = 0.4, random.seed = 42, verbose = FALSE)
+brain <- FindClusters(brain, algorithm = 3, resolution = 1.5, random.seed = 42, verbose = FALSE)
+
+p1 <- DimPlot(brain, group.by = "peaks_snn_res.0.4", label = TRUE) + ggtitle("Resolution 0.4") + NoLegend()
+p2 <- DimPlot(brain, group.by = "peaks_snn_res.1.5", label = TRUE) + ggtitle("Resolution 1.5") + NoLegend()
+p1 + p2
+
+## Along a differentiation trajectory, higher resolutions mostly cut the same
+## continuum into more pieces rather than revealing new discrete types. Pick
+## the resolution that matches the question (broad lineages vs. maturation
+## stages) and check that the extra clusters have distinct markers.
+
+## Carry on with resolution 0.8
+Idents(brain) <- "peaks_snn_res.0.8"
+```
+
+**Exercise 4** - **QC revisited**
+
+- Plot your QC metrics on the UMAP and by cluster. Does any cluster look like it is driven by low quality, or by doublets?
+```{r ex4_umap,echo=toMessage}
+FeaturePlot(
+  brain,
+  features   = c("nCount_peaks", "TSS.enrichment", "nucleosome_signal",
+                 "pct_reads_in_peaks", "scDblFinder.score"),
+  max.cutoff = "q95",
+  ncol       = 3
+)
+```
+
+```{r ex4_vln,echo=toMessage}
+VlnPlot(
+  brain,
+  features = c("nCount_peaks", "TSS.enrichment", "pct_reads_in_peaks", "scDblFinder.score"),
+  pt.size  = 0,
+  ncol     = 2
+)
+```
+
+```{r ex4_dbl,echo=toMessage}
+## Proportion of scDblFinder doublets per cluster: a cluster made up mostly of
+## doublets is a candidate for removal.
+round(prop.table(table(Idents(brain), brain$scDblFinder.class), margin = 1), 2)
+```
+
+- In the Session 2 exercise we used a fairly permissive FRiP threshold. Is low FRiP spread evenly, or concentrated in some clusters? What could cause a cell type to have low FRiP without being low quality?
+```{r ex4_frip,echo=toMessage}
+## Cell Ranger called peaks on the pooled cells. Peaks specific to rarer cell
+## types are under-represented, so those cells have fewer fragments in peaks,
+## and so a lower FRiP, even when they are fine. Re-calling peaks per cluster
+## (MACS2 via CallPeaks) is the fix if this matters.
+VlnPlot(brain, features = "pct_reads_in_peaks", pt.size = 0) + NoLegend()
+```
+
+**Exercise 5** - **Gene activity**
+
+- Compute gene activity scores, add them as an "RNA" assay and log-normalize them as in the session.
+```{r ex5_ga,echo=toMessage}
+gene.activities <- GeneActivity(brain)
+
+brain[["RNA"]] <- CreateAssayObject(counts = gene.activities)
+brain <- NormalizeData(
+  object               = brain,
+  assay                = "RNA",
+  normalization.method = "LogNormalize",
+  scale.factor         = median(brain$nCount_RNA)
+)
+DefaultAssay(brain) <- "RNA"
+```
+
+- Plot gene activity for known markers of the developing cortex. Mouse gene symbols are title case (e.g. *Pax6*, not *PAX6*). Which clusters look like progenitors, which like neurons, and are there any non-neural cells?
+```{r ex5_markers,echo=toMessage,fig.width=12,fig.height=11}
+markers <- c(
+  "Pax6", "Sox2", "Hes5",      # radial glia / apical progenitors
+  "Mki67",                     # cycling cells
+  "Eomes",                     # intermediate progenitors (Tbr2)
+  "Neurod2", "Neurod6",        # excitatory neurons
+  "Tbr1", "Bcl11b", "Satb2",   # deep-layer / upper-layer cortical neurons
+  "Gad2", "Dlx2",              # inhibitory interneurons
+  "Olig2",                     # oligodendrocyte lineage / glial progenitors
+  "Reln"                       # Cajal-Retzius cells
+)
+
+FeaturePlot(brain, features = markers, pt.size = 0.1, max.cutoff = "q95", ncol = 4)
+```
+
+```{r ex5_dot,echo=toMessage}
+DotPlot(brain, features = markers) + RotatedAxis()
+```
+
+- Give each cluster a provisional label based on the markers. Which clusters are you least confident about?
+```{r ex5_label,echo=toMessage}
+## One way to make this systematic: average gene activity per cluster for each
+## group of markers, then take the group with the highest score. Treat the
+## result as a starting point and check it against the dot plot.
+marker_groups <- list(
+  `Radial glia`              = c("Pax6", "Sox2", "Hes5"),
+  `Intermediate progenitor`  = c("Eomes"),
+  `Deep-layer excitatory`    = c("Tbr1", "Bcl11b", "Neurod6"),
+  `Upper-layer excitatory`   = c("Satb2"),
+  `Interneuron`              = c("Gad2", "Dlx2"),
+  `Cajal-Retzius`            = c("Reln")
+)
+avg <- AverageExpression(brain, assay = "RNA", features = unlist(marker_groups),
+                         group.by = "peaks_snn_res.0.8")$RNA
+## Scale each gene across clusters so highly-scored genes don't dominate
+avg_z <- t(scale(t(as.matrix(avg))))
+group_scores <- sapply(marker_groups, function(g) colMeans(avg_z[g, , drop = FALSE]))
+data.frame(cluster = rownames(group_scores),
+           provisional = colnames(group_scores)[apply(group_scores, 1, which.max)])
+
+## Least clear-cut here: the large Reln-high cluster (Reln is broad in
+## gene activity, and true Cajal-Retzius cells are rare) and clusters with
+## weak, mixed markers, which are likely immature or migrating neurons
+## between progenitor and neuron states.
+```
+
+**Exercise 6** - **Label transfer from an imperfect reference**
+
+We don't have an annotated scRNA-seq reference for E18 mouse brain that is small and freely downloadable. Instead we use the reference from the [Signac mouse brain vignette](https://stuartlab.org/signac/articles/mouse_brain_vignette): scRNA-seq of **adult** mouse cortex from the Allen Institute (~1.2 GB).
+
+```{r ex6_download, eval=FALSE}
+options(timeout = 3600)
+download.file(
+  url      = "https://signac-objects.s3.amazonaws.com/allen_brain.rds",
+  destfile = "data/allen_brain.rds",
+  mode     = "wb"
+)
+```
+
+- Before running anything: this is adult cortex and our sample is embryonic cortex, hippocampus and ventricular zone. Which of our cell types do you expect to be **missing** from the reference? What do you think label transfer will do with those cells?
+
+```{r ex6_predict,echo=toMessage}
+## The adult cortex has no radial glia, intermediate progenitors or migrating
+## immature neurons. Label transfer always assigns the closest reference label,
+## so those cells will still get a label (e.g. an astrocyte or neuron type),
+## but with a lower prediction score. It cannot say "none of the above".
+```
+
+- Load the reference and explore its metadata. How old are the mice, and which brain regions were sampled? Which columns hold cell type labels, and at what level of detail?
+```{r ex6_ref,echo=toMessage}
+allen_rna <- readRDS("data/allen_brain.rds")
+allen_rna <- UpdateSeuratObject(allen_rna)
+allen_rna
+
+## Adult animals (~P50-P90), and primary visual cortex (VISp) only. Our
+## sample is embryonic and also has hippocampus and ventricular zone.
+summary(allen_rna$age_days)
+table(allen_rna$brain_region)
+
+## "class" is coarse, "subclass" mid-level (we use this), "cluster" finest.
+table(allen_rna$class)
+table(allen_rna$subclass)
+```
+
+- Find transfer anchors between the reference and your gene activity assay, and transfer the `subclass` labels. Use LSI 2:30 for the weighting, as in the session.
+```{r ex6_anchors,echo=toMessage}
+allen_rna <- FindVariableFeatures(allen_rna, nfeatures = 5000)
+
+DefaultAssay(brain) <- "RNA"
+transfer.anchors <- FindTransferAnchors(
+  reference       = allen_rna,
+  query           = brain,
+  features        = VariableFeatures(object = allen_rna),
+  reference.assay = "RNA",
+  query.assay     = "RNA",
+  reduction       = "cca"
+)
+
+predictions <- TransferData(
+  anchorset        = transfer.anchors,
+  refdata          = allen_rna$subclass,
+  weight.reduction = brain[["lsi"]],
+  dims             = 2:30
+)
+brain <- AddMetaData(brain, metadata = predictions)
+
+rm(allen_rna)   # ~1 GB we no longer need
+```
+
+```{r ex6_umap,echo=toMessage}
+DimPlot(brain, group.by = "predicted.id", label = TRUE, repel = TRUE) + NoLegend()
+```
+
+- Look at the prediction scores. Where on the UMAP are the low-confidence cells, and which of your marker-based clusters do they match? Was your prediction right?
+```{r ex6_scores,echo=toMessage}
+hist(brain$prediction.score.max, breaks = 50,
+     xlab = "Max prediction score", main = "Label transfer confidence")
+
+FeaturePlot(brain, features = "prediction.score.max")
+
+## Median confidence per cluster. Confidence is low (well below 0.5) almost
+## everywhere, not only in progenitors: embryonic neurons are not yet like
+## adult cortical neurons either. The radial glia cluster is typically the
+## lowest, and is mostly called "Astro", the closest adult relative.
+sort(tapply(brain$prediction.score.max, Idents(brain), median))
+```
+
+- Cross-tabulate transferred labels against your clusters. Pick one cluster where the transferred label disagrees with your marker-based label. Which do you trust, and why? (Hint: look at how many cells get adult interneuron labels such as Sst, Vip and Pvalb, and compare that with *Gad2*/*Dlx2* activity.)
+```{r ex6_xtab,echo=toMessage}
+xtab <- table(cluster = Idents(brain), predicted = brain$predicted.id)
+xtab
+```
+
+```{r ex6_heatmap,echo=toMessage,fig.width=10,fig.height=5}
+## Clusters differ a lot in size, so show the fraction of each cluster given
+## each label (rows sum to 1) rather than raw counts.
+xtab_prop <- as.data.frame(prop.table(xtab, margin = 1))
+
+ggplot(xtab_prop, aes(x = predicted, y = cluster, fill = Freq)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "firebrick",
+                      name = "Fraction of\ncluster") +
+  labs(x = "Transferred label (adult Allen reference)", y = "Cluster") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+- If you were analyzing this dataset for real, what reference would you look for? What properties does a good reference need?
+```{r ex6_better,echo=toMessage}
+## Same species and genome annotation, the same tissue/region, and above all
+## the same developmental stage, so every query cell type is present. Ideally
+## also annotated at the resolution you need (e.g. progenitor subtypes), from a
+## similar technology. For E18 cortex, developmental atlases (e.g. Di Bella et al.
+## 2021, or the Allen developing mouse cortex data) are much better matches
+## than adult cortex.
+```
+
+```{r ex6_save,echo=FALSE,eval=FALSE,include=FALSE}
+## Checkpoint for the Session 4 exercise
+saveRDS(brain, "data/brain_annotated.rds")
 ```

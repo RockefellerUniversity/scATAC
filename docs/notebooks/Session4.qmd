@@ -30,7 +30,7 @@ knitr::opts_chunk$set(echo = TRUE, tidy = T)
 
 Having annotated our clusters, a common next question is:
 
-> **Which genomic regions are more accessible in cell type A than cell type B?**
+**Which genomic regions are more accessible in cell type A than cell type B?**
 
 Differentially accessible (DA) peaks can point to:
 
@@ -40,7 +40,7 @@ Differentially accessible (DA) peaks can point to:
 
 ## Considerations for DA Testing in scATAC-seq
 
-DA testing in scATAC-seq is harder than in scRNA-seq
+DA testing in scATAC-seq is harder than in scRNA-seq, for simiilar reasons to what we have discussed already. 
 
 | Challenge | Why it matters |
 |---|---|
@@ -57,13 +57,13 @@ The solution depends on your experimental design — cluster markers within a si
 
 Signac recommends **logistic regression** for single-cell DA testing.
 
-Accessibility is modelled as a binary outcome, with cell type as the predictor and **sequencing depth as a latent variable** to control for depth confounding.
+Accessibility is modelled as a binary outcome, with cell type as the predictor and **sequencing depth as a latent variable** to prevent depth confounding the result.
 
 ## Lets grab the data
 
-We will make sure we hAve Signac loaded in and the current pbmc object. 
+We will make sure we have Signac loaded in and the current pbmc object. 
 
-We can set our Idents(). The Idents corresponds to which are the active group being used in our dataset. Often this is cell type labels or clusters. We will set this to "predicted.id".
+We can set our Idents(). The Idents corresponds to which are the active grouping metadata being used in our dataset. Often this is cell type labels or clusters. We will set this to "predicted.id".
 
 ```{r findMarkersSetup}
 library(Signac)
@@ -91,7 +91,7 @@ if (file.exists(frag_local)) {
 
 ## Running FindMarkers
 
-We can then look for markers of a specific cell type. The provided group has to be from whichever Idents has been set i.e. if that has been set seurat_clusters, the dent provided would be a cluster number. When you supply 1 ident, it runs a comparison against all other cells. You can do a pairwise comparison by providing ident.1 and ident.2.
+We can then look for markers of a specific cell type. The provided group has to be an option from whichever metadata column is used for Idents i.e. if that has been set seurat_clusters, the dent provided would be a cluster number. When you supply one ident (as we do here), it runs a comparison against all other cells. You can do a pairwise comparison by providing ident.1 and ident.2.
 
 As mentioned we will do logistic regression and add the number of counts per cell as a covariate. 
 
@@ -103,20 +103,27 @@ da_peaks <- FindMarkers(
   test.use    = "LR",         # logistic regression
   latent.vars = "nCount_peaks" # control for depth
 )
+```
 
+## Running FindMarkers
+
+At this point we know what peaks are changing, but not much about the peaks themselves. The first step is usually annotation. 
+
+```{r}
 head(da_peaks)
 ```
 
 
 ## Annotating DA Peaks to Nearest Genes
 
-There are several ways to start functional annotating peaks to genes. The easiest (and often the most parsimonious) is to use the nearest gene. We can do this easily from our DA output. 
+There are several methods to start functionally annotating peaks to genes. The easiest (and often the most parsimonious) is to use the nearest gene. We can do this easily from our DA output. 
 
 ```{r interpretDA}
 significant_peaks <- subset(da_peaks,
                               p_val_adj < 0.05 & avg_log2FC > 0.5)
 
 closest <- ClosestFeature(pbmc, regions = rownames(significant_peaks))
+
 head(closest[, c("gene_name", "distance", "query_region")])
 ```
 
@@ -128,20 +135,22 @@ head(closest[, c("gene_name", "distance", "query_region")])
 
 The top accessible peaks are generally related to genes that are known to be associated with CD14+ Monocytes or more generally immune cell developmental genes.
 
-That said there is a peak/gene that sticks out: FAM174B. The peak is right at the gene so it's likely to be a direct effect. A quick lit review suggests that its associated with golgi and stress. It could be realtively high because Monocytes do a lot of secretion. These cells are supposed to be from a healthy patient but maybe there is some immune activation. 
+That said there is a peak/gene that sticks out: FAM174B. The peak is right at the gene so it's likely to be a direct effect. A quick lit review suggests that its associated with golgi and stress. It could be relatively high because Monocytes do a lot of secretion. These cells are supposed to be from a healthy patient but maybe there is some immune activation. 
 
-Often there are a few peaks here and there that could make sense. It is important to rationalize these markers and assess in the context of the all the QC and other markers.
+Often there are a few peaks that could make sense, but require a little more thought. It is important to rationalize these markers and assess in the context of the all the QC and other markers.
 
 * Do we have a lot of markers that do not make sense?
 * Does it overlap with poor quality cells or doublets?
 
 # Visualizing regions of interest {background-color="#23373B" .center .middle}
 
+## Visualizing regions of interest
+
 Another good check is to visualize the coverage at peaks and genes of interest. Our FAM174B peak overlaps the gene, but visualizing it as a track may be more revealing.
 
 Signac's `CoveragePlot()` generates this directly from the **fragment file** — no BAM file required.
 
-Each track is generated by counting fragments that overlap a position in each cell, normalised by the number of cells in that group. This is equivalent to a pseudo-bulk ATAC-seq track per cell type.
+Each track is generated by counting fragments that overlap a position in each cell, normalized by the number of cells in that group. This is equivalent to a pseudo-bulk ATAC-seq track per cell type.
 
 ## CoveragePlot at a Gene
 
@@ -191,11 +200,16 @@ CoveragePlot(
 )
 ```
 
+# QC and Markers {background-color="#23373B" .center .middle}
+
 ## QC and Markers
+
+We have reviewed how we use markers as an additional level of QC with Gene Activity in the last session. Using DA peaks works in the same way.
 
 At this point I would feel happy with the CD14+ Monocyte annotation. A similar review of other markers for other cell types could help. You can also do this at the cluster level to see if the clusters line up. 
 
 Always keep in mind the QC. No matter how late you are in the analysis process you could get indicators of a QC issue, which would prompt you to go back and tweak. 
+
 ## QC and Markers
 
 What to look for as a QC issues is similar to scRNAseq:
@@ -208,16 +222,33 @@ What to look for as a QC issues is similar to scRNAseq:
 
 ## Finding All Cluster Markers
 
-It's easy to expand finding markers to all Cell Types using FindAllMarkers. This will run FindMarkers, for every group within Idents. 
+It's easy to expand finding markers to all Cell Types using FindAllMarkers. This will run FindMarkers, for every group within Idents.
 
-```{r allMarkers, warning=F}
+::: {.callout-warning}
+**We will not run this chunk in class.** Logistic regression on every peak for every cell type takes around 40 minutes. To follow along, load the pre-computed result instead: `all_markers <- readRDS("data/all_markers_pbmc500.rds")`
+:::
+
+```{r allMarkers, warning=F, eval=identical(Sys.getenv("SCATAC_REBUILD"), "true") || isTRUE(knitr::opts_knit$get("tangle"))}
 all_markers <- FindAllMarkers(
   object      = pbmc,
   only.pos    = TRUE,
   test.use    = "LR",
   latent.vars = "nCount_peaks"
 )
+```
 
+```{r allMarkers-checkpoint, include=FALSE, purl=FALSE}
+# FindAllMarkers (LR) takes ~40 min per render, so the render loads a saved
+# result. Refresh it with SCATAC_REBUILD=true (docker/rebuild_checkpoints.sh),
+# which runs the chunk above.
+if (identical(Sys.getenv("SCATAC_REBUILD"), "true")) {
+  saveRDS(all_markers, "data/all_markers_pbmc500.rds")
+} else {
+  all_markers <- readRDS("data/all_markers_pbmc500.rds")
+}
+```
+
+```{r allMarkersHead}
 head(all_markers)
 ```
 
@@ -228,66 +259,514 @@ We can quickly parse these result with dplyr to just grab our top hits for each 
 
 ```{r}
 library(dplyr)
-top5 <- all_markers |>
+top2 <- all_markers |>
   group_by(cluster) |>
-  slice_max(order_by = avg_log2FC, n = 5)
+  slice_max(order_by = avg_log2FC, n = 2)
 
-head(top5)
+head(top2)
 ```
 
 ## Reviewing Cluster Markers
 
 As we did for the single cluster marker results, we can visualize our differentials using Coverage Plots. We can also go back to FeaturePlots and VlnPlots to assess how specific these peaks are.
 
-## Pseudobulk Heatmap of Top Markers
+DotPlot is another very useful function to review multiple markers. 
 
-Per-cell heatmaps of peaks are very sparse, so instead we sum each cell type's counts into a **pseudobulk** profile. Each cell type is normalised by its total counts (CPM), so cell types with more cells or deeper sequencing don't look more accessible across the board. Each peak is then z-scored across cell types.
-
-```{r markerHeatmap}
+```{r}
 library(ggplot2)
+DotPlot(pbmc,top2$gene)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8 ))
 
-# Sum raw peak counts per cell type, then CPM-normalise using all peaks
-pb <- as.matrix(AggregateExpression(pbmc, assays = "peaks", group.by = "predicted.id")$peaks)
-pb_cpm <- log1p(sweep(pb, 2, colSums(pb), "/") * 1e6)
-
-# Keep the top marker peaks and z-score each peak across cell types
-top_peaks <- unique(top5$gene)
-mat <- pb_cpm[top_peaks, ]
-mat <- t(scale(t(mat)))
-
-heat_df <- data.frame(
-  peak      = factor(rep(rownames(mat), ncol(mat)), levels = rev(top_peaks)),
-  cell_type = rep(colnames(mat), each = nrow(mat)),
-  z         = as.vector(mat)
-)
-
-ggplot(heat_df, aes(x = cell_type, y = peak, fill = z)) +
-  geom_tile() +
-  scale_fill_gradient2(low = "steelblue", mid = "white", high = "firebrick") +
-  labs(x = NULL, y = NULL, fill = "Row z-score") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        axis.text.y = element_text(size = 5))
 ```
-
-
-
-
 
 
 # Pseudobulk differential accessibility {background-color="#23373B" .center .middle}
 
-## Pseudobulk differential accessibility
+## The Problem of Pseudoreplication
 
-?? Aggregating counts per sample × cell type so biological replicates are the unit of testing; requires multiple samples per condition ??
+`FindMarkers()` treats each **cell** as an independent observation. But cells from the same **donor or biological context** are highly correlated — they share genetic background, environment, and batch effects. In large datasets you also have a very large n number, so you can reach significance easily, even if changes are subtle. 
 
-```{r pseudobulk, eval=FALSE}
-## ?? e.g. AggregateExpression() then DESeq2 ??
+When comparing conditions (patient vs. control) this leads to **pseudoreplication** — inflated degrees of freedom and many false positives.
+
+
+## We Need a Second Sample
+
+Pseudobulk treats each **sample** as one replicate, so we need more than our single PBMC 500 sample. We will add a second human PBMC dataset: the ATAC part of the **10x Multiome PBMC (10k)** dataset, available through the [SeuratData](https://github.com/satijalab/seurat-data) package as `pbmcMultiome`.
+
+- Already QC filtered and cell type annotated by the Satija lab
+- Downsampled to 1,000 cells to keep things quick
+- Passed through the same TSS enrichment and nucleosome signal filters as our data
+
+Combining two samples takes a few extra steps, which we walk through next. They take a while to run, so we have run them for you and provide the final object.
+
+```{r downloadIntegrated, eval=FALSE}
+options(timeout = 600)
+download.file(
+  url      = "https://www.dropbox.com/scl/fi/qavpfxt969y4j9fl9e4x9/pbmc_integrated.rds?rlkey=bwwxg3s55a31o2o15yp1gx73g&st=rmiv84p0&dl=0",
+  destfile = "data/pbmc_integrated.rds",
+  mode     = "wb"
+)
 ```
 
-## Comparing approaches
+```{r integratedAvailable, include=FALSE, purl=FALSE}
+# The integrated object is built offline (notebooks/dataset2_prep.R) and is too
+# large to commit; only run the chunks that need it when it is present.
+have_integrated <- file.exists("data/pbmc_integrated.rds")
+```
 
-?? Where FindMarkers and pseudobulk results agree and disagree; report adjusted p-values ??
+## Harmonising Cell Type Labels
+
+The two samples were labelled with different references, so the same cells have different names, e.g. "CD14+ Monocytes" vs "CD14 Mono". Pseudobulk compares the **same cell type across samples**, so we first map both onto one shared set of labels.
+
+We collapse to the level both references support, e.g. CD4 TCM, CD4 TEM and Treg all become "CD4 Memory".
+
+## Harmonising Cell Type Labels {.scrollable}
+
+Every label in either sample gets an entry. Labels with no counterpart in the other sample (HSPC, Plasma, Platelet) map to `NA` and are dropped.
+
+```{r harmoniseLabels, eval=FALSE}
+celltype_map <- c(
+  # Multiome (seurat_annotations)
+  "CD14 Mono"      = "CD14+ Monocytes",
+  "CD16 Mono"      = "CD16+ Monocytes",
+  "CD4 Naive"      = "CD4 Naive",
+  "CD4 TCM"        = "CD4 Memory",
+  "CD4 TEM"        = "CD4 Memory",
+  "Treg"           = "CD4 Memory",
+  "CD8 Naive"      = "CD8 Naive",
+  "CD8 TEM_1"      = "CD8 effector",
+  "CD8 TEM_2"      = "CD8 effector",
+  "NK"             = "NK",
+  "Naive B"        = "B",
+  "Intermediate B" = "B",
+  "Memory B"       = "B",
+  "cDC"            = "Dendritic cell",
+  "pDC"            = "pDC",
+  "gdT"            = "Other T",
+  "MAIT"           = "Other T",
+  "HSPC"           = NA,
+  "Plasma"         = NA,
+  # PBMC 500 (predicted.id from the 10k reference)
+  "CD14+ Monocytes"        = "CD14+ Monocytes",
+  "CD16+ Monocytes"        = "CD16+ Monocytes",
+  "CD4 Memory"             = "CD4 Memory",
+  "CD8 effector"           = "CD8 effector",
+  "NK dim"                 = "NK",
+  "NK bright"              = "NK",
+  "pre-B cell"             = "B",
+  "B cell progenitor"      = "B",
+  "Dendritic cell"         = "Dendritic cell",
+  "Double negative T cell" = "Other T",
+  "Platelet"               = NA
+)
+
+multi$celltype <- unname(celltype_map[multi$seurat_annotations])
+pbmc$celltype  <- unname(celltype_map[pbmc$predicted.id])
+```
+
+## Building a Shared Peak Set
+
+Each sample had its peaks called separately, so the two peak sets do not line up. Before we can compare them, both samples need to be counted on **the same features**.
+
+We take the union of both peak sets and merge any that overlap. Very narrow or very wide merged regions are dropped.
+
+```{r sharedPeaks, eval=FALSE}
+peaks_500   <- read.table("data/atac_pbmc_500_nextgem_peaks.bed",
+                          col.names = c("chr", "start", "end"))
+peaks_500   <- makeGRangesFromDataFrame(peaks_500)
+peaks_multi <- granges(multi[["peaks"]])
+
+combined_peaks <- reduce(c(peaks_500, peaks_multi))
+combined_peaks <- combined_peaks[width(combined_peaks) > 20 &
+                                 width(combined_peaks) < 10000]
+```
+
+## Re-counting Each Sample {.scrollable}
+
+We then count each sample's fragments in the shared peaks, straight from its own fragment file, and build a new Signac object for each.
+
+```{r recountPeaks, eval=FALSE}
+# PBMC 500
+counts_500 <- FeatureMatrix(
+  fragments = Fragments(pbmc),
+  features  = combined_peaks,
+  cells     = colnames(pbmc)
+)
+
+obj_500 <- CreateSeuratObject(
+  counts    = CreateChromatinAssay(counts     = counts_500,
+                                   fragments  = Fragments(pbmc),
+                                   annotation = Annotation(pbmc)),
+  assay     = "peaks",
+  meta.data = pbmc[[]]
+)
+
+# PBMC Multiome
+counts_multi <- FeatureMatrix(
+  fragments = Fragments(multi),
+  features  = combined_peaks,
+  cells     = colnames(multi)
+)
+
+obj_multi <- CreateSeuratObject(
+  counts    = CreateChromatinAssay(counts     = counts_multi,
+                                   fragments  = Fragments(multi),
+                                   annotation = Annotation(pbmc)),
+  assay     = "peaks",
+  meta.data = multi[[]]
+)
+```
+
+## Merging the Samples
+
+With both samples on the same peaks, we can merge them. Both use 10x barcodes ending in "-1", so we add a prefix to keep every cell name unique.
+
+```{r mergeSamples, eval=FALSE}
+combined <- merge(obj_500, y = obj_multi,
+                  add.cell.ids = c("pbmc500", "multiome"))
+
+combined <- RunTFIDF(combined)
+combined <- FindTopFeatures(combined, min.cutoff = 10)
+combined <- RunSVD(combined, seed.use = 42)
+combined <- RunUMAP(combined, reduction = "lsi", dims = 2:30, seed.use = 42,
+                    reduction.name = "umap_unintegrated")
+```
+
+## Sample Effects Before Integration
+
+Lets load the combined object and look at the UMAP before any integration. You can download it from [here](https://www.dropbox.com/scl/fi/qavpfxt969y4j9fl9e4x9/pbmc_integrated.rds?rlkey=bwwxg3s55a31o2o15yp1gx73g&st=rmiv84p0&dl=0)
+
+```{r loadIntegrated, eval=have_integrated}
+pbmc_int <- readRDS("data/pbmc_integrated.rds")
+pbmc_int
+table(pbmc_int$celltype, pbmc_int$sample)
+```
+
+## Sample Effects Before Integration
+
+Each cell type splits into two groups, one per sample. Differences between samples, here different 10x technologies, donors and processing, dominate the embedding.
+
+```{r umapUnintegrated, eval=have_integrated}
+DimPlot(pbmc_int, reduction = "umap_unintegrated",
+        group.by = c("sample", "celltype"), label = TRUE, repel = TRUE)
+```
+
+## Multiomic data
+
+As a quick aside these datasets are not great replicates. Multiomic data is much poorer data in general, as you can see here. That said depsite these clear QC differnces the cell type signature is very strong. 
+
+```{r}
+VlnPlot(pbmc_int, "TSS.enrichment", split.by = "sample")
+
+```
+
+## Integrating with Reciprocal LSI
+
+Signac's recommended approach projects each sample into the other's LSI space to find **anchors**: pairs of matching cells across samples. These are then used to correct the shared LSI embedding. This is similat to what we do with label transfer, but is specific to the lsi space of scATAC.
+
+```{r integrateLSI, eval=FALSE}
+obj_list <- SplitObject(combined, split.by = "sample")
+obj_list <- lapply(obj_list, function(x) {
+  x <- FindTopFeatures(x, min.cutoff = 10)
+  x <- RunTFIDF(x)
+  RunSVD(x, seed.use = 42)
+})
+
+anchors <- FindIntegrationAnchors(
+  object.list     = obj_list,
+  anchor.features = rownames(combined),
+  reduction       = "rlsi",
+  dims            = 2:30
+)
+
+combined <- IntegrateEmbeddings(
+  anchorset          = anchors,
+  reductions         = combined[["lsi"]],
+  new.reduction.name = "integrated_lsi",
+  dims.to.integrate  = 1:30
+)
+
+combined <- RunUMAP(combined, reduction = "integrated_lsi",
+                    dims = 2:30, seed.use = 42)
+```
+
+## After Integration
+
+The samples now overlap, and cells group by cell type rather than by sample.
+
+```{r umapIntegrated, eval=have_integrated}
+DimPlot(pbmc_int, reduction = "umap",
+        group.by = c("sample", "celltype"), label = TRUE, repel = TRUE)
+```
+
+## What Integration Does (and Doesn't) Change
+
+Integration only corrects the **low-dimensional embedding** (`integrated_lsi`) used for UMAP, clustering and label transfer. The **peak counts are untouched**.
+
+- Use the embedding to visualize and cluster across samples
+- Use the **raw counts** for differential accessibility, with sample accounted for in the model
+
+This is exactly what pseudobulk needs: we sum the original counts per cell type and sample, and let DESeq2 handle the differences between samples.
+
+## Pseudobulk Workflow
+
+**Pseudobulk analysis:**
+
+1. Aggregate (sum) counts within each cell type × sample combination
+2. Treat each aggregated profile as one bulk sample
+3. Run bulk DA tools (DESeq2, edgeR) on the aggregates
+
+We now have some replicates to be able to do this.
+
+We will use DESeq2. Some folks prefer EdgeR. In our hands they perform similarly. 
+
+```{r pseudobulkAggregate}
+library(DESeq2)
+
+bulk <- AggregateExpression(
+  pbmc_int,
+  assays       = "peaks",
+  return.seurat = FALSE,
+  group.by     = c("celltype","sample")
+)
+
+counts_bulk <- bulk$peaks
+head(counts_bulk)
+```
+
+## DESeq2 DA Analysis
+
+Now we have our input matrix we can start our DA analysis. First we need a metadata object. 
+
+```{r metadataDESeq2}
+parts <- do.call(rbind, strsplit(colnames(counts_bulk), "_"))
+
+col_data <- data.frame(
+  celltype  = parts[, 1],
+  sample    = parts[, 2],
+  row.names = colnames(counts_bulk)
+)
+
+# How many cells went into each pseudobulk. AggregateExpression turns "_"
+# inside a value into "-", so match that when building the group names.
+pb_group <- paste(pbmc_int$celltype, gsub("_", "-", pbmc_int$sample), sep = "_")
+col_data$n_cells <- as.vector(table(pb_group)[rownames(col_data)])
+col_data
+```
+
+## DESeq2 DA Analysis
+
+Now lets run DESeq2. We need to provide all the count and metadata information to create our DESeq object. We are also going to icnlude Sample as a covariate in our model. We know that Sample will have a big impact in this dataset, but in others this may not be necessary. 
+
+```{r}
+# Pseudobulks summed from only a few cells are mostly noise, and DESeq2 shares
+# its variance estimates across all columns, so drop them before fitting
+keep_cols   <- col_data$n_cells >= 10
+counts_keep <- counts_bulk[, keep_cols]
+col_keep    <- col_data[keep_cols, ]
+
+dds <- DESeqDataSetFromMatrix(
+  countData = counts_keep,
+  colData   = col_keep,
+  design    = ~ sample + celltype   # sample is the replicate/blocking factor
+)
+dds <- DESeq(dds)
+```
+
+
+## DESeq2 Results
+
+We can now call results to get the differential from an individual comparison. 
+
+```{r}
+res_deseq <- results(dds, contrast = c("celltype", "CD14+ Monocytes", "B"))
+summary(res_deseq, alpha = 0.05)
+
+```
+
+## Lets compare to findMarkers
+
+```{r}
+Idents(pbmc_int) <- "celltype"
+res_fm <- FindMarkers(pbmc_int, ident.1 = "CD14+ Monocytes", ident.2 = "B")
+
+
+
+```
+
+## Comparing the Results
+
+```{r compareDA}
+pb_sig <- rownames(res_deseq)[which(res_deseq$padj < 0.05)]
+fm_sig <- rownames(res_fm)[res_fm$p_val_adj < 0.05]
+
+data.frame(
+  approach    = c("Pseudobulk (DESeq2)", "FindMarkers (per cell)"),
+  significant = c(length(pb_sig), length(fm_sig)),
+  in_both     = length(intersect(pb_sig, fm_sig)),
+  # typical strength of evidence among the peaks each approach calls
+  median_padj_significant = c(median(res_deseq[pb_sig, "padj"]),
+                              median(res_fm[fm_sig, "p_val_adj"])),
+  min_padj = c(min(res_deseq[pb_sig, "padj"]),
+                              min(res_fm[fm_sig, "p_val_adj"]))
+)
+```
+
+- Monocytes and B cells differ so much that both approaches find thousands of peaks. Many of these overlap, but there are plenty of peaks that are specific to the approach used.
+- For FindMarkers the per-cell p-values are more extreme, because each cell is counted as an independent replicate.
+
+## Example: FindMarkers Only
+
+That is not all the differences. 
+
+```{r coverageFMonly}
+CoveragePlot(
+  object            = pbmc_int,
+  region            = "chr6-106702055-106703095",
+  group.by          = "celltype",
+  split.by          = "sample",
+  idents            = c("CD14+ Monocytes", "B"),
+  extend.upstream   = 2000,
+  extend.downstream = 2000
+)
+```
+
+Open in B cells in **both** samples, absent in monocytes. The per-cell test is very confident. Pseudobulk is not: the peak has signal in only 2 of the pseudobulks, so DESeq2 cannot estimate its variance well, and its average count is low enough that DESeq2's independent filtering may not test it at all (`padj` is `NA`). This one is probably real: per-cell tests are not always wrong, but pseudobulk only calls what it can back with sample-level evidence.
+
+## Example: Pseudobulk Only
+
+```{r coveragePBonly, eval=have_fragments}
+CoveragePlot(
+  object            = pbmc_int,
+  region            = "chr6-41934567-41943790",
+  group.by          = "celltype",
+  split.by          = "sample",
+  idents            = c("CD14+ Monocytes", "B"),
+  extend.upstream   = 2000,
+  extend.downstream = 2000
+)
+```
+
+Open in both cell types, so the per-cell contrast is weak. But summed across cells it is consistently higher in monocytes in **both** samples, which pseudobulk can detect with confidence.
+
+## FindMarkers vs Pseudobulk
+
+To recap there are key differences and restrictions for differntial methods. 
+
+| | `FindMarkers()` (per cell) | Pseudobulk (DESeq2 / edgeR) |
+|---|---|---|
+| Unit of replication | Each **cell** | Each **sample** |
+| Needs replicates? | No | Yes, ideally 3+ per group |
+| Sample/donor effects | Ignored | Modelled (`~ sample + celltype`) |
+| p-values | Over-confident with many cells | Reflect sample-level variation |
+| Best for | Exploring markers within one sample | Comparisons you want to generalise beyond your samples |
+
+The difference matters most for **subtle effects**, e.g. patient vs control within one cell type. There, sample-to-sample variation is as large as the effect itself, and per-cell tests produce many false positives.
+
+## Other Approaches
+
+**Other pseudobulk tools**
+
+- edgeR (quasi-likelihood) and limma-voom: same idea as DESeq2, with different models for the variance
+
+**Mixed models**
+
+- Keep the single cells, but add sample/donor as a **random effect**, e.g. NEBULA, glmmTMB, or the mixed-model options in muscat
+- They account for pseudoreplication like pseudobulk does (Zimmerman *et al*, 2021), but are slower and more complex
+
+**scATAC-specific methods**
+
+- **ArchR** `getMarkerFeatures()`: Wilcoxon test against background cells matched on TSS enrichment and fragment counts
+- **chromVAR**: tests at the level of TF motifs rather than single peaks
+- **Count-based models** that treat fragment counts as quantitative (e.g. Martens *et al*, 2024) rather than binary
+
+For a benchmark of these methods on scATAC data, see [Teo, Squair & Courtine, 2024](https://doi.org/10.1038/s41467-024-53089-5).
+
+# Where to Go Next {background-color="#23373B" .center .middle}
+
+## Next Steps: Peaks and Motifs
+
+* **Better peaks**
+  - Re-call peaks per cell type with MACS ([`CallPeaks(group.by = ...)`](https://stuartlab.org/signac/reference/callpeaks)) to capture peaks from rare cell types, then re-count before differential accessibility
+
+* **Interpreting DA peaks**
+  - Annotate peaks to genes and genomic features with [ChIPseeker](https://bioconductor.org/packages/ChIPseeker/)
+  - Test for functional enrichment of nearby genes with [rGREAT](https://bioconductor.org/packages/rGREAT/)
+
+* **Motifs**
+  - Signac [`FindMotifs()`](https://stuartlab.org/signac/articles/motif_vignette): which TF motifs are enriched in a set of peaks, e.g. your DA peaks
+  - [chromVAR](https://bioconductor.org/packages/chromVAR/) (`RunChromVAR()`): a per-cell accessibility score for each TF motif, which you can then compare between groups
+  - Signac [`Footprint()`](https://stuartlab.org/signac/articles/footprint): TF footprinting at motif sites, to look for evidence of binding
+
+## Next Steps: Regulation and Beyond
+
+* **Gene regulation**
+  - [Cicero](https://cole-trapnell-lab.github.io/cicero-release/): links regulatory regions (e.g. enhancers to promoters) by co-accessibility. Works on scATAC alone
+  - [Epiregulon](https://bioconductor.org/packages/epiregulon/): TF activity per cell. Needs gene expression too, from multiome or from a separate scRNA-seq dataset integrated with your ATAC data
+  - [SCENIC+](https://github.com/aertslab/scenicplus): regulatory networks from paired accessibility and expression (Python)
+
+* **Multiome data**
+  - Seurat [WNN](https://satijalab.org/seurat/articles/weighted_nearest_neighbor_analysis) (`FindMultiModalNeighbors()`): cluster using RNA and ATAC together
+  - Signac [`LinkPeaks()`](https://stuartlab.org/signac/articles/pbmc_multiomic): link peaks to genes by correlating accessibility with expression in the same cells
+
+* **Trajectories**
+  - [Monocle 3](https://cole-trapnell-lab.github.io/monocle3/), which Cicero builds on, or [ArchR's trajectory tools](https://www.archrproject.com/bookdown/trajectory-analysis-with-archr.html), to order cells along a differentiation path
+
+
+## Time for an exercise!
+
+Session 4 exercises can be found [here](../../exercises/exercises/scATAC_Exercise4_exercise.html)
+
+## Answers to exercises
+
+Answers can be found [here](../../exercises/answers/scATAC_Exercise4_answers.html)
+
+## Course Summary
+
+::: {.columns}
+
+::: {.column width="50%"}
+**Session 1 — Foundations**
+
+- Chromatin accessibility biology; why sparsity is the defining challenge
+- scATAC-seq technologies; fragment files, count matrices
+- Loading data into Signac/Seurat; gene annotations
+
+**Session 2 — QC & Preprocessing**
+
+- TSS enrichment, nucleosome signal, FRiP, blacklist ratio
+- Iterative threshold-setting and filtering
+- TF-IDF normalisation; `FindTopFeatures()`
+:::
+
+::: {.column width="50%"}
+**Session 3 — Dimensionality Reduction & Clustering**
+
+- LSI via `RunSVD()`; always skip component 1 (`DepthCor()`)
+- UMAP; graph-based clustering; tuning resolution
+- QC as a cyclical process; gene activity; label transfer
+
+**Session 4 — Differential Accessibility & Visualisation**
+
+- `FindMarkers()` with logistic regression + depth covariate
+- Pseudobulk approaches with DESeq2/edgeR
+- `CoveragePlot()` directly from the fragment file
+- Motif analysis, multi-modal integration, pseudotime, regulatory networks
+:::
+
+:::
+
+## Further Resources
+
+| Resource | URL |
+|---|---|
+| Signac documentation | https://stuartlab.org/signac/ |
+| Seurat documentation | https://satijalab.org/seurat/ |
+| ArchR | https://www.archrproject.com/ |
+| snapATAC2 | https://github.com/scverse/SnapATAC2 |
+| 10x Genomics ATAC datasets | https://www.10xgenomics.com/datasets |
+
+**Questions?** Contact the Bioinformatics Resource Center at **brc@rockefeller.edu**
 
 
 

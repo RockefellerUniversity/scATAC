@@ -33,11 +33,11 @@ knitr::opts_chunk$set(echo = TRUE, tidy = T)
 
 ## scATAC QC metrics
 
-There are many ways we check 
+There are many ways we check data quality.
 
 Some of the QC metrics we are interested in are common across single cell methods i.e. nCount, percent.mt etc
 
-Many oF the most important are ATAC specific, and will be recognizable to those that have done bulk ATACseq. These often are readouts for tagmentation efficiency. 
+Many of the most important are ATAC specific, and will be recognizable to those that have done bulk ATACseq. These often are readouts for tagmentation efficiency. 
 
 We need to use a combination of these metrics to answer the most important question: *Can I trust my data?*
 
@@ -57,29 +57,35 @@ Instead we use:
 
 We will calculate and review all these metrics before considering any filtering. 
 
+## Our QC Workflow
+
+* Diagnose QC
+* Apply conservative thresholds
+* Try clustering and dimension reduction
+* Rereview QC
+
 ## scATAC data
  
-We will be using the [500 cell PBMC dataset from 10X](https://www.10xgenomics.com/datasets/500-peripheral-blood-mononuclear-cells-pbm-cs-from-a-healthy-donor-next-gem-v-1-1-1-1-standard-2-0-0) we looked at earlier. This is relatively small but good quality dataset. Lets make sure we have it in our R session. In the process we will remove non-standard chromsomes.  
+We will be using the [500 cell PBMC dataset from 10X](https://www.10xgenomics.com/datasets/500-peripheral-blood-mononuclear-cells-pbm-cs-from-a-healthy-donor-next-gem-v-1-1-1-1-standard-2-0-0) we looked at earlier in Session 1. This is relatively small but good quality dataset. You should already have it in your R session, but if not here's a reminder for starting with the h5 file:  
 
-```{r}
+```{r, echo=F, eval=T}
 library(Signac)
 library(Seurat)
 
 ```
  
-```{r, eval=F}
-# read in h5 file
+```{r buildPbmcStart, eval=identical(Sys.getenv("SCATAC_REBUILD"), "true") || isTRUE(knitr::opts_knit$get("tangle"))}
 library(Signac)
 library(Seurat)
 
-counts <- Read10X_h5(filename = "~/Desktop/ATAC.data.500.cell/atac_pbmc_500_nextgem_filtered_peak_bc_matrix.h5")
+counts <- Read10X_h5(filename = "data/atac_pbmc_500_nextgem_filtered_peak_bc_matrix.h5")
 
 std_chr   <- paste0("chr", c(1:22, "X", "Y"))
 peak_chr  <- as.character(seqnames(StringToGRanges(rownames(counts), sep = c(":", "-"))))
 counts    <- counts[peak_chr %in% std_chr, ]
 
 metadata <- read.csv(
-  file = "~/Desktop/ATAC.data.500.cell/atac_pbmc_500_nextgem_singlecell.csv",
+  file = "data/atac_pbmc_500_nextgem_singlecell.csv",
   header = TRUE,
   row.names = 1
 )
@@ -87,7 +93,7 @@ metadata <- read.csv(
 chrom_assay <- CreateChromatinAssay(
   counts = counts,
   sep = c(":", "-"),
-  fragments = "~/Desktop/ATAC.data.500.cell/atac_pbmc_500_nextgem_fragments.tsv.gz",
+  fragments = "data/atac_pbmc_500_nextgem_fragments.tsv.gz",
   min.cells = 10,
   min.features = 200
 )
@@ -97,6 +103,26 @@ pbmc <- CreateSeuratObject(
   assay = "peaks",
   meta.data = metadata
 )
+```
+
+```{r buildPbmcStart-checkpoint, include=FALSE, purl=FALSE}
+# The object build above runs only when refreshing checkpoints
+# (SCATAC_REBUILD=true, see docker/rebuild_checkpoints.sh); the normal render
+# loads the saved object below. Session 1 reads the same checkpoint.
+# Saved checkpoints point at the fragment file where students will have it:
+# data/ relative to the course docs/ folder (their working directory). Signac's
+# UpdatePath() always stores an absolute path from the current machine, so the
+# relative path is set directly on the Fragment object.
+save_for_students <- function(obj, file,
+                              frag_path = "data/atac_pbmc_500_nextgem_fragments.tsv.gz") {
+  frag <- Fragments(obj)[[1]]
+  slot(frag, "path") <- frag_path
+  Fragments(obj) <- NULL
+  Fragments(obj) <- frag
+  saveRDS(obj, file)
+}
+
+if (identical(Sys.getenv("SCATAC_REBUILD"), "true")) save_for_students(pbmc, "data/pbmc_start.rds")
 ```
 
 ```{r}
@@ -149,26 +175,33 @@ A key note is that TSSE is calculated slightly differently by different tools. A
 
 :::
 
-## TSS enrichment with Signac
+## Grabbing an Annotation
 
 The first step to calculating TSS enrichment is loading in a reference gene annotation with the TSS regions. The gene ranges from which to specify TSS can be provided directly as a GTF file. Here though we grab the appropriate information from R package database *AnnotationHub*. In this case we will grab the ENSEMBL version of human gene annotation. 
 
-```{r}
+We must first use query to find the name of the Annotation for the genome version we want: EnsDb.Hsapiens.v98
 
+```{r}
 library(AnnotationHub)
 ah <- AnnotationHub()
-
 query(ah, "EnsDb.Hsapiens.v98")
-ensdb_v98 <- ah[["AH75011"]]
 
-annotations <- GetGRangesFromEnsDb(ensdb = ensdb_v98)
-
-head(annotations)
 ```
 
-## TSS enrichment
+## Grabbing an Annotation
 
-Next we need to amend the annotations to be using UCSC-style chromosomes. We can then add the annotation to Signac object. 
+Once we know the name of the annotation (AH75011), we can then use that to index it out from the database and convert it to a GRanges object. 
+
+```{r}
+ensdb_v98 <- ah[["AH75011"]]
+annotations <- GetGRangesFromEnsDb(ensdb = ensdb_v98)
+head(annotations)
+
+```
+
+## Grabbing an Annotation
+
+Next we need to amend the annotations to be using UCSC-style chromosomes as this is what Cell Ranger used. We can then add the annotation to Signac object. 
 
 ```{r}
 
@@ -180,7 +213,7 @@ Annotation(pbmc) <- annotations
 
 ## TSS enrichment distribution
 
-We can first calculate the score, then plot it. 
+We can first calculate the score, then plot it. The go-to plot for many QC metrics is a Violin plot so we can see the full distribution of the cells along the metric of choice. 
 
 ```{r tss_enrichment_violin}
 
@@ -193,7 +226,7 @@ VlnPlot(object = pbmc,
 
 ## TSS enrichment metaplot
 
-If you want to also draw the metaplot itself you will have to recalculate the TSS enrichment. By default this function does not save an aggregated matrix of ATAC reads x position across the TSS to save memory. By setting the *fast* argument to FALSE, this matrix is stored and can then be sued to generate the TSS metaplot. These can be nice to compare between samples.  
+If you want to also draw the metaplot itself you will have to recalculate the TSS enrichment. To save memory the TSSEnrichment function does not save an aggregated matrix of *ATAC reads x TSS position*. By changing the *fast* argument away from its default to FALSE, this matrix is stored and can then be used to generate the TSS metaplot. These can be nice to compare between samples.  
 
 ```{r tss_enrichment_metaplot}
 
@@ -231,22 +264,15 @@ In good quality ATAC-seq libraries, fragment sizes show a characteristic **ladde
 
 ## Nucleosome Signal in Signac
 
-Signac calculates a **nucleosome signal** score per cell: the ratio of mono-nucleosomal to sub-nucleosomal (NFR) fragment counts. If a cell has a high nucleosome signal this means you're fragments are larger and less digested.
+Signac calculates a **nucleosome signal** score per cell: the ratio of mono-nucleosomal to sub-nucleosomal (NFR) fragment counts. 
+
+If a cell has a high nucleosome signal this means you're fragments are larger and less digested.
 
 ## Nucleosome Signal in Signac
-
-::: {.columns}
-
-::: {.column width="50%"}
 
 High values for nucleosome signal can indicate several QC problems:
 * Most of the time it is low tagmentation efficiency
 * Dying/damaged cells
-
-
-:::
-
-::: {.column width="50%"}
 
 ```{r nucleosome_signal}
 pbmc <- NucleosomeSignal(object = pbmc)
@@ -254,11 +280,9 @@ pbmc <- NucleosomeSignal(object = pbmc)
 VlnPlot(pbmc, features = "nucleosome_signal")
 ```
 
-:::
-
 ## Fragment ladder
 
-We can also visualize the fragment ladder as a histogram through Signac using *FragmentHistogram*. If you can't see any ladder you likely have a failed library.
+We can also visualize the fragment ladder as a histogram through Signac using *FragmentHistogram*. If you can't see any ladder you likely have a low quality/failed library.
 
 ```{r nucleosome_fragment}
 FragmentHistogram(
@@ -287,6 +311,8 @@ Cell Ranger has called peaks for us. **FRiP** measures the proportion of a cell'
 
 - High FRiP → reads concentrated at accessible sites → good signal-to-noise
 - Low FRiP → reads scattered across the genome → likely low-quality cell, ambient DNA or over-tagmentation. 
+
+![FRiP](../imgs/FRIP.png)
 
 ## Fraction of Reads in Peaks (FRiP)
 
@@ -324,7 +350,7 @@ A high blacklist ratio often points to low-quality or misassigned barcodes
 
 
 ::: {.callout-note}
-There is an increasing prevalence for these areas of the genome to be called exclusion regions or high-signal artifacts as it's more inclusive and precise language.  
+Though these regions have traditionally been called blacklist regions, there is an increasing prevalence for these areas of the genome to be called exclusion regions or high-signal artifacts as it's more inclusive and precise language. We are referring to both as many online resources still use the term blacklist and the field is still mid-transition.    
 :::
 
 ## Blacklist/Exclusion regions
@@ -337,9 +363,23 @@ Here is an example for the Human Centromeric alpha satellite:
 
 These regions are both manually and computationally curated by systematic review of 100s of different cell types. Some regions have 1000+ times the signal versus expected background. 
 
+## In this dataset
+
+This is a region from this dataset. This is a small nuclear RNA gene that exists as multiple copies in tandem on the genome, but not in the reference.
+
+```{r, echo=F}
+CoveragePlot(
+  object            = pbmc,
+  region            = "chr9-134164478-134165354",
+  extend.upstream   = 5000,
+  extend.downstream = 5000
+)
+
+```
+
 ## Blacklist/Exclusion regions
 
-Older versions of Cell Ranger used to report the blacklist fragments in *blacklist_region_fragments*. This is not the case anymore so you need to calculate it. 
+Older versions of Cell Ranger used to report the blacklist fragments in *blacklist_region_fragments*. This is not the case anymore so you need to calculate it. The slot does still exists in the created Signac object, but it is empty. 
 
 A comprehensive list of artifactual regions are also available in the [excluderanges](https://www.bioconductor.org/packages/release/data/annotation/html/excluderanges.html) R package.
 
@@ -348,20 +388,20 @@ Several are also included in Signac. The PBMC dataset we are using was mapped to
 ## Blacklist/Exclusion regions
 
 **hg38** 
+
 * 636 regions
-* Median is 10 kb, but largest is >30Mb
+* Median is 10kb
+* Largest is >30Mb
 
 ```{r}
 Signac::blacklist_hg38
 ```
 
-
-
 ## Calculating Blacklist/Exclusion proportion
 
-::: {.columns}
+We can then calculate the fraction of reads in these exclusion ranges by doing the FractionCountsInRegion function. This can be used to also check any provided regions, so you can also use it to check know regions of interest as a positive control.
 
-::: {.column width="50%"}
+One thing to note is that this function is doing this in the context of the peaks, so you have low FRiP or poor peak calling in general this metric would then be off. 
 
 ```{r}
 pbmc$excl_prop <- FractionCountsInRegion(
@@ -370,16 +410,14 @@ pbmc$excl_prop <- FractionCountsInRegion(
   regions = blacklist_hg38
 )
 ```
-:::
 
-::: {.column width="50%"}
+## Blacklist/Exclusion proportion
 
 ```{r}
 VlnPlot(pbmc, features = "excl_prop")
 ```
-:::
 
-:::
+
 
 # Doublets {background-color="#23373B" .center .middle}
 
@@ -389,18 +427,20 @@ Doublets occur when multiple cells/nuclei are in the same droplet. The worst cas
 
 Doublets typically occur when a large number of cells are loaded or if there is inefficient disaggregation. 
 
-Often a simple filter of cells with high ca will remove most doublets. That said we can use specialist tools to help. OUr preferred tool is **scDblFinder**.
+Often a simple filter of cells with high ca will remove most doublets. That said we can use specialist tools to help. Our preferred tool is **scDblFinder**.
 
 ## scDblFinder methods
 
 scDblFinder has two methods that we can use:
 
 1. scDblFinder
+
   - Originally developed for RNAseq, but has settings good for ATAC-seq
   - Simulates doublets using pairs of cells, and then tests if real cells are similar to simulated cells. 
   - Sensitive to heterotypic duplicates
 
 2. AMULET
+
   - ATAC-specific
   - Counts genome positions and looks for anywhere with >2 counts
   - Sensitive to heterotypic and homotypic duplicates
@@ -425,11 +465,11 @@ sce <- as.SingleCellExperiment(pbmc, assay = "peaks")
 Before we can run scDblFinder we must first set a seed. This is important for reproducibility, as the doublet simulation process is random. 
 
 We also use several ATAC-specific arguments:
+
 * aggregateFeatures = TRUE - Relative to scRNA, scATAC has many more features, with each having lower signal. For ATAC we aggregate signal at many features (peaks) together. 
 * nfeatures = 25 - The feature are aggregated into meta-features. We can then choose how mnay meta-features to use. 
 * processing = "normFeatures" - As we have a low number of meta-features, we can stick to basic normalization without full dimension reduction. 
 * dbr = NULL - You can provide an expected doublet rate. For scATAC it is typically low, especially this kind of PBMC data. 
-
 
 ```{r}
 set.seed(42)  
@@ -445,7 +485,7 @@ sce <- scDblFinder(
 
 ## AMULET 
 
-While standard scDblFinder works from the count matrix, AMULET needs to check all the frsgment files, as it looking genome wide for anywhere with >2 reads. As a result this can be a long and memory-intensive process
+While standard scDblFinder works from the count matrix, AMULET utilizes the fragment files, as it looking genome wide for anywhere with >2 reads. As a result this can be a longer and memory-intensive process
 
 First we will grab the path to the fragment file.
 
@@ -459,7 +499,7 @@ frag_path <- GetFragmentData(Fragments(pbmc)[[1]], slot = "path")
 
 We also want to mask any genome ranges that are considered problems because they have high chances of inappropriate mapping i.e. mitochondria, sex chromosomes, repeats and exclude ranges.
 
-Most of these are easy to do/we laready have loaded in. We just need to grab extra repeat information by getting the RepeatMasker for our genome. We can use AnnotationHub again. 
+Most of these are easy to do/we laready have loaded in. We just need to grab extra repeat information by getting the [RepeatMasker](https://github.com/Dfam-consortium/RepeatMasker/) for our genome. We can use AnnotationHub again. 
 
 ```{r}
 
@@ -491,9 +531,13 @@ excl <- reduce(c(
 
 Now lets run AMULET. If you run this you will see what we mean by much more heavy duty process. Even on this simple and small dataset it takes a few minutes. This is a lot longer then scDblFinder at <10s.
 
-We pass `barcodes = colnames(pbmc)` so AMULET only scores our called cells. AMULET compares each cell's number of high-overlap sites with the average across the barcodes it analyses. Including empty droplets and debris, which have few fragments, would lower that average and inflate doublet calls. Restricting to cells is also much faster: the fragment file contains ~220,000 barcodes, but we have 482 cells.
+We pass `barcodes = colnames(pbmc)` so AMULET only scores our called cells. AMULET compares each cell's number of high-overlap sites with the average across the barcodes it analyses. Including empty droplets and debris, which have few fragments, would lower that average and inflate doublet calls. Restricting to cells is also faster.
 
-```{r}
+::: {.callout-warning}
+**We will not run this chunk in class.** AMULET takes around 10 minutes even on this small dataset. To follow along, load the pre-computed result instead: `amu <- readRDS("data/amulet_pbmc500.rds")`
+:::
+
+```{r amulet, eval=identical(Sys.getenv("SCATAC_REBUILD"), "true") || isTRUE(knitr::opts_knit$get("tangle"))}
 amu <- amulet(
   frag_path,
   barcodes         = colnames(pbmc),
@@ -501,9 +545,19 @@ amu <- amulet(
 )
 ```
 
+```{r amulet-checkpoint, include=FALSE, purl=FALSE}
+# AMULET takes ~10 min per render, so the render loads a saved result. Refresh it
+# with SCATAC_REBUILD=true (docker/rebuild_checkpoints.sh), which runs the chunk above.
+if (identical(Sys.getenv("SCATAC_REBUILD"), "true")) {
+  saveRDS(amu, "data/amulet_pbmc500.rds")
+} else {
+  amu <- readRDS("data/amulet_pbmc500.rds")
+}
+```
+
 ## Adding doublet calls
 
-Now that we have our doublet scoring we will want to add it back to our Signac object. During the amulet calling the order can shift so first we will start by making sure theya re ordered the same. Then we can just assign out the scores and classiifcations into the Signac. 
+Now that we have our doublet scoring we will want to add it back to our Signac object. During the AMULET calling the order can shift so first we will start by making sure they are ordered the same. Then we can just assign out the scores and classifications into the Signac. 
 
 ```{r}
 amu <- amu[colnames(pbmc), ]
@@ -520,9 +574,9 @@ pbmc$scDblFinder.class <- sce$scDblFinder.class
 
 You can see that there is quite different doublet calls between these two callers. scDblFinder is a lot more conservative. 
 
-A typical scATAC has varied doublet rates depending on how many cells were loaded (0.5 -10%). 500 cells is on the low end for loading, so we're expecting 0.5% i.e. 2.5. By default scDblFinder is expecting 1%.  
+A typical scATAC has varied doublet rates depending on how many cells were loaded (0.5 -10%). 500 cells is on the low end for loading, so we're expecting 0.5% i.e. 2.5 doublets. By default scDblFinder is expecting 1%.  
 
-It seems like we have overcalling of duplicates. Especially in AMULET.  
+It seems like we have overcalling of doublets. Especially in AMULET.  
 
 ```{r}
 
@@ -532,9 +586,9 @@ table(scDblFinder = pbmc$scDblFinder.class,
 
 ## Reviewing AMULET doublets
 
-Overcalling is a known property of AMULET. Underlying the significance is calling is an assumption that the mean depth is the same the same for all samples, but in reality cell depths in scATAC easily vary 5–10-fold.
+Overcalling is a known property of AMULET. Underlying the significance calling is an assumption that the mean depth is the same per cell, but in reality per cell sequencing depths in scATAC easily vary 5–10-fold.
 
-As expected AMULET results correlates strongly with nCount. This and 
+As expected AMULET results correlates strongly with nCount.
 
 ```{r}
 VlnPlot(pbmc, features = "nCount_peaks",
@@ -543,9 +597,9 @@ VlnPlot(pbmc, features = "nCount_peaks",
 
 ## Reviewing AMULET doublets
 
-Though we have removed repeats we are running into an issue of more regions with >2 counts then expected. This becomes more of an issue when you have high depth in sequencing (like this dataset). Any minor repeats, CNVs, extrachromosomal DNA, polyploidy etc that have not been filtered, start to gain prominence with deeper sequencing. If you know of these specifically in your samples you can diagnose and exclude them. 
+Though we have removed repeats we are running into an issue of more regions with >2 counts then expected. This becomes more of an issue when you have high depth in sequencing (like this dataset). Any minor repeats, CNVs, extrachromosomal DNA, polyploidy etc. that have not been filtered, start to gain prominence with deeper sequencing. If you know of these specifically in your samples you can diagnose and exclude them. 
 
-If *nAbove2* ~5 or more AMULET will start to struggle. 
+If *nAbove2* is ~5 or more AMULET will start to struggle. This suggests it would not be good for this dataset. 
 
 ```{r}
 
@@ -576,9 +630,15 @@ It is also possible to combine pvalues so that you can filter based on the pvalu
 
 ## QC in scATAC-seq is iterative
 
-Unlike RNA-seq where QC thresholds are relatively standard, scATAC-seq QC is more sensitive to the tissue, protocol, and sequencing depth. The iterative process of revisiting QC is even more important as a result. We need to inspect the distributions, apply conservative thresholds initially, then **revisit QC after clustering** — low-quality cells often form isolated clusters with poor marker accessibility.
+Unlike RNA-seq where QC thresholds are relatively standard, scATAC-seq QC is more sensitive to the tissue, protocol, and sequencing depth. The iterative process of revisiting QC is even more important as a result. 
 
-## Visualising All QC Metrics Together
+We need to:
+* Inspect the distributions
+* Apply conservative thresholds initially
+* **Revisit QC after clustering** — low-quality cells often form isolated clusters with poor marker accessibility.
+* Repeat
+
+## Visualizing all QC metrics together
 
 By looking at all these metrics together we can get a one stop summary plot that gives you a sense how many outliers you have. 
 
@@ -639,7 +699,8 @@ Lets look at some other examples of PBMC data. This is from a paper comparing  d
 ## Choosing Sensible Thresholds
 
 Let's remember: 
-1. Apply conservative thresholds initially
+
+1. Apply conservative context-specific thresholds initially
 2. UMAP and Cluster
 3. Double-check QC metrics on UMAP to see if anything is sticking out
 4. Update filters and go back to 2, until there are no remaning QC concerns. 
@@ -659,7 +720,7 @@ Let's remember:
 
 ## Theshold Ranges
 
-PBMC datasets are typically good data, so thresholds end up more stringent. The experimental context can 
+PBMC datasets are typically good data, so thresholds end up more stringent. The experimental context impacts chosen thresholds a lot. 
 
 * *High quality data:* Fresh blood, cell lines, deep sequencing.
 * *Low quality data:* Frozen, postmortem, FFPE, fibrous or fatty tissue, multiomic, shallow sequencing.
@@ -668,59 +729,61 @@ Lets walk through some typical ranges.
 
 ## Fragments/nCounts
 
-::: {.callout-tip}
 * Minimum fragments	
   - High quality:  3k–10k
   - Low quality: 1k–1.5k
-:::
 
 This mostly depends on sequencing depth and library complexity - samples from FFPE are much lower for this, so need more lenient thresholds.
 
-::: {.callout-tip}
 * Maximum fragments	
   - Top 1–2%
-:::
 
 This is variable and more about skimming of the top based on the distribution, rather then a fixed value. You can also use [MAD to determine outliers](https://bioconductor.org/books/3.13/OSCA.advanced/quality-control-redux.html). The right value grows with sequencing depth and cells loaded. It is useful to pair this with doublet detection to remove these high count cells.  
 
 ## TSS enrichment
 
-::: {.callout-tip}
 - High quality: 4-8
 - Low quality: 1-2
-:::
-Warning: values can't be compared between tools. Signac, ArchR, ENCODE etc calculate the score slightly differently.
 
+::: {.callout-warning}
+Values can't be compared between tools. Signac, ArchR, ENCODE etc calculate the score slightly differently.
+:::
+
+## Nucleosome signal
+
+- High quality: < 2
+- Low quality: up to 4
+
+Nucleosome signal is the ratio of mono-nucleosome fragments to nucleosome-free fragments, so higher values mean less of the open, nucleosome-free signal ATAC is designed to capture. It is sensitive to nuclei integrity and the Tn5-to-nuclei ratio, so degraded or under-tagmented samples sit higher.
+
+::: {.callout-tip}
+Rather than relying on a fixed cut-off, compare the fragment size histograms of cells above and below your threshold with *FragmentHistogram*. Cells with a weak nucleosome-free peak, or no clear ladder, are the ones to remove.
+:::
 
 
 ## FRiP
 
-::: {.callout-tip}
 - High quality: > 40%
 - Low quality: 15–20%
-:::
 
-FRiP is relatively sensitive to method as it's a very direct readout of ATAC efficiency. Another thing to be aware of is that in a tissue with rare cell types, it is often necessary to re-call peaks per cluster before filtering with this cutoff.
+FRiP is relatively sensitive to method as it's a very direct readout of ATAC efficiency. 
+
+::: {.callout-warning}
+In a tissue with rare cell types, it is often necessary to re-call peaks per cluster before filtering with this cutoff.
+:::
 
 ## Blacklist/Exclude Ranges
 
-::: {.callout-tip}
 - High quality: < 0.01
 - Low quality: ≤ 0.05
+
+::: {.callout-warning}
+Blacklist proportion is calculated in the context of peaks, so a low-FRiP sample automatically has a higher ratio. That's why depending on context you may need a looser value.
 :::
-
-In the Signac vignettes this is blacklist fragments ÷ peak fragments, so a low-FRiP sample automatically has a higher ratio. That's why lenient contexts need a looser value. Check which version you've calculated: your plot shows excl_prop, which may use a different denominator.
- 
-
-
-
-
-TSS enrichment > 2 is a common minimum; > 3 for higher-quality datasets such as 10x PBMC. The exact value depends on your reference annotations — more genes = richer signal. Plot the distribution before setting a hard cutoff.
-
 
 ## Sensible thresholds
 
-* We have given guidelines for thresholds
+* We have given rough guidelines for thresholds
 * Context matters a lot though
 * Review your data distributions and make conservative choices. You can always come back and filter more. 
 
@@ -730,13 +793,14 @@ TSS enrichment > 2 is a common minimum; > 3 for higher-quality datasets such as 
 Looking at this data what are we thinking?
 
 | Metric | Minimum | Maximum |
+|---|---|---|
 | nCount_peaks | 5,000 | 60,000 |
 | TSS.enrichment | 4 | — |
 | nucleosome_signal | — | 2 |
 | pct_reads_in_peaks | 40 | — |
 | blacklist_ratio | — | - |
 
-We will also keep potential doublets for now. Often the Max nCount is sufficient to remove most doublets. 
+We will also keep potential doublets for now. Often the Max nCount is sufficient to remove most doublets. But we have that calculated so we can keep an eye on it. 
 
 
 ## Filtering in action
@@ -777,6 +841,8 @@ ATACqc(pbmc)
 
 ```
 
+Similarly is you want to use ArchR or snapATAC2 you will use the same appraoch but just different functions specific to those packages. 
+
 # Normalization with TF-IDF {background-color="#23373B" .center .middle}
 
 ## Why Not Just Log-Normalize?
@@ -790,9 +856,9 @@ For scATAC-seq this is **insufficient** because:
 - A simple log-normalization treats all peaks equally regardless of their overall accessibility across cells
 
 ::: {.callout-important}
-## We need a method that down-weights common peaks and up-weights rare, informative ones
+We need a method that down-weights common peaks and up-weights rare, informative ones
 
-This is exactly what TF-IDF does.
+This is what TF-IDF does.
 :::
 
 ## TF-IDF: The Concept
@@ -808,7 +874,7 @@ $$\text{TF-IDF}_{ij} = \text{TF}_{ij} \times \log\left(1 + \frac{N}{n_i}\right)$
 
 Where $N$ = total cells, $n_i$ = cells in which peak $i$ is accessible.
 
-# More then simple normalization?
+## More then simple normalization?
 
 Yes. We already start to focus our attention on the biologically relevant peaks. Why do this for ATAC?
 
@@ -819,7 +885,7 @@ Yes. We already start to focus our attention on the biologically relevant peaks.
 * TF-IDF feeds directly into singular value decomposition (SVD), the dimension reduction technique used in scATAC. Together this approach is Latent Semantic Indexing (LSI), a technique also from text mining [Cusanovich et al, 2019  ](https://pmc.ncbi.nlm.nih.gov/articles/PMC6158300/).
 
 
-# Running TD-IDF in Signac
+## Running TD-IDF in Signac
 
 ```{r runTFIDF, eval=TRUE}
 pbmc <- RunTFIDF(pbmc)
@@ -828,7 +894,7 @@ pbmc[["peaks"]]@data[1:5, 1:5]
 ```
 
 ::: {.callout-note}
-The normalised values are stored in the `data` slot. The raw counts remain in the `counts` slot and are needed for differential accessibility testing later.
+The normalized values are stored in the `data` slot. The raw counts remain in the `counts` slot and are needed for differential accessibility testing later.
 :::
 
 # Feature Selection {background-color="#23373B" .center .middle}
@@ -841,11 +907,11 @@ Many peaks are accessible in only 1–2 cells (likely noise) or in almost every 
 
 We want peaks with **intermediate frequency** — those that vary meaningfully between cells.
 
-We are upweighting rare peaks with TD-IDF, but to prevent noise creeping through we also want to filter out the bottom peaks as we tackle the next steps of dimension reduction and clustering.
+We are upweighting rare peaks with TD-IDF, but to prevent noise creeping through we also want to filter out the bottom peaks. We do this calculation in parallel with TF-IDF before we tackle the next steps of dimension reduction and clustering.
 
 ## FindTopFeatures
 
-To select features with Signac we run FindTopFeatures. This is equivalent to FindVariableFeatures in Seurat. As we have run TD-IDF we do not need the most variable as we will be upweighting intersting peaks. So instead we can just find the top features. 
+To select features with Signac we run FindTopFeatures. This is equivalent to FindVariableFeatures in Seurat. As we also have run TD-IDF we do not need the most variable as we will be upweighting interesting peaks. So instead we can just find the top features. 
 
 In this case we will filter to the peaks in the top 95th percentile of total normalized counts. You can also filter on a specific value i.e min.cutoff = 20 (remember when we run the import we already filtered out the low end with min.cells = 10). 
 
@@ -883,7 +949,7 @@ abline(v = log10(22), col = "red", linetype = "dashed", lwd = 2)
 
 ## FindTopFeatures filter
 
-You can also check cluster stability. We will be getting into clustering next session, but we will quickly review this idea before we jump in. 
+You can also check cluster stability. We will be getting into clustering next session, but we will quickly review this idea. 
 
 By running clustering with multiple different feature cutoffs you can assess similarity of clusters at each cutoff level.
 
@@ -891,8 +957,10 @@ By running clustering with multiple different feature cutoffs you can assess sim
 2. Directly check overlap in cluster identities. Look for missing small clusters.
 3. Do statistical testing of cluster stability using packages like [bluster](https://bioconductor.org/packages//release/bioc/vignettes/bluster/inst/doc/diagnostics.html)
 
-```{R, eval=F, echo=F}
-saveRDS(pbmc,"~/Desktop/ATAC.data.500.cell/pbmc_filtered_tfidf.rds")
+```{r saveForSession3, echo=FALSE, purl=FALSE, eval=identical(Sys.getenv("SCATAC_REBUILD"), "true")}
+# Checkpoint read by Session 3. Saved only when refreshing checkpoints
+# (docker/rebuild_checkpoints.sh); a normal render leaves the committed copy alone.
+save_for_students(pbmc, "data/pbmc_filtered_tfidf.rds")   # helper defined in buildPbmcStart-checkpoint
 ```
 
 
@@ -900,7 +968,9 @@ saveRDS(pbmc,"~/Desktop/ATAC.data.500.cell/pbmc_filtered_tfidf.rds")
 
 ## Re-calling peaks and consensus peak sets
 
-?? When the Cell Ranger peak set is not enough: re-calling peaks per cluster/cell type (e.g. MACS2 via CallPeaks), and building a merged/consensus peak set when combining samples ??
+We are using the peaks Cell Ranger called on all cells pooled together. These can miss peaks that are only open in rare cell types, and they do not match between samples.
+
+Once we have clusters we can re-call peaks for each group with MACS and build a consensus peak set. We cover this in [Session 3](Session3.html#re-calling-peaks), after dimensionality reduction and clustering.
 
 ## Time for an exercise!
 

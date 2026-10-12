@@ -18,6 +18,7 @@ knitr::opts_chunk$set(echo = TRUE, tidy = T)
 ## Recap
 
 Thus far we have covered:
+
 - Cell Ranger 
 - Importing data into R and Signac
 - Generating QC metrics
@@ -27,8 +28,10 @@ Thus far we have covered:
 ## Overview
 
 - [Latent Semantic Indexing](#latent-semantic-indexing)
-- [Embedding and clustering](#embedding-and-clustering)
-- [Revisiting QC](#revisiting-qc)
+- [UMAP embedding](#umap-embedding)
+- [Graph-based clustering](#graph-based-clustering)
+- [Re-calling peaks](#re-calling-peaks)
+- [Revisiting QC](#qc-revisited)
 - [Gene activity scores](#gene-activity-scores)
 - [Label transfer from scRNA-seq](#label-transfer-from-scrna-seq)
 
@@ -39,13 +42,15 @@ Thus far we have covered:
 
 LSI = TF-IDF followed by singular value decomposition (SVD). 
 
-Just as a reminder this helps deal with some of the specifics of scATAC data structure. Thus far we have done TF-IDF which normalizes for per-cell sequencing depth (TF) and up-weights rarer, more informative peaks (IDF).
+Just as a reminder scATAC has a specific data structure that makes conventional scRNAseq emthods problematic. 
+
+Thus far we have done TF-IDF which normalizes for per-cell sequencing depth (TF) and up-weights rarer, more informative peaks (IDF).
 
 The next step is SVD. This in place of PCA for scRNAseq.
 
 ## Why Can't We Use PCA?
 
-In scRNA-seq, **PCA** is the standard dimensionality reduction step applied after log-normalization.
+In scRNA-seq, **PCA** is the standard dimensionality reduction step applied after normalization.
 
 For scATAC-seq, the TF-IDF matrix is:
 
@@ -57,9 +62,11 @@ PCA applied directly to TF-IDF data performs poorly because PCA assumes approxim
 
 ## What is SVD doing?
 
-SVD summarises ~100,000 peaks as a few dozen **"accessibility programs"**:
+Like PCA, SVD summarizes ~100,000 peaks as a few dozen **"accessibility programs"**:
 groups of peaks that tend to open and close together across cells
 (e.g. a set of T-cell enhancers). The top dimensions capture the major axes of chromatin accessibility variation across cells — analogous to principal components.
+
+## What is SVD doing?
 
 It splits the TF-IDF matrix into three parts:
 
@@ -106,9 +113,9 @@ if (file.exists(frag_local)) {
 
 ## SVD dimensions
 
-`RunSVD()` defaults to 50 dimensions. 
+`RunSVD()` defaults to 50 dimensions.
 
-* The **first singular vector** in LSI typically is almost always strongly correlated with total fragment count (sequencing depth) rather than meaningful biological variation. This is because cells with high reads tend to have fewer non-zero entries across all peaks.
+* The **first singular vector** in LSI is almost always strongly correlated with total fragment count (sequencing depth) rather than meaningful biological variation. This is because cells with high reads tend to have fewer non-zero entries across all peaks.
 * You rarely need all 50 for clustering. 
 
 Dimensions 2–30 are a common working set, but we can always check `DepthCor()` first.
@@ -125,12 +132,13 @@ The output is a bar plot showing the Pearson correlation of each LSI component w
 DepthCor(pbmc)
 ```
 
-::: {.callout-important}
+
 ## What to look for
 - **LSI 1:** correlation close to +/-1 → **always exclude**
 - **Later components:** correlations > 0.75 → may also be depth-driven; consider excluding
 - **Most datasets:** skip LSI 1, use 2–30
 
+::: {.callout-important}
 Downstream calls that use LSI must specify `dims = 2:N` explicitly.
 :::
 
@@ -142,7 +150,7 @@ Downstream calls that use LSI must specify `dims = 2:N` explicitly.
 ::: {.columns}
 
 ::: {.column width="50%"}
-**UMAP** projects the high-dimensional LSI space into 2D for visualisation. Compared to t-SNE it generally:
+**UMAP** projects the high-dimensional LSI space into 2D for visualization. It's preferred to t-SNE generally:
 
 - Preserves more **global structure** (relative position of clusters matters)
 - Runs faster on large datasets
@@ -199,7 +207,7 @@ The clustering workflow mirrors scRNA-seq:
 2. **Refine with SNN** (shared nearest neighbour)
 3. **Community detection** — Louvain, SLM or Leiden algorithm
 
-Leiden is considered the gold standard these days, but you also need to install the [leiden algorithm outside of R](https://leidenalg.readthedocs.io/en/stable/intro.html). In the Signac vignette they use SLM, so lets go for that.
+Leiden is considered the gold standard these days, but you also need to install the [leiden algorithm outside of R](https://leidenalg.readthedocs.io/en/stable/intro.html). In the Signac vignette they use SLM, so lets go for that for now.
 
 ## Clustering with Seurat
 
@@ -228,7 +236,7 @@ DimPlot(object = pbmc, label = TRUE) + NoLegend()
 
 There is no single "correct" resolution. The right level of granularity depends on your biological question — coarser for broad lineages, finer for rare subtypes. Try several values and compare cluster stability.
 
-```{r resolutionTuning}
+```{r resolutionTuning, warning=F, message=F}
 pbmc <- FindClusters(pbmc, resolution = 0.5)   # coarser
 pbmc <- FindClusters(pbmc, resolution = 2.0)   # finer
 
@@ -244,6 +252,7 @@ p2 <- DimPlot(pbmc, group.by = "peaks_snn_res.2",   label = TRUE) +
 
 p1 + p2
 ```
+
 
 
 # QC Revisited {background-color="#23373B" .center .middle}
@@ -314,6 +323,7 @@ Signs of a doublet cluster:
 ## Cyclical QC strategy
 
 Let's remember: 
+
 1. Apply conservative thresholds initially
 2. UMAP and Cluster
 3. Double-check QC metrics on UMAP to see if anything is sticking out
@@ -329,6 +339,143 @@ There are low counts in one cluster. But the other metrics look pretty okay.
 
 QC does not have to end here though. We will keep an eye on that cluster as we do check for marker peaks and do cell type annotation. 
 
+# Re-calling Peaks {background-color="#23373B" .center .middle}
+
+## Why re-call peaks?
+
+So far we have used the peaks Cell Ranger called. Cell Ranger calls peaks on **all cells pooled together**, which has some drawbacks:
+
+- The pooled signal is dominated by the **most abundant cell types**. Peaks that are only open in a rare population may never reach significance.
+- Peak boundaries reflect the majority population, so a rare cell type's peak may be merged into, or offset from, a neighbouring common peak.
+
+Now that we have clusters, we can call peaks **separately for each group of cells** and pick up peaks that are specific to smaller populations. This is why peak re-calling comes *after* dimensionality reduction and clustering: we need the groups first.
+
+::: {.callout-note}
+We will not run this section in class. Peak calling typically uses MACS and calling peaks for every cluster takes time. The code is here so you can apply it to your own data.
+:::
+
+## MACS
+
+MACS is a tried and trsuted peak caller that has been used for various epigenomic methods across bulk and single cell for many years. 
+
+To install it you can simply use miniconda/minimamba. We have a package called Herper to do this all through R. You can use this to install MACS in existing miniconda installs, or to generate a new miniconda. 
+
+```{r, eval=F}
+library(Herper)
+
+install_CondaTools("macs","peak.calling", pathToMiniConda = "~/Documents/mini")
+
+```
+
+## Calling peaks per group with MACS
+
+Signac's `CallPeaks()` runs MACS on the fragments from each group of cells and returns a GRanges of peaks.
+
+- **`group.by`** sets the groups, e.g. clusters or transferred cell type labels.
+- **`macs2.path`** points to the MACS executable. MACS2 is no longer maintained; MACS3 keeps the same `callpeak` command, so you can pass the path to `macs3` here.
+- **`effective.genome.size`** is the mappable genome size. The default (2.7e9) is for human.
+
+```{r callPeaks, eval=FALSE}
+peaks <- CallPeaks(
+  object                = pbmc,
+  group.by              = "seurat_clusters",
+  macs2.path            = "~/Documents/mini/env/peak.calling/macs3",
+  effective.genome.size = 2.7e9,
+  combine.peaks         = TRUE
+)
+```
+
+## Cleaning up the new peaks
+
+The same filters we applied to the Cell Ranger peaks apply here: keep the standard chromosomes and remove peaks overlapping the blacklist.
+
+```{r filterPeaks, eval=FALSE}
+peaks <- keepStandardChromosomes(peaks, pruning.mode = "coarse")
+peaks <- subsetByOverlaps(peaks, blacklist_hg38_unified, invert = TRUE)
+```
+
+## Building a consensus peak set
+
+Calling peaks per group gives one peak set per group. They overlap but do not line up exactly: the same element can have slightly different boundaries in each group.
+
+A **consensus peak set** merges these into one set of non-overlapping regions, so every group is counted against the same features.
+
+- With `combine.peaks = TRUE`, `CallPeaks()` does this for you: overlapping peaks from different groups are merged (`GenomicRanges::reduce()`).
+- The `peak_called_in` column records which groups each consensus peak was found in. Peaks found in only one small cluster are your candidate cell-type-specific elements.
+
+```{r consensusPeaks, eval=FALSE}
+head(peaks$peak_called_in)
+```
+
+## Consensus peaks across samples
+
+The same problem appears when **combining samples**. Cell Ranger calls peaks for each sample separately, so their peak sets do not match and their count matrices cannot simply be merged.
+
+The fix is the same idea: merge the peak sets, then re-count every sample against the merged set. Very wide merged regions are usually several elements joined together, and very narrow ones are unreliable, so these are often filtered out.
+
+```{r consensusSamples, eval=FALSE}
+combined_peaks <- reduce(c(peaks_sample1, peaks_sample2))
+
+peak_widths    <- width(combined_peaks)
+combined_peaks <- combined_peaks[peak_widths > 20 & peak_widths < 10000]
+```
+
+## The problem with merging: daisy-chaining
+
+Most of the time this approach works well, but sometimes it has a hidden flaw: daisy chaining. `reduce()` joins **any** overlapping peaks. With many groups or samples, peaks that each overlap the next can chain together into one wide region that covers several distinct regulatory elements.
+
+- A strong T-cell peak and a neighbouring monocyte peak become one feature, so the cell-type difference between them is averaged away.
+- The more groups you merge, the wider these chains get. The width filter above only removes the most extreme cases.
+
+## Iterative overlap removal
+
+An alternative is to keep peaks **separate** and resolve overlaps by significance. This is the approach ArchR uses (Corces *et al.* 2018 *Science*; Granja *et al.* 2021 *Nat Genet*):
+
+1. Make every peak the **same width** (501 bp) around its summit, the point of highest signal.
+2. Rank all peaks by significance. Normalize scores within each group first, because deeper groups give larger MACS scores.
+3. Keep the most significant peak and **remove** any peak overlapping it. Repeat down the list.
+
+Every element keeps its own peak, and the result is a set of fixed-width, non-overlapping peaks. If you see a lot of large peaks filtered out or in your final peak set, then have a look into this method for making a consensus.
+
+## Counting fragments in the new peaks
+
+New peaks need a new count matrix. `FeatureMatrix()` counts each cell's fragments in each peak directly from the fragment file, so no re-alignment is needed. We store the result as a new assay alongside the original peaks.
+
+```{r newPeakAssay, eval=FALSE}
+macs_counts <- FeatureMatrix(
+  fragments = Fragments(pbmc),
+  features  = peaks,
+  cells     = colnames(pbmc)
+)
+
+pbmc[["macs_peaks"]] <- CreateChromatinAssay(
+  counts     = macs_counts,
+  fragments  = Fragments(pbmc),
+  annotation = Annotation(pbmc)
+)
+```
+
+## Then repeat the workflow
+
+The new assay goes back through the same steps: normalization, feature selection, LSI, UMAP and clustering. Compare the new clusters with the old ones. Rare populations that were blurred before may now separate.
+
+```{r rerunOnNewPeaks, eval=FALSE}
+DefaultAssay(pbmc) <- "macs_peaks"
+
+pbmc <- RunTFIDF(pbmc)
+pbmc <- FindTopFeatures(pbmc, min.cutoff = "q5")
+pbmc <- RunSVD(pbmc)
+pbmc <- RunUMAP(pbmc, reduction = "lsi", dims = 2:30, seed.use = 42)
+```
+
+## Things to consider
+
+- **Small clusters have few fragments.** MACS needs enough signal, so very small groups may return few or no peaks. Merging related small clusters before calling can help.
+- **Groups decide what you find.** Peaks are only as specific as the groups you call them in. Calling per cluster at a coarse resolution will still miss subtype-specific peaks.
+- **It is iterative.** Better peaks can give better clusters, which can give better peaks. One round is usually enough.
+- **It is optional.** For well-separated, abundant cell types like most PBMCs, the Cell Ranger peaks are often sufficient. Re-calling matters most for rare populations and when combining samples.
+
+
 # Gene activity scores {background-color="#23373B" .center .middle}
 
 ## From Peaks to Genes
@@ -339,14 +486,14 @@ We have information about our clusters relating to their QC, but assigning cell 
 
 
 ::: {.callout-note}
-This is a **proxy** for expression, not true RNA. Accessible chromatin at a gene promoter or body correlates with transcription but does not equal it — especially for genes regulated primarily by distal enhancers.Typically framgents that overlap 2kb upstream of TSS and whole gene body are counted. 
+This is a **proxy** for expression, not true RNA. Accessible chromatin at a gene promoter or body correlates with transcription but does not equal it, especially for genes regulated primarily by distal enhancers. Typically fragments that overlap 2kb upstream of TSS or anywhere on the gene body are counted. 
 :::
 
 ## Computing Gene Activity
 
-We generate gene activity scores and add them to our Signac object as a separate assay. We will largely treat this like RNA data. 
+We generate gene activity scores and add them to our Signac object as a separate assay. We will largely treat this like RNA data. This is a smimilar approach to genrating a multiomic dataset.
 
-This step will recount in the context of genes, instead of peaks. This means we will need the fragments file for this.
+GeneActivity() will recount in the context of genes, instead of peaks. This means we will be using the fragments file for this.
 
 ```{r geneActivity}
 gene.activities <- GeneActivity(pbmc)
@@ -365,7 +512,27 @@ DefaultAssay(pbmc) <- "RNA"
 
 ## Using Gene Activity for Annotation
 
-```{r geneActivityViz}
+```{r geneActivityViz, echo=T, eval=F}
+FeaturePlot(
+  object     = pbmc,
+  features   = c(
+    "MS4A1",   # B cells
+    "CD3D",    # T cells
+    "LEF1",    # naive T cells
+    "NKG7",    # NK cells
+    "TREM1",   # monocytes
+    "LYZ"      # monocytes/DCs
+  ),
+  pt.size    = 0.1,
+  max.cutoff = "q95",
+  ncol       = 3
+)
+```
+
+
+## Using Gene Activity for Annotation
+
+```{r geneActivityViz2, eval=T, echo=F}
 FeaturePlot(
   object     = pbmc,
   features   = c(
@@ -384,20 +551,22 @@ FeaturePlot(
 
 ## Strengths and Limitations of Gene Activity
 
-## Strengths
+### Strengths
 - Quick, no additional data required
 - Works for well-studied cell types with known marker genes
 - Provides biologically interpretable axes for initial annotation
 - Scales to large datasets (computed from the fragment file directly)
 
-## Limitations
+### Limitations
 - Not true gene expression — accessibility ≠ transcription
 - Long genes with many peaks, or gene dense regions may be systematically over-represented
 - Poorly captures enhancer-regulated genes with distal regulatory elements
 - Noisy for rare or lowly expressed genes
 
 ## Best practice
-Use gene activity as a **guide** and confirm with label transfer from a matched scRNA-seq reference where available. The two approaches are complementary.
+
+Use gene activity as a **guide** and confirm with multiple markers or do label transfer from a matched scRNA-seq reference where available. The two approaches are complementary.
+
 
 
 # Label Transfer from scRNA-seq {background-color="#23373B" .center .middle}
@@ -405,6 +574,8 @@ Use gene activity as a **guide** and confirm with label transfer from a matched 
 ## Leveraging a Reference scRNA-seq Dataset
 
 There already exist many well documented scRNAseq atlases or well curated datasets for most experimental contexts. We can use our Gene Activity along with Seurats label transfer methodology to be able to use published data to label cells.
+
+This works by finding similar cells in both datasets. We can then use these "anchors" to transfer curated labels ie. cell types, from a reference RNAseq dataset to a query ATACseq dataset.
 
 ## Leveraging a Reference scRNA-seq Dataset
 
@@ -418,7 +589,7 @@ More robust than gene activity alone because it uses the full transcriptomic ref
 
 ## Our Reference: 10k PBMC scRNA-seq
 
-We will use an annotated scRNA-seq dataset of ~10,000 human PBMCs (10x Genomics Chromium v3). It is the reference used in the [Signac PBMC vignette](https://stuartlab.org/signac/articles/pbmc_vignette), already processed with Seurat and labelled by cell type.
+We will use an annotated scRNA-seq dataset of ~10,000 human PBMCs (10x Genomics Chromium v3). It is the reference used in the [Signac PBMC vignette](https://stuartlab.org/signac/articles/pbmc_vignette), and is already processed with Seurat and labelled by cell type.
 
 - Same tissue as our scATAC data (PBMCs), so the cell types should largely overlap.
 - Cell type labels are stored in the `celltype` metadata column.
@@ -497,9 +668,12 @@ hist(pbmc$prediction.score.max,
 pbmc$low_confidence <- pbmc$prediction.score.max < 0.5
 table(pbmc$low_confidence)
 ```
+
 ## Evaluating Label Transfer Quality
 
-If these labels were all in a single cluster, or region that could suggest the reference is insufficient or has similar but conflicting labels. 
+If these labels were all in a single cluster, or region that could suggest the reference is insufficient or has similar but conflicting labels.
+
+It does seem like there is maybe an overlap in low confidence with CD4 naive. 
 
 ```{r}
 DimPlot(
@@ -521,6 +695,52 @@ Cells with prediction score < 0.5 may represent:
 
 Cross-reference low-confidence cells with QC metrics before deciding whether to keep or remove them.
 
+## In our data
+
+Based on the QC that region did not stick out as problematic, so its unlikely to be low quality cells. That said it didn't form a distinct cluster. 
+Biological context is everything.
+
+These are several closely related  T-cell types in this area. This small dataset may not have enough power to separate these. 
+
+Lets follow up by cehcking some known markers for these cells. 
+
+## In our data
+
+We are going to set our object to RNA (Gene Activity). Lets subset the data object to just T-cells, so we can just visualize those cells. Then run DotPlot with some known markers. 
+
+```{r, eval=F, echo=T}
+DefaultAssay(pbmc) <- "RNA"
+t_cells <- subset(pbmc, predicted.id %in% c("CD4 Naive", "CD4 Memory", "CD8 Naive", "CD8 effector"))
+
+DotPlot(
+  object   = t_cells,
+  assay    = "RNA",
+  features = c("CD8A", "CD8B", "BACH2", "TCF7", "LEF1", "CD44", "NKG7", "GZMB", "CCL5"),
+  group.by = "predicted.id"
+) + RotatedAxis()
+
+```
+
+## In our data
+
+```{r, eval=T, echo=F}
+DefaultAssay(pbmc) <- "RNA"
+t_cells <- subset(pbmc, predicted.id %in% c("CD4 Naive", "CD4 Memory", "CD8 Naive", "CD8 effector"))
+
+DotPlot(
+  object   = t_cells,
+  assay    = "RNA",
+  features = c("CD8A", "CD8B", "BACH2", "TCF7", "LEF1", "CD44", "NKG7", "GZMB", "CCL5"),
+  group.by = "predicted.id"
+) + RotatedAxis()
+
+```
+
+## In our data
+
+A combination of transferring labels and directly reviewing amrekres has helped us with our labeling. 
+
+Practically you could also report these at a coarser level (“naive T”, or “CD4 T”) when the fine label is uncertain.
 
 ## Time for an exercise!
 
@@ -547,5 +767,18 @@ We have covered:
 ```{r saveForSession4, include=FALSE, purl=FALSE}
 # Checkpoint read by Session 4 (data/pbmc_annotated.rds); sessions render in
 # order within one build. Too large to commit (>100 MB), so it is gitignored.
-saveRDS(pbmc, "data/pbmc_annotated.rds")
+# Saved checkpoints point at the fragment file where students will have it:
+# data/ relative to the course docs/ folder (their working directory). Signac's
+# UpdatePath() always stores an absolute path from the current machine, so the
+# relative path is set directly on the Fragment object.
+save_for_students <- function(obj, file,
+                              frag_path = "data/atac_pbmc_500_nextgem_fragments.tsv.gz") {
+  frag <- Fragments(obj)[[1]]
+  slot(frag, "path") <- frag_path
+  Fragments(obj) <- NULL
+  Fragments(obj) <- frag
+  saveRDS(obj, file)
+}
+
+save_for_students(pbmc, "data/pbmc_annotated.rds")
 ```

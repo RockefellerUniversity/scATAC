@@ -17,20 +17,375 @@ params:
 ```{r, setup,include=FALSE, purl=FALSE}
 toMessage <- ifelse(!is.null(params$toMessage),params$toMessage,FALSE)
 message(toMessage)
+## Temporarily skip all code in the exercises so the course renders quickly on
+## GitHub; solution code is still shown (echo) but not run. Remove to re-enable.
+knitr::opts_chunk$set(eval = FALSE)
 ```
 
 
 <p>&nbsp;</p>
 These exercises are about scATAC-seq QC metrics, cell filtering, TF-IDF normalization and feature selection in [Single-cell ATAC-seq](https://rockefelleruniversity.github.io/scATAC/).
 
-**Exercise 1** - **??Ex 1 title??**
+In the session we worked through QC on a small, high quality PBMC dataset. Here you will run the same workflow on a very different sample: the 10x [Flash-frozen cortex, hippocampus and ventricular zone from embryonic (E18) mouse brain](https://www.10xgenomics.com/datasets/flash-frozen-cortex-hippocampus-and-ventricular-zone-from-embryonic-mouse-brain-e-18-1-standard-1-2-0) dataset.
 
-- ??What is the first question??
-```{r,echo=toMessage}
-## ?? Solution here — shown only in the answers version (echo=toMessage) ??
+Things that are different from the PBMC data, and that you will need to think about:
+
+* It is **mouse**, mapped to **mm10**, not human hg38.
+* It is **flash-frozen tissue**, not fresh blood.
+* It was processed with an **older version of Cell Ranger ATAC (1.2.0)**.
+* It has ~3,800 cells rather than ~500.
+
+Don't just copy the thresholds from the session. Look at the distributions and decide for yourself.
+
+::: {.callout-note}
+The fragment file is ~1.1 GB. Download it before you start. AMULET in Exercise 5 also takes a while on this sample so only kick it off when you have time.
+:::
+
+## Getting the data
+
+Download these four files from the 10x dataset page into a **data/** folder in your working directory. You can also do it from R:
+
+```{r download, eval=FALSE, echo=TRUE}
+base <- "https://cf.10xgenomics.com/samples/cell-atac/1.2.0/atac_v1_E18_brain_flash_5k/"
+files <- paste0("atac_v1_E18_brain_flash_5k_",
+                c("filtered_peak_bc_matrix.h5", "singlecell.csv",
+                  "fragments.tsv.gz", "fragments.tsv.gz.tbi"))
+options(timeout = 3600)   # the fragment file is ~1.1 GB
+dir.create("data", showWarnings = FALSE)
+for (f in files) {
+  download.file(paste0(base, f), destfile = file.path("data", f), mode = "wb")
+}
 ```
 
-- ??What is the second question??
-```{r,echo=toMessage}
-## ?? Solution here ??
+**Exercise 1** - **Building the Signac object**
+
+- Read in the peak-by-cell matrix from the h5 file. Do we need to fitler for non-standard chromosomes?
+
+```{r ex1_counts,echo=toMessage}
+library(Signac)
+library(Seurat)
+library(GenomicRanges)
+
+counts <- Read10X_h5(filename = "data/atac_v1_E18_brain_flash_5k_filtered_peak_bc_matrix.h5")
+
+std_chr  <- paste0("chr", c(1:19, "X", "Y"))
+table(seqlevels(StringToGRanges(rownames(counts), sep = c(":", "-"))) %in% std_chr)
+
+```
+
+- Read in the per-barcode metadata (singlecell.csv) and build a Signac ChromatinAssay and Seurat object. Use the same settings as the session (min.cells = 10, min.features = 200). Attach the fragment file.
+
+```{r ex1_object,echo=toMessage}
+metadata <- read.csv(
+  file      = "data/atac_v1_E18_brain_flash_5k_singlecell.csv",
+  header    = TRUE,
+  row.names = 1
+)
+
+chrom_assay <- CreateChromatinAssay(
+  counts       = counts,
+  sep          = c(":", "-"),
+  fragments    = "data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz",
+  min.cells    = 10,
+  min.features = 200
+)
+
+brain <- CreateSeuratObject(
+  counts    = chrom_assay,
+  assay     = "peaks",
+  meta.data = metadata
+)
+brain
+```
+
+- Cell Ranger called 3,789 cells. How many cells and peaks are in your object? Why might the numbers differ?
+```{r ex1_dims,echo=toMessage}
+dim(brain)
+
+## Cell Ranger's cell calls are the columns of the filtered h5. min.features = 200
+## drops any called cell with accessible counts in fewer than 200 peaks, and
+## min.cells = 10 drops peaks seen in fewer than 10 cells.
+
+ncol(counts) - ncol(brain)    # cells removed by min.features
+```
+
+**Exercise 2** - **Gene annotation and TSS enrichment**
+
+- Use AnnotationHub to list the mouse EnsDb annotations. There are many. Which genome assembly does each use, and which ones are compatible with these data? Pick the Ensembl v98 one (the same release we used for human in the session).
+```{r ex2_query,echo=toMessage}
+library(AnnotationHub)
+ah <- AnnotationHub()
+
+## The data were mapped to mm10 (= GRCm38). Ensembl releases up to 102 are on
+## GRCm38. Later releases are on GRCm39, and there are also strain-specific
+## assemblies. Using GRCm39 coordinates on mm10 data would shift TSS positions,
+## breaking TSS enrichment and every gene-based step later.
+q <- query(ah, c("EnsDb", "Mus musculus"))
+
+data.frame(id = names(q), title = mcols(q)$title, genome = mcols(q)$genome)
+
+```
+
+- Get the annotation as a GRanges, switch it to UCSC-style chromosome names and add it to your object.
+```{r ex2_annot,echo=toMessage}
+ensdb_v98   <- ah[["AH75036"]]   # Ensembl 98, GRCm38
+annotations <- GetGRangesFromEnsDb(ensdb = ensdb_v98)
+
+seqlevels(annotations) <- paste0("chr", seqlevels(annotations))
+genome(annotations)    <- "mm10"
+
+Annotation(brain) <- annotations
+```
+
+- Calculate the TSS enrichment score and plot its distribution. Then draw the TSS metaplot, split into high and low groups at a threshold you think is sensible for this sample.
+```{r ex2_tss,echo=toMessage}
+brain <- TSSEnrichment(object = brain, fast = FALSE)
+
+VlnPlot(brain, features = "TSS.enrichment", pt.size = 0.1)
+```
+
+```{r ex2_tss_plot,echo=toMessage}
+## The TSSE is p[retty low. A cut-off of 3 would be too strict. Something around 1/1.5 would be a good start. 
+brain$TSSE.group <- ifelse(brain$TSS.enrichment > 1.5, "High", "Low")
+table(brain$TSSE.group)
+
+TSSPlot(brain, group.by = "TSSE.group")
+```
+
+**Exercise 3** - **Nucleosome signal**
+
+- Calculate the nucleosome signal and plot its distribution.
+```{r ex3_ns,echo=toMessage}
+brain <- NucleosomeSignal(object = brain)
+
+VlnPlot(brain, features = "nucleosome_signal", pt.size = 0.1)
+```
+
+- Draw the fragment length histogram split by nucleosome signal. If you use the session's code unchanged it will fail. Check the `region` argument of `FragmentHistogram()`. Why is the default a problem for mouse data, and what would you use instead? Can you see the nucleosome ladder? Does it look different between the groups?
+
+```{r ex3_hist,echo=toMessage}
+brain$nucleosome_group <- ifelse(brain$nucleosome_signal > 2, "NS > 2", "NS < 2")
+table(brain$nucleosome_group)
+
+## FragmentHistogram() only reads fragments from one region, chr1:1-2,000,000
+## by default. In mm10 the first ~3 Mb of chr1 is unsequenced (N's), so no
+## fragments fall in that region and the plot fails. Pick a region with
+## mappable sequence (and enough fragments to see the ladder).
+FragmentHistogram(
+  object   = brain,
+  region   = "chr1-5000000-25000000",
+  group.by = "nucleosome_group"
+)
+```
+
+**Exercise 4** - **FRiP and exclusion regions**
+
+- Calculate the percentage of fragments in peaks (FRiP) for each cell and plot it. How does it compare with the PBMC data from the session? What might explain the difference?
+```{r ex4_frip,echo=toMessage}
+brain$pct_reads_in_peaks <- brain$peak_region_fragments / brain$passed_filters * 100
+
+summary(brain$pct_reads_in_peaks)
+VlnPlot(brain, features = "pct_reads_in_peaks", pt.size = 0.1)
+
+## FRiP is much lower than the PBMC data. Frozen tissue gives noisier nuclei
+## preps than fresh blood. Brain is also much more heterogeneous, so peaks from
+## rare cell types may be missing from the bulk-called peak set. That
+## lowers FRiP for those cells even when they are fine (see the session's note
+## about re-calling peaks per cluster).
+```
+
+- Calculate the fraction of counts in exclusion (blacklist) regions with Signac. Which blacklist object should you use for these data?
+```{r ex4_bl,echo=toMessage}
+## blacklist_mm10, not blacklist_hg38: wrong-genome regions would just be
+## random intervals in mouse.
+brain$excl_prop <- FractionCountsInRegion(
+  object  = brain,
+  assay   = "peaks",
+  regions = blacklist_mm10
+)
+
+VlnPlot(brain, features = "excl_prop", pt.size = 0.1)
+```
+
+- This dataset was made with the old Cell Ranger ATAC 1.2.0. Look at the metadata columns: is there anything you can compare your blacklist values to? Do the two measures agree? Why might they differ?
+```{r ex4_bl_cr,echo=toMessage}
+## Older Cell Ranger versions filled in blacklist_region_fragments (newer
+## versions leave it empty). Cell Ranger's ratio uses *all* passing fragments.
+## Signac's uses only counts within peaks, so the two measure slightly
+## different things.
+brain$cr_blacklist_ratio <- brain$blacklist_region_fragments / brain$passed_filters
+
+summary(brain$cr_blacklist_ratio)
+summary(brain$excl_prop)
+
+FeatureScatter(brain, feature1 = "cr_blacklist_ratio", feature2 = "excl_prop")
+```
+
+**Exercise 5** - **Doublets**
+
+- How many doublets would you expect in this sample? (10x estimates a doublet rate of roughly 0.8% per 1,000 cells recovered.)
+```{r ex5_expected,echo=toMessage}
+## The rate scales with the number of cells loaded, so ~3,800 cells means
+## ~3% doublets: much higher than the ~0.5% we expected for 500 PBMCs.
+rate <- 0.008 * ncol(brain) / 1000
+c(rate = rate, n_expected = round(rate * ncol(brain)))
+```
+
+- Run scDblFinder with the ATAC-specific settings from the session. Remember to set the seed.
+```{r ex5_scdbl,echo=toMessage}
+library(scDblFinder)
+library(SingleCellExperiment)
+
+sce <- as.SingleCellExperiment(brain, assay = "peaks")
+
+set.seed(42)
+sce <- scDblFinder(
+  sce,
+  aggregateFeatures = TRUE,
+  nfeatures         = 25,
+  processing        = "normFeatures",
+  dbr               = NULL
+)
+
+brain$scDblFinder.score <- sce$scDblFinder.score
+brain$scDblFinder.class <- sce$scDblFinder.class
+```
+
+- Build a set of regions for AMULET to exclude, using mouse resources: RepeatMasker for mm10, chrM, the sex chromosomes and the mm10 blacklist. Then run AMULET on your cells.
+```{r ex5_excl,echo=toMessage}
+rm_q <- query(ah, c("RepeatMasker", "mm10"))
+mcols(rm_q)[, c("title", "rdataclass", "sourceurl")]
+rmsk <- rm_q[[which(rm_q$rdataclass == "GRanges")[1]]]
+
+plain <- function(gr) GRanges(as.character(seqnames(gr)), ranges(gr))
+
+excl <- reduce(c(
+  GRanges(c("chrM", "chrX", "chrY"), IRanges(1L, width = seqlengths(Annotation(brain))["chrX"])),
+  plain(blacklist_mm10),
+  plain(rmsk)
+))
+```
+
+```{r ex5_amulet,echo=toMessage, eval=F}
+frag_path <- GetFragmentData(Fragments(brain)[[1]], slot = "path")
+
+amu <- amulet(
+  frag_path,
+  barcodes         = colnames(brain),
+  regionsToExclude = excl
+)
+
+amu <- amu[colnames(brain), ]
+brain$amulet.nAbove2 <- amu$nAbove2
+brain$amulet.q       <- amu$q.value
+brain$amulet.class   <- ifelse(amu$q.value < 0.01, "Doublet", "Singlet")
+```
+
+- Compare the two callers. How many doublets does each call, and how does that compare with what you expected? In the session AMULET over-called on the deep PBMC data. Is the same true here? Check the relationship with nCount_peaks and the typical value of nAbove2.
+```{r ex5_compare,echo=toMessage, eval=F}
+table(scDblFinder = brain$scDblFinder.class,
+      amulet      = brain$amulet.class)
+
+## In the session, AMULET struggled once typical nAbove2 reached ~5 or more,
+## because deep sequencing turns minor repeats/CNVs into many >2-count sites.
+## Compare this sample's depth and nAbove2 with that.
+summary(brain$amulet.nAbove2)
+
+VlnPlot(brain, features = "nCount_peaks", group.by = "amulet.class", pt.size = 0.1)
+VlnPlot(brain, features = "nCount_peaks", group.by = "scDblFinder.class", pt.size = 0.1)
+```
+
+**Exercise 6** - **Filtering cells**
+
+- Plot all your QC metrics together, and make density scatters of nCount_peaks against TSS enrichment and against FRiP.
+```{r ex6_vln,echo=toMessage}
+library(ggplot2)
+VlnPlot(
+  object   = brain,
+  features = c("nCount_peaks", "TSS.enrichment", "excl_prop",
+               "nucleosome_signal", "pct_reads_in_peaks"),
+  pt.size  = 0.1,
+  ncol     = 5
+) & theme(plot.title = element_text(size = 8))
+```
+
+```{r ex6_density,echo=toMessage}
+DensityScatter(brain, x = "nCount_peaks", y = "TSS.enrichment",
+               log_x = TRUE, quantiles = TRUE)
+DensityScatter(brain, x = "nCount_peaks", y = "pct_reads_in_peaks",
+               log_x = TRUE, quantiles = TRUE)
+```
+
+- Choose thresholds for this sample and filter the object. Justify each one. Which of the session's PBMC thresholds would be a bad choice here, and why?
+```{r ex6_filter,echo=toMessage}
+## This is frozen, heterogeneous tissue, so we start at the "lower quality" end
+## of the ranges from the session and stay conservative. We can tighten after
+## clustering if a low-quality cluster shows up.
+##  * nCount_peaks > 1500: trims the sparse low tail in the density scatter.
+##  * nCount_peaks below the 98th percentile: skims the top ~2% as likely
+##    doublets/multiplets. Just picking ~ 30000 would be good. 
+##  * TSS.enrichment > 2: The PBMC cut-off of 4 would remove most cells.
+##  * nucleosome_signal < 2: the few cells above 2 have almost no
+##    nucleosome-free fragments in the histogram, i.e. failed tagmentation.
+##  * FRiP > 15: the PBMC cut-off of 40 would remove ~95% of this sample. Low
+##    FRiP here partly reflects the peak set and cell type, not only cell quality.
+##  * excl_prop < 0.05: the low-quality guideline from the session.
+max_count <- quantile(brain$nCount_peaks, 0.98)
+max_count
+
+## How many cells does each threshold remove on its own?
+fails <- data.frame(
+  low_count  = brain$nCount_peaks <= 1500,
+  high_count = brain$nCount_peaks >= max_count,
+  low_tss    = brain$TSS.enrichment <= 2,
+  high_ns    = brain$nucleosome_signal >= 2,
+  low_frip   = brain$pct_reads_in_peaks <= 15,
+  high_excl  = brain$excl_prop >= 0.05
+)
+colSums(fails)
+sum(rowSums(fails) > 0)
+
+brain
+brain <- subset(
+  x      = brain,
+  subset = nCount_peaks > 1500 &
+           nCount_peaks < max_count &
+           TSS.enrichment > 2 &
+           nucleosome_signal < 2 &
+           pct_reads_in_peaks > 15 &
+           excl_prop < 0.05
+)
+brain
+```
+
+- What fraction of cells did you remove? Compare that with the PBMC data. Is there anything you are unsure about that you'd want to re-check after clustering?
+```{r ex6_frac,echo=toMessage}
+## Keep the doublet calls as metadata rather than filtering on them for now.
+## Look again once we have clusters, as we did in the session.
+table(brain$scDblFinder.class)
+```
+
+**Exercise 7** - **TF-IDF normalization and feature selection**
+
+- Run TF-IDF normalization and look at a corner of the normalized matrix. Where are the raw counts kept?
+```{r ex7_tfidf,echo=toMessage}
+brain <- RunTFIDF(brain)
+
+## Normalized values live in the "data" layer. Raw counts stay in "counts".
+brain[["peaks"]]@data[1:5, 1:5]
+```
+
+- Select top features with the Signac default (q5). How many peaks are kept? Look at the distribution of total counts per peak. Would you change the cut-off for this dataset?
+```{r ex7_features,echo=toMessage}
+brain <- FindTopFeatures(brain, min.cutoff = "q5")
+length(VariableFeatures(brain))
+
+peak_counts <- rowSums(GetAssayData(brain, assay = "peaks", layer = "counts"))
+quantile(peak_counts, c(0.05, 0.25, 0.5, 0.75))
+hist(log10(peak_counts), breaks = 50, main = "Total counts per peak")
+```
+
+```{r ex7_save,echo=FALSE,eval=FALSE,include=FALSE}
+## Checkpoint for the Session 3 exercise
+saveRDS(brain, "data/brain_filtered_tfidf.rds")
 ```

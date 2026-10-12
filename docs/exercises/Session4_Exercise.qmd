@@ -17,20 +17,238 @@ params:
 ```{r, setup,include=FALSE, purl=FALSE}
 toMessage <- ifelse(!is.null(params$toMessage),params$toMessage,FALSE)
 message(toMessage)
+## Temporarily skip all code in the exercises so the course renders quickly on
+## GitHub; solution code is still shown (echo) but not run. Remove to re-enable.
+knitr::opts_chunk$set(eval = FALSE)
 ```
 
 
 <p>&nbsp;</p>
 These exercises are about differential accessibility testing and coverage plots in [Single-cell ATAC-seq](https://rockefelleruniversity.github.io/scATAC/).
 
-**Exercise 1** - **??Ex 1 title??**
+We continue with the E18 mouse brain object from the Session 3 exercise. In the session we found markers for a cell type in blood. Here we look for the regulatory elements that separate **progenitors** from **neurons** in the developing cortex.
 
-- ??What is the first question??
-```{r,echo=toMessage}
-## ?? Solution here — shown only in the answers version (echo=toMessage) ??
+**Exercise 1** - **Choosing groups to compare**
+
+- Load your annotated object from the Session 3 exercise. Set the default assay to peaks and use your clusters as the identities.
+```{r ex1_load,echo=toMessage}
+library(Signac)
+library(Seurat)
+library(ggplot2)
+library(dplyr)
+
+brain <- readRDS("data/brain_annotated.rds")
+DefaultAssay(brain) <- "peaks"
+Idents(brain) <- "peaks_snn_res.0.8"
+
+DimPlot(brain, label = TRUE) + NoLegend()
 ```
 
-- ??What is the second question??
-```{r,echo=toMessage}
-## ?? Solution here ??
+```{r repointFragments, include=FALSE, purl=FALSE}
+# The saved object records the fragment file's absolute path on the machine that
+# built it. When a copy sits in data/ (CI downloads it there), point the object
+# at that copy so fragment-based steps (CoveragePlot) can find it.
+frag_local <- "data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz"
+if (file.exists(frag_local)) {
+  frags <- UpdatePath(Fragments(brain)[[1]], new.path = frag_local)
+  Fragments(brain) <- NULL
+  Fragments(brain) <- frags
+}
+```
+
+- Use the gene activity assay to find the cluster with the highest *Pax6* activity (radial glia) and the cluster with the highest *Neurod6* activity (excitatory neurons). Don't just read it off a plot. Compute the average per cluster.
+```{r ex1_pick,echo=toMessage}
+avg <- AverageExpression(
+  brain,
+  assay    = "RNA",
+  features = c("Pax6", "Sox2", "Eomes", "Neurod6", "Neurod2"),
+  group.by = "peaks_snn_res.0.8"
+)$RNA
+round(avg, 2)
+
+## Clusters may be named "g1", "g2"... by AverageExpression in Seurat v5
+pick <- function(gene) sub("^g", "", colnames(avg)[which.max(avg[gene, ])])
+progenitor_cl <- pick("Pax6")
+neuron_cl     <- pick("Neurod6")
+c(progenitor = progenitor_cl, neuron = neuron_cl)
+```
+
+- What did label transfer from the adult Allen reference call the cells in these two clusters? Does that fit what you expected?
+```{r ex1_allen,echo=toMessage}
+## The progenitor cluster has no matching type in the adult reference, so
+## expect a glial label (probably astrocyte-like) with low prediction scores.
+table(brain$predicted.id[Idents(brain) == progenitor_cl])
+table(brain$predicted.id[Idents(brain) == neuron_cl])
+```
+
+**Exercise 2** - **Differential accessibility**
+
+- Find peaks more accessible in the progenitor cluster than in all other cells. Use logistic regression with sequencing depth as a latent variable, as in the session. Why do we include depth?
+```{r ex2_one,echo=toMessage,warning=FALSE}
+## Cells with more fragments look "open" at more peaks, so without the depth
+## covariate a cluster of deeply sequenced cells would get spurious markers.
+## min.pct = 0.05 skips peaks open in <5% of both groups; they can't be
+## tested well and would slow LR on ~3,800 cells a lot.
+da_prog <- FindMarkers(
+  object      = brain,
+  ident.1     = progenitor_cl,
+  only.pos    = TRUE,
+  test.use    = "LR",
+  latent.vars = "nCount_peaks",
+  min.pct     = 0.05
+)
+head(da_prog)
+
+sum(da_prog$p_val_adj < 0.05)
+```
+
+- Now compare the progenitor cluster directly against the neuron cluster, keeping both directions. How many peaks are significantly more open in each? What does a negative avg_log2FC mean here?
+```{r ex2_pair,echo=toMessage,warning=FALSE}
+da_pair <- FindMarkers(
+  object      = brain,
+  ident.1     = progenitor_cl,
+  ident.2     = neuron_cl,
+  only.pos    = FALSE,
+  test.use    = "LR",
+  latent.vars = "nCount_peaks",
+  min.pct     = 0.05
+)
+
+## Positive log2FC = more open in ident.1 (progenitors), negative = more open
+## in ident.2 (neurons).
+sig <- subset(da_pair, p_val_adj < 0.05 & abs(avg_log2FC) > 0.5)
+table(direction = ifelse(sig$avg_log2FC > 0, "progenitor", "neuron"))
+```
+
+- Make a volcano plot of the pairwise result.
+```{r ex2_volcano,echo=toMessage}
+da_pair$peak <- rownames(da_pair)
+ggplot(da_pair, aes(avg_log2FC, -log10(p_val_adj + 1e-300),
+                    colour = p_val_adj < 0.05 & abs(avg_log2FC) > 0.5)) +
+  geom_point(size = 0.5) +
+  scale_colour_manual(values = c(`FALSE` = "grey70", `TRUE` = "firebrick"),
+                      name = "Significant") +
+  labs(x = "avg log2FC (progenitor vs neuron)", y = "-log10 adjusted p") +
+  theme_bw()
+```
+
+- Your volcano plot probably has two separate "wings" of points at very large fold changes (around ±12). What are these peaks? Should you rank peaks by fold change?
+```{r ex2_wings,echo=toMessage}
+## These peaks have (almost) no accessible cells in one of the two groups. The
+## log2FC is then set by the small pseudocount added to avoid dividing by
+## zero, not by the biology, so its size means little. Rank by significance
+## (or look at pct.1/pct.2) rather than by extreme fold changes.
+sig |> filter(abs(avg_log2FC) > 10) |> select(avg_log2FC, pct.1, pct.2) |> head()
+```
+
+**Exercise 3** - **What genes are nearby?**
+
+- Annotate the significant pairwise peaks with their closest gene. Look at the most significant ones in each direction. Do you recognise any genes from the developing cortex?
+```{r ex3_closest,echo=toMessage}
+closest <- ClosestFeature(brain, regions = rownames(sig))
+sig$gene_name <- closest$gene_name[match(rownames(sig), closest$query_region)]
+sig$distance  <- closest$distance[match(rownames(sig), closest$query_region)]
+
+sig |> filter(avg_log2FC > 0) |> arrange(p_val_adj) |> select(avg_log2FC, p_val_adj, gene_name, distance) |> head(15)
+sig |> filter(avg_log2FC < 0) |> arrange(p_val_adj) |> select(avg_log2FC, p_val_adj, gene_name, distance) |> head(15)
+```
+
+- Check whether known progenitor and neuron genes appear among the nearest genes, and on which side.
+```{r ex3_known,echo=toMessage}
+known <- c("Pax6", "Sox2", "Hes1", "Hes5", "Notch1", "Fabp7", "Vim",   # progenitor
+           "Neurod2", "Neurod6", "Tbr1", "Bcl11b", "Satb2", "Mef2c")   # neuron
+sig |> filter(gene_name %in% known) |>
+  select(gene_name, avg_log2FC, p_val_adj, distance) |>
+  arrange(gene_name)
+```
+
+- What fraction of significant peaks are more than 10 kb from their closest gene? What kind of elements are these likely to be, and why is "nearest gene" a weak assumption for them?
+```{r ex3_dist,echo=toMessage}
+## Distal peaks are mostly putative enhancers. Enhancers can regulate genes
+## hundreds of kb away and skip over the nearest one, so nearest-gene
+## assignment is only a first guess. Co-accessibility (e.g. Cicero) or
+## peak-gene links from multiome data are better evidence.
+mean(sig$distance > 10000)
+hist(log10(sig$distance + 1), breaks = 50,
+     xlab = "log10 distance to closest gene (bp)", main = "")
+```
+
+**Exercise 4** - **Coverage plots**
+
+- Draw a coverage plot at *Pax6* and at *Neurod6* for all clusters, with gene activity shown alongside. Do the tracks agree with your choice of clusters?
+```{r ex4_genes,echo=toMessage}
+CoveragePlot(
+  object            = brain,
+  region            = "Pax6",
+  expression.assay  = "RNA",
+  extend.upstream   = 5000,
+  extend.downstream = 5000
+)
+CoveragePlot(
+  object            = brain,
+  region            = "Neurod6",
+  expression.assay  = "RNA",
+  extend.upstream   = 5000,
+  extend.downstream = 5000
+)
+```
+
+- In the session the panel next to the coverage plot was labelled as expression. What is it actually showing for us, and why does that matter?
+```{r ex4_expr,echo=toMessage}
+## It is the gene activity assay, i.e. ATAC fragments summed over the gene body
+## and promoter, not measured RNA. It agrees with the tracks by
+## construction, so it is not independent evidence of expression.
+```
+
+- Plot the most significant progenitor-specific and neuron-specific peaks from your pairwise test, showing only the two clusters you compared.
+```{r ex4_peaks,echo=toMessage}
+up   <- subset(sig, avg_log2FC > 0)
+down <- subset(sig, avg_log2FC < 0)
+top_prog   <- rownames(up)[which.min(up$p_val_adj)]
+top_neuron <- rownames(down)[which.min(down$p_val_adj)]
+
+CoveragePlot(brain, region = top_prog, idents = c(progenitor_cl, neuron_cl),
+             extend.upstream = 2000, extend.downstream = 2000)
+CoveragePlot(brain, region = top_neuron, idents = c(progenitor_cl, neuron_cl),
+             extend.upstream = 2000, extend.downstream = 2000)
+```
+
+**Exercise 5** - **Markers as QC**
+
+- Look at the one-vs-rest progenitor markers with a critical eye. Are any on chrX, chrY or chrM? Are any driven by very few cells (low pct.1)? What would each of these tell you?
+```{r ex5_qc,echo=toMessage}
+da_prog$chr <- sub("-.*", "", rownames(da_prog))
+table(da_prog$chr[da_prog$p_val_adj < 0.05])
+
+## Sex-chromosome markers can reflect a sex difference between cells if
+## the sample pooled embryos. They are worth checking but are not usually
+## cell type biology.
+summary(da_prog$pct.1[da_prog$p_val_adj < 0.05])
+```
+
+- Is the progenitor cluster unusual for any QC metric? Could any of its markers be explained by quality instead of biology?
+```{r ex5_qc2,echo=toMessage}
+VlnPlot(
+  brain,
+  features = c("nCount_peaks", "TSS.enrichment", "pct_reads_in_peaks", "scDblFinder.score"),
+  idents   = c(progenitor_cl, neuron_cl),
+  pt.size  = 0,
+  ncol     = 4
+)
+```
+
+- In the session we ran `FindAllMarkers()` on 500 cells and it took ~40 minutes. This dataset has ~8x more cells. What could you change to make it practical? (No need to run it.)
+```{r ex5_all,echo=toMessage,eval=FALSE}
+## Fewer cells per group (max.cells.per.ident) and fewer peaks tested
+## (higher min.pct, or only VariableFeatures) cut runtime a lot. Parallelise
+## with future, or run it as a batch job on the HPC.
+all_markers <- FindAllMarkers(
+  object              = brain,
+  only.pos            = TRUE,
+  test.use            = "LR",
+  latent.vars         = "nCount_peaks",
+  min.pct             = 0.1,
+  max.cells.per.ident = 200,
+  random.seed         = 42
+)
 ```

@@ -215,6 +215,16 @@ jobs:
           ## Saved under the name Session 3 reads.
           curl -fsSL --retry 3 -o docs/data/pbmc_10k_rna.rds \
             https://signac-objects.s3.amazonaws.com/pbmc_10k_v3.rds
+          ## Session 2 exercise dataset: 10x E18 mouse brain (flash-frozen),
+          ## Cell Ranger ATAC 1.2.0, mm10. Fragment file ~1.1 GB.
+          base=https://cf.10xgenomics.com/samples/cell-atac/1.2.0/atac_v1_E18_brain_flash_5k
+          for f in filtered_peak_bc_matrix.h5 singlecell.csv fragments.tsv.gz fragments.tsv.gz.tbi; do
+            curl -fsSL --retry 3 -o "docs/data/atac_v1_E18_brain_flash_5k_${f}" "${base}/atac_v1_E18_brain_flash_5k_${f}"
+          done
+          ## Session 3 exercise label-transfer reference: Allen adult mouse cortex
+          ## scRNA-seq from the Signac mouse brain vignette, ~1.16 GB.
+          curl -fsSL --retry 3 -o docs/data/allen_brain.rds \
+            https://signac-objects.s3.amazonaws.com/allen_brain.rds
           ls -l docs/data
 
       ## Install the compileCourses engine, install the local package and

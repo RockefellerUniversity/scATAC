@@ -1,5 +1,5 @@
 suppressPackageStartupMessages(require(knitr))
-knitr::opts_chunk$set(echo = TRUE, tidy = T)
+knitr::opts_chunk$set(echo = TRUE, tidy = FALSE)
 
 library(Signac)
 library(Seurat)
@@ -246,5 +246,5 @@ head(VariableFeatures(pbmc))
 peak_counts <- rowSums(GetAssayData(pbmc, assay = "peaks", layer = "counts"))
 quantile(peak_counts, c(0.05, 0.25, 0.5, 0.75))
 hist(log10(peak_counts), breaks = 50, main = "Total counts per peak")
-abline(v = log10(22), col = "red", linetype = "dashed", lwd = 2)
+abline(v = log10(22), col = "red", lty = 2, lwd = 2)
 

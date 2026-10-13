@@ -179,11 +179,14 @@ DotPlot(pbmc,top2$gene)+
 # combined <- RunUMAP(combined, reduction = "lsi", dims = 2:30, seed.use = 42,
 #                     reduction.name = "umap_unintegrated")
 
+pbmc_int <- readRDS("data/pbmc_integrated.rds")
+pbmc_int
+table(pbmc_int$celltype, pbmc_int$sample)
 
 
 
-
-
+DimPlot(pbmc_int, reduction = "umap_unintegrated",
+        group.by = c("sample", "celltype"), label = TRUE, repel = TRUE)
 
 VlnPlot(pbmc_int, "TSS.enrichment", split.by = "sample")
 
@@ -212,7 +215,8 @@ VlnPlot(pbmc_int, "TSS.enrichment", split.by = "sample")
 # combined <- RunUMAP(combined, reduction = "integrated_lsi",
 #                     dims = 2:30, seed.use = 42)
 
-
+DimPlot(pbmc_int, reduction = "umap",
+        group.by = c("sample", "celltype"), label = TRUE, repel = TRUE)
 
 library(DESeq2)
 
@@ -275,4 +279,24 @@ data.frame(
                               median(res_fm[fm_sig, "p_val_adj"])),
   min_padj = c(min(res_deseq[pb_sig, "padj"]),
                               min(res_fm[fm_sig, "p_val_adj"]))
+)
+
+CoveragePlot(
+  object            = pbmc_int,
+  region            = "chr6-106702055-106703095",
+  group.by          = "celltype",
+  split.by          = "sample",
+  idents            = c("CD14+ Monocytes", "B"),
+  extend.upstream   = 2000,
+  extend.downstream = 2000
+)
+
+CoveragePlot(
+  object            = pbmc_int,
+  region            = "chr6-41934567-41943790",
+  group.by          = "celltype",
+  split.by          = "sample",
+  idents            = c("CD14+ Monocytes", "B"),
+  extend.upstream   = 2000,
+  extend.downstream = 2000
 )

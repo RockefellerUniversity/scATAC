@@ -61,7 +61,18 @@ Accessibility is modelled as a binary outcome, with cell type as the predictor a
 
 ## Lets grab the data
 
-We will make sure we have Signac loaded in and the current pbmc object. 
+We will make sure we have Signac loaded in and the current pbmc object.
+
+If you don't have the annotated object from the end of Session 3, you can download it:
+
+```{r downloadAnnotated, eval=FALSE}
+options(timeout = 600)
+download.file(
+  url      = "https://www.dropbox.com/scl/fi/a6dcb7ipvh1epzswtq9t1/pbmc_annotated.rds?rlkey=33f90hbganthzp5yi3r196z72&st=c4giu9vl&dl=1",
+  destfile = "data/pbmc_annotated.rds",
+  mode     = "wb"
+)
+```
 
 We can set our Idents(). The Idents corresponds to which are the active grouping metadata being used in our dataset. Often this is cell type labels or clusters. We will set this to "predicted.id".
 
@@ -302,7 +313,7 @@ Combining two samples takes a few extra steps, which we walk through next. They 
 ```{r downloadIntegrated, eval=FALSE}
 options(timeout = 600)
 download.file(
-  url      = "https://www.dropbox.com/scl/fi/qavpfxt969y4j9fl9e4x9/pbmc_integrated.rds?rlkey=bwwxg3s55a31o2o15yp1gx73g&st=rmiv84p0&dl=0",
+  url      = "https://www.dropbox.com/scl/fi/qavpfxt969y4j9fl9e4x9/pbmc_integrated.rds?rlkey=bwwxg3s55a31o2o15yp1gx73g&st=25qa5j3z&dl=1",
   destfile = "data/pbmc_integrated.rds",
   mode     = "wb"
 )
@@ -312,6 +323,7 @@ download.file(
 # The integrated object is built offline (notebooks/dataset2_prep.R) and is too
 # large to commit; only run the chunks that need it when it is present.
 have_integrated <- file.exists("data/pbmc_integrated.rds")
+have_fragments  <- FALSE   # set once the integrated object is loaded
 ```
 
 ## Harmonising Cell Type Labels
@@ -434,12 +446,28 @@ combined <- RunUMAP(combined, reduction = "lsi", dims = 2:30, seed.use = 42,
 
 ## Sample Effects Before Integration
 
-Lets load the combined object and look at the UMAP before any integration. You can download it from [here](https://www.dropbox.com/scl/fi/qavpfxt969y4j9fl9e4x9/pbmc_integrated.rds?rlkey=bwwxg3s55a31o2o15yp1gx73g&st=rmiv84p0&dl=0)
+Lets load the combined object and look at the UMAP before any integration. You can download it from [here](https://www.dropbox.com/scl/fi/qavpfxt969y4j9fl9e4x9/pbmc_integrated.rds?rlkey=bwwxg3s55a31o2o15yp1gx73g&st=25qa5j3z&dl=1)
 
 ```{r loadIntegrated, eval=have_integrated}
 pbmc_int <- readRDS("data/pbmc_integrated.rds")
 pbmc_int
 table(pbmc_int$celltype, pbmc_int$sample)
+```
+
+```{r repointIntegratedFragments, include=FALSE, purl=FALSE, eval=have_integrated}
+# The integrated object stores each sample's fragment file as an absolute path
+# on the machine that built it, which does not exist anywhere else. Point each
+# Fragment object at the file of the same name in data/, and only draw the
+# fragment-based coverage plots when both samples' files and indexes are there.
+frag_list <- Fragments(pbmc_int[["peaks"]])
+frag_local <- file.path("data", basename(vapply(frag_list, GetFragmentData,
+                                                character(1), slot = "path")))
+have_fragments <- all(file.exists(frag_local, paste0(frag_local, ".tbi")))
+if (have_fragments) {
+  frag_list <- Map(function(f, path) UpdatePath(f, new.path = path), frag_list, frag_local)
+  Fragments(pbmc_int[["peaks"]]) <- NULL
+  Fragments(pbmc_int[["peaks"]]) <- frag_list
+}
 ```
 
 ## Sample Effects Before Integration
@@ -619,7 +647,7 @@ data.frame(
 
 That is not all the differences. 
 
-```{r coverageFMonly}
+```{r coverageFMonly, eval=have_fragments}
 CoveragePlot(
   object            = pbmc_int,
   region            = "chr6-106702055-106703095",

@@ -30,3 +30,6 @@ docs/data/allen_brain.rds
 docs/data/brain_annotated.rds
 # Exercise data copied next to the exercises for rendering (multi-GB): never commit.
 docs/exercises/data/
+# Session 4 two-sample objects (~230 MB): downloaded in CI / built by dataset2_prep.R, never committed.
+docs/data/pbmc_integrated.rds
+docs/data/pbmc_multiome.rds

@@ -225,6 +225,9 @@ jobs:
           ## scRNA-seq from the Signac mouse brain vignette, ~1.16 GB.
           curl -fsSL --retry 3 -o docs/data/allen_brain.rds \
             https://signac-objects.s3.amazonaws.com/allen_brain.rds
+          ## Session 4 two-sample (PBMC 500 + multiome) integrated object, ~230 MB.
+          curl -fsSL --retry 3 -o docs/data/pbmc_integrated.rds \
+            'https://www.dropbox.com/scl/fi/qavpfxt969y4j9fl9e4x9/pbmc_integrated.rds?rlkey=bwwxg3s55a31o2o15yp1gx73g&st=25qa5j3z&dl=1'
           ls -l docs/data
 
       ## Install the compileCourses engine, install the local package and

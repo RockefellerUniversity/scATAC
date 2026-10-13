@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
 width: 0.8em;
 margin: 0 0.8em 0.2em -1em;  vertical-align: middle;
 }
+
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+}
+pre.numberSource { margin-left: 3em; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -3076,13 +3110,110 @@ vertical-align: -.125em;
  
 </p>
 <p>These exercises are about scATAC-seq QC metrics, cell filtering, TF-IDF normalization and feature selection in <a href="https://rockefelleruniversity.github.io/scATAC/">Single-cell ATAC-seq</a>.</p>
-<p><strong>Exercise 1</strong> - <strong>??Ex 1 title??</strong></p>
+<p>In the session we worked through QC on a small, high quality PBMC dataset. Here you will run the same workflow on a very different sample: the 10x <a href="https://www.10xgenomics.com/datasets/flash-frozen-cortex-hippocampus-and-ventricular-zone-from-embryonic-mouse-brain-e-18-1-standard-1-2-0">Flash-frozen cortex, hippocampus and ventricular zone from embryonic (E18) mouse brain</a> dataset.</p>
+<p>Things that are different from the PBMC data, and that you will need to think about:</p>
 <ul>
-<li>??What is the first question??</li>
+<li>It is <strong>mouse</strong>, mapped to <strong>mm10</strong>, not human hg38.</li>
+<li>It is <strong>flash-frozen tissue</strong>, not fresh blood.</li>
+<li>It was processed with an <strong>older version of Cell Ranger ATAC (1.2.0)</strong>.</li>
+<li>It has ~3,800 cells rather than ~500.</li>
+</ul>
+<p>Don’t just copy the thresholds from the session. Look at the distributions and decide for yourself.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The fragment file is ~1.1 GB. Download it before you start. AMULET in Exercise 5 also takes a while on this sample so only kick it off when you have time.</p>
+</div>
+</div>
+<section id="getting-the-data" class="level2">
+<h2 class="anchored" data-anchor-id="getting-the-data">Getting the data</h2>
+<p>Download these four files from the 10x dataset page into a <strong>data/</strong> folder in your working directory. You can also do it from R:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>base <span class="ot">&lt;-</span> <span class="st">&quot;https://cf.10xgenomics.com/samples/cell-atac/1.2.0/atac_v1_E18_brain_flash_5k/&quot;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>files <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;atac_v1_E18_brain_flash_5k_&quot;</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>                <span class="fu">c</span>(<span class="st">&quot;filtered_peak_bc_matrix.h5&quot;</span>, <span class="st">&quot;singlecell.csv&quot;</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                  <span class="st">&quot;fragments.tsv.gz&quot;</span>, <span class="st">&quot;fragments.tsv.gz.tbi&quot;</span>))</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">timeout =</span> <span class="dv">3600</span>)   <span class="co"># the fragment file is ~1.1 GB</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">&quot;data&quot;</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (f <span class="cf">in</span> files) {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">download.file</span>(<span class="fu">paste0</span>(base, f), <span class="at">destfile =</span> <span class="fu">file.path</span>(<span class="st">&quot;data&quot;</span>, f), <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Exercise 1</strong> - <strong>Building the Signac object</strong></p>
+<ul>
+<li>Read in the peak-by-cell matrix from the h5 file. Do we need to fitler for non-standard chromosomes?</li>
 </ul>
 <ul>
-<li>??What is the second question??</li>
+<li>Read in the per-barcode metadata (singlecell.csv) and build a Signac ChromatinAssay and Seurat object. Use the same settings as the session (min.cells = 10, min.features = 200). Attach the fragment file.</li>
 </ul>
+<ul>
+<li>Cell Ranger called 3,789 cells. How many cells and peaks are in your object? Why might the numbers differ?</li>
+</ul>
+<p><strong>Exercise 2</strong> - <strong>Gene annotation and TSS enrichment</strong></p>
+<ul>
+<li>Use AnnotationHub to list the mouse EnsDb annotations. There are many. Which genome assembly does each use, and which ones are compatible with these data? Pick the Ensembl v98 one (the same release we used for human in the session).</li>
+</ul>
+<ul>
+<li>Get the annotation as a GRanges, switch it to UCSC-style chromosome names and add it to your object.</li>
+</ul>
+<ul>
+<li>Calculate the TSS enrichment score and plot its distribution. Then draw the TSS metaplot, split into high and low groups at a threshold you think is sensible for this sample.</li>
+</ul>
+<p><strong>Exercise 3</strong> - <strong>Nucleosome signal</strong></p>
+<ul>
+<li>Calculate the nucleosome signal and plot its distribution.</li>
+</ul>
+<ul>
+<li>Draw the fragment length histogram split by nucleosome signal. If you use the session’s code unchanged it will fail. Check the <code>region</code> argument of <code>FragmentHistogram()</code>. Why is the default a problem for mouse data, and what would you use instead? Can you see the nucleosome ladder? Does it look different between the groups?</li>
+</ul>
+<p><strong>Exercise 4</strong> - <strong>FRiP and exclusion regions</strong></p>
+<ul>
+<li>Calculate the percentage of fragments in peaks (FRiP) for each cell and plot it. How does it compare with the PBMC data from the session? What might explain the difference?</li>
+</ul>
+<ul>
+<li>Calculate the fraction of counts in exclusion (blacklist) regions with Signac. Which blacklist object should you use for these data?</li>
+</ul>
+<ul>
+<li>This dataset was made with the old Cell Ranger ATAC 1.2.0. Look at the metadata columns: is there anything you can compare your blacklist values to? Do the two measures agree? Why might they differ?</li>
+</ul>
+<p><strong>Exercise 5</strong> - <strong>Doublets</strong></p>
+<ul>
+<li>How many doublets would you expect in this sample? (10x estimates a doublet rate of roughly 0.8% per 1,000 cells recovered.)</li>
+</ul>
+<ul>
+<li>Run scDblFinder with the ATAC-specific settings from the session. Remember to set the seed.</li>
+</ul>
+<ul>
+<li>Build a set of regions for AMULET to exclude, using mouse resources: RepeatMasker for mm10, chrM, the sex chromosomes and the mm10 blacklist. Then run AMULET on your cells.</li>
+</ul>
+<ul>
+<li>Compare the two callers. How many doublets does each call, and how does that compare with what you expected? In the session AMULET over-called on the deep PBMC data. Is the same true here? Check the relationship with nCount_peaks and the typical value of nAbove2.</li>
+</ul>
+<p><strong>Exercise 6</strong> - <strong>Filtering cells</strong></p>
+<ul>
+<li>Plot all your QC metrics together, and make density scatters of nCount_peaks against TSS enrichment and against FRiP.</li>
+</ul>
+<ul>
+<li>Choose thresholds for this sample and filter the object. Justify each one. Which of the session’s PBMC thresholds would be a bad choice here, and why?</li>
+</ul>
+<ul>
+<li>What fraction of cells did you remove? Compare that with the PBMC data. Is there anything you are unsure about that you’d want to re-check after clustering?</li>
+</ul>
+<p><strong>Exercise 7</strong> - <strong>TF-IDF normalization and feature selection</strong></p>
+<ul>
+<li>Run TF-IDF normalization and look at a corner of the normalized matrix. Where are the raw counts kept?</li>
+</ul>
+<ul>
+<li>Select top features with the Signac default (q5). How many peaks are kept? Look at the distribution of total counts per peak. Would you change the cut-off for this dataset?</li>
+</ul>
+</section>
 
 </main>
 <!-- /main column -->

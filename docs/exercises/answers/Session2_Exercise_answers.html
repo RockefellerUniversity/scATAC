@@ -3110,19 +3110,376 @@ vertical-align: -.125em;
  
 </p>
 <p>These exercises are about scATAC-seq QC metrics, cell filtering, TF-IDF normalization and feature selection in <a href="https://rockefelleruniversity.github.io/scATAC/">Single-cell ATAC-seq</a>.</p>
-<p><strong>Exercise 1</strong> - <strong>??Ex 1 title??</strong></p>
+<p>In the session we worked through QC on a small, high quality PBMC dataset. Here you will run the same workflow on a very different sample: the 10x <a href="https://www.10xgenomics.com/datasets/flash-frozen-cortex-hippocampus-and-ventricular-zone-from-embryonic-mouse-brain-e-18-1-standard-1-2-0">Flash-frozen cortex, hippocampus and ventricular zone from embryonic (E18) mouse brain</a> dataset.</p>
+<p>Things that are different from the PBMC data, and that you will need to think about:</p>
 <ul>
-<li>??What is the first question??</li>
+<li>It is <strong>mouse</strong>, mapped to <strong>mm10</strong>, not human hg38.</li>
+<li>It is <strong>flash-frozen tissue</strong>, not fresh blood.</li>
+<li>It was processed with an <strong>older version of Cell Ranger ATAC (1.2.0)</strong>.</li>
+<li>It has ~3,800 cells rather than ~500.</li>
+</ul>
+<p>Don’t just copy the thresholds from the session. Look at the distributions and decide for yourself.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The fragment file is ~1.1 GB. Download it before you start. AMULET in Exercise 5 also takes a while on this sample so only kick it off when you have time.</p>
+</div>
+</div>
+<section id="getting-the-data" class="level2">
+<h2 class="anchored" data-anchor-id="getting-the-data">Getting the data</h2>
+<p>Download these four files from the 10x dataset page into a <strong>data/</strong> folder in your working directory. You can also do it from R:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>base <span class="ot">&lt;-</span> <span class="st">&quot;https://cf.10xgenomics.com/samples/cell-atac/1.2.0/atac_v1_E18_brain_flash_5k/&quot;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>files <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;atac_v1_E18_brain_flash_5k_&quot;</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>                <span class="fu">c</span>(<span class="st">&quot;filtered_peak_bc_matrix.h5&quot;</span>, <span class="st">&quot;singlecell.csv&quot;</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                  <span class="st">&quot;fragments.tsv.gz&quot;</span>, <span class="st">&quot;fragments.tsv.gz.tbi&quot;</span>))</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">timeout =</span> <span class="dv">3600</span>)   <span class="co"># the fragment file is ~1.1 GB</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">&quot;data&quot;</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (f <span class="cf">in</span> files) {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">download.file</span>(<span class="fu">paste0</span>(base, f), <span class="at">destfile =</span> <span class="fu">file.path</span>(<span class="st">&quot;data&quot;</span>, f), <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Exercise 1</strong> - <strong>Building the Signac object</strong></p>
+<ul>
+<li>Read in the peak-by-cell matrix from the h5 file. Do we need to fitler for non-standard chromosomes?</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="do">## ?? Solution here — shown only in the answers version (echo=toMessage) ??</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Signac)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Seurat)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GenomicRanges)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>counts <span class="ot">&lt;-</span> <span class="fu">Read10X_h5</span>(<span class="at">filename =</span> <span class="st">&quot;data/atac_v1_E18_brain_flash_5k_filtered_peak_bc_matrix.h5&quot;</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>std_chr  <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;chr&quot;</span>, <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">19</span>, <span class="st">&quot;X&quot;</span>, <span class="st">&quot;Y&quot;</span>))</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="fu">seqlevels</span>(<span class="fu">StringToGRanges</span>(<span class="fu">rownames</span>(counts), <span class="at">sep =</span> <span class="fu">c</span>(<span class="st">&quot;:&quot;</span>, <span class="st">&quot;-&quot;</span>))) <span class="sc">%in%</span> std_chr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <ul>
-<li>??What is the second question??</li>
+<li>Read in the per-barcode metadata (singlecell.csv) and build a Signac ChromatinAssay and Seurat object. Use the same settings as the session (min.cells = 10, min.features = 200). Attach the fragment file.</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="do">## ?? Solution here ??</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>metadata <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">file      =</span> <span class="st">&quot;data/atac_v1_E18_brain_flash_5k_singlecell.csv&quot;</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">header    =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="dv">1</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>chrom_assay <span class="ot">&lt;-</span> <span class="fu">CreateChromatinAssay</span>(</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">counts       =</span> counts,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">sep          =</span> <span class="fu">c</span>(<span class="st">&quot;:&quot;</span>, <span class="st">&quot;-&quot;</span>),</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">fragments    =</span> <span class="st">&quot;data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">min.cells    =</span> <span class="dv">10</span>,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">min.features =</span> <span class="dv">200</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>brain <span class="ot">&lt;-</span> <span class="fu">CreateSeuratObject</span>(</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">counts    =</span> chrom_assay,</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">assay     =</span> <span class="st">&quot;peaks&quot;</span>,</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">meta.data =</span> metadata</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>brain</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<ul>
+<li>Cell Ranger called 3,789 cells. How many cells and peaks are in your object? Why might the numbers differ?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(brain)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="do">## Cell Ranger&#39;s cell calls are the columns of the filtered h5. min.features = 200</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="do">## drops any called cell with accessible counts in fewer than 200 peaks, and</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="do">## min.cells = 10 drops peaks seen in fewer than 10 cells.</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ncol</span>(counts) <span class="sc">-</span> <span class="fu">ncol</span>(brain)    <span class="co"># cells removed by min.features</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Exercise 2</strong> - <strong>Gene annotation and TSS enrichment</strong></p>
+<ul>
+<li>Use AnnotationHub to list the mouse EnsDb annotations. There are many. Which genome assembly does each use, and which ones are compatible with these data? Pick the Ensembl v98 one (the same release we used for human in the session).</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(AnnotationHub)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>ah <span class="ot">&lt;-</span> <span class="fu">AnnotationHub</span>()</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="do">## The data were mapped to mm10 (= GRCm38). Ensembl releases up to 102 are on</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="do">## GRCm38. Later releases are on GRCm39, and there are also strain-specific</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="do">## assemblies. Using GRCm39 coordinates on mm10 data would shift TSS positions,</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="do">## breaking TSS enrichment and every gene-based step later.</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>q <span class="ot">&lt;-</span> <span class="fu">query</span>(ah, <span class="fu">c</span>(<span class="st">&quot;EnsDb&quot;</span>, <span class="st">&quot;Mus musculus&quot;</span>))</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">id =</span> <span class="fu">names</span>(q), <span class="at">title =</span> <span class="fu">mcols</span>(q)<span class="sc">$</span>title, <span class="at">genome =</span> <span class="fu">mcols</span>(q)<span class="sc">$</span>genome)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Get the annotation as a GRanges, switch it to UCSC-style chromosome names and add it to your object.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ensdb_v98   <span class="ot">&lt;-</span> ah[[<span class="st">&quot;AH75036&quot;</span>]]   <span class="co"># Ensembl 98, GRCm38</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>annotations <span class="ot">&lt;-</span> <span class="fu">GetGRangesFromEnsDb</span>(<span class="at">ensdb =</span> ensdb_v98)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">seqlevels</span>(annotations) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;chr&quot;</span>, <span class="fu">seqlevels</span>(annotations))</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">genome</span>(annotations)    <span class="ot">&lt;-</span> <span class="st">&quot;mm10&quot;</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="fu">Annotation</span>(brain) <span class="ot">&lt;-</span> annotations</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Calculate the TSS enrichment score and plot its distribution. Then draw the TSS metaplot, split into high and low groups at a threshold you think is sensible for this sample.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>brain <span class="ot">&lt;-</span> <span class="fu">TSSEnrichment</span>(<span class="at">object =</span> brain, <span class="at">fast =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">VlnPlot</span>(brain, <span class="at">features =</span> <span class="st">&quot;TSS.enrichment&quot;</span>, <span class="at">pt.size =</span> <span class="fl">0.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="do">## The TSSE is p[retty low. A cut-off of 3 would be too strict. Something around 1/1.5 would be a good start. </span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>brain<span class="sc">$</span>TSSE.group <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(brain<span class="sc">$</span>TSS.enrichment <span class="sc">&gt;</span> <span class="fl">1.5</span>, <span class="st">&quot;High&quot;</span>, <span class="st">&quot;Low&quot;</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(brain<span class="sc">$</span>TSSE.group)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">TSSPlot</span>(brain, <span class="at">group.by =</span> <span class="st">&quot;TSSE.group&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Exercise 3</strong> - <strong>Nucleosome signal</strong></p>
+<ul>
+<li>Calculate the nucleosome signal and plot its distribution.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>brain <span class="ot">&lt;-</span> <span class="fu">NucleosomeSignal</span>(<span class="at">object =</span> brain)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">VlnPlot</span>(brain, <span class="at">features =</span> <span class="st">&quot;nucleosome_signal&quot;</span>, <span class="at">pt.size =</span> <span class="fl">0.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Draw the fragment length histogram split by nucleosome signal. If you use the session’s code unchanged it will fail. Check the <code>region</code> argument of <code>FragmentHistogram()</code>. Why is the default a problem for mouse data, and what would you use instead? Can you see the nucleosome ladder? Does it look different between the groups?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>brain<span class="sc">$</span>nucleosome_group <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(brain<span class="sc">$</span>nucleosome_signal <span class="sc">&gt;</span> <span class="dv">2</span>, <span class="st">&quot;NS &gt; 2&quot;</span>, <span class="st">&quot;NS &lt; 2&quot;</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(brain<span class="sc">$</span>nucleosome_group)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="do">## FragmentHistogram() only reads fragments from one region, chr1:1-2,000,000</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="do">## by default. In mm10 the first ~3 Mb of chr1 is unsequenced (N&#39;s), so no</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="do">## fragments fall in that region and the plot fails. Pick a region with</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="do">## mappable sequence (and enough fragments to see the ladder).</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="fu">FragmentHistogram</span>(</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">object   =</span> brain,</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">region   =</span> <span class="st">&quot;chr1-5000000-25000000&quot;</span>,</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">group.by =</span> <span class="st">&quot;nucleosome_group&quot;</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Exercise 4</strong> - <strong>FRiP and exclusion regions</strong></p>
+<ul>
+<li>Calculate the percentage of fragments in peaks (FRiP) for each cell and plot it. How does it compare with the PBMC data from the session? What might explain the difference?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>brain<span class="sc">$</span>pct_reads_in_peaks <span class="ot">&lt;-</span> brain<span class="sc">$</span>peak_region_fragments <span class="sc">/</span> brain<span class="sc">$</span>passed_filters <span class="sc">*</span> <span class="dv">100</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(brain<span class="sc">$</span>pct_reads_in_peaks)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="fu">VlnPlot</span>(brain, <span class="at">features =</span> <span class="st">&quot;pct_reads_in_peaks&quot;</span>, <span class="at">pt.size =</span> <span class="fl">0.1</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="do">## FRiP is much lower than the PBMC data. Frozen tissue gives noisier nuclei</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="do">## preps than fresh blood. Brain is also much more heterogeneous, so peaks from</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="do">## rare cell types may be missing from the bulk-called peak set. That</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="do">## lowers FRiP for those cells even when they are fine (see the session&#39;s note</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="do">## about re-calling peaks per cluster).</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Calculate the fraction of counts in exclusion (blacklist) regions with Signac. Which blacklist object should you use for these data?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="do">## blacklist_mm10, not blacklist_hg38: wrong-genome regions would just be</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="do">## random intervals in mouse.</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>brain<span class="sc">$</span>excl_prop <span class="ot">&lt;-</span> <span class="fu">FractionCountsInRegion</span>(</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">object  =</span> brain,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">assay   =</span> <span class="st">&quot;peaks&quot;</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">regions =</span> blacklist_mm10</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="fu">VlnPlot</span>(brain, <span class="at">features =</span> <span class="st">&quot;excl_prop&quot;</span>, <span class="at">pt.size =</span> <span class="fl">0.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>This dataset was made with the old Cell Ranger ATAC 1.2.0. Look at the metadata columns: is there anything you can compare your blacklist values to? Do the two measures agree? Why might they differ?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Older Cell Ranger versions filled in blacklist_region_fragments (newer</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="do">## versions leave it empty). Cell Ranger&#39;s ratio uses *all* passing fragments.</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="do">## Signac&#39;s uses only counts within peaks, so the two measure slightly</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="do">## different things.</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>brain<span class="sc">$</span>cr_blacklist_ratio <span class="ot">&lt;-</span> brain<span class="sc">$</span>blacklist_region_fragments <span class="sc">/</span> brain<span class="sc">$</span>passed_filters</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(brain<span class="sc">$</span>cr_blacklist_ratio)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(brain<span class="sc">$</span>excl_prop)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="fu">FeatureScatter</span>(brain, <span class="at">feature1 =</span> <span class="st">&quot;cr_blacklist_ratio&quot;</span>, <span class="at">feature2 =</span> <span class="st">&quot;excl_prop&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Exercise 5</strong> - <strong>Doublets</strong></p>
+<ul>
+<li>How many doublets would you expect in this sample? (10x estimates a doublet rate of roughly 0.8% per 1,000 cells recovered.)</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="do">## The rate scales with the number of cells loaded, so ~3,800 cells means</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="do">## ~3% doublets: much higher than the ~0.5% we expected for 500 PBMCs.</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>rate <span class="ot">&lt;-</span> <span class="fl">0.008</span> <span class="sc">*</span> <span class="fu">ncol</span>(brain) <span class="sc">/</span> <span class="dv">1000</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="at">rate =</span> rate, <span class="at">n_expected =</span> <span class="fu">round</span>(rate <span class="sc">*</span> <span class="fu">ncol</span>(brain)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Run scDblFinder with the ATAC-specific settings from the session. Remember to set the seed.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scDblFinder)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(SingleCellExperiment)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>sce <span class="ot">&lt;-</span> <span class="fu">as.SingleCellExperiment</span>(brain, <span class="at">assay =</span> <span class="st">&quot;peaks&quot;</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>sce <span class="ot">&lt;-</span> <span class="fu">scDblFinder</span>(</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  sce,</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">aggregateFeatures =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">nfeatures         =</span> <span class="dv">25</span>,</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">processing        =</span> <span class="st">&quot;normFeatures&quot;</span>,</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">dbr               =</span> <span class="cn">NULL</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>brain<span class="sc">$</span>scDblFinder.score <span class="ot">&lt;-</span> sce<span class="sc">$</span>scDblFinder.score</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>brain<span class="sc">$</span>scDblFinder.class <span class="ot">&lt;-</span> sce<span class="sc">$</span>scDblFinder.class</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Build a set of regions for AMULET to exclude, using mouse resources: RepeatMasker for mm10, chrM, the sex chromosomes and the mm10 blacklist. Then run AMULET on your cells.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>rm_q <span class="ot">&lt;-</span> <span class="fu">query</span>(ah, <span class="fu">c</span>(<span class="st">&quot;RepeatMasker&quot;</span>, <span class="st">&quot;mm10&quot;</span>))</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mcols</span>(rm_q)[, <span class="fu">c</span>(<span class="st">&quot;title&quot;</span>, <span class="st">&quot;rdataclass&quot;</span>, <span class="st">&quot;sourceurl&quot;</span>)]</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>rmsk <span class="ot">&lt;-</span> rm_q[[<span class="fu">which</span>(rm_q<span class="sc">$</span>rdataclass <span class="sc">==</span> <span class="st">&quot;GRanges&quot;</span>)[<span class="dv">1</span>]]]</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>plain <span class="ot">&lt;-</span> <span class="cf">function</span>(gr) <span class="fu">GRanges</span>(<span class="fu">as.character</span>(<span class="fu">seqnames</span>(gr)), <span class="fu">ranges</span>(gr))</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>excl <span class="ot">&lt;-</span> <span class="fu">reduce</span>(<span class="fu">c</span>(</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">GRanges</span>(<span class="fu">c</span>(<span class="st">&quot;chrM&quot;</span>, <span class="st">&quot;chrX&quot;</span>, <span class="st">&quot;chrY&quot;</span>), <span class="fu">IRanges</span>(<span class="dv">1</span>L, <span class="at">width =</span> <span class="fu">seqlengths</span>(<span class="fu">Annotation</span>(brain))[<span class="st">&quot;chrX&quot;</span>])),</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plain</span>(blacklist_mm10),</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plain</span>(rmsk)</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>frag_path <span class="ot">&lt;-</span> <span class="fu">GetFragmentData</span>(<span class="fu">Fragments</span>(brain)[[<span class="dv">1</span>]], <span class="at">slot =</span> <span class="st">&quot;path&quot;</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>amu <span class="ot">&lt;-</span> <span class="fu">amulet</span>(</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  frag_path,</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">barcodes         =</span> <span class="fu">colnames</span>(brain),</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">regionsToExclude =</span> excl</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>amu <span class="ot">&lt;-</span> amu[<span class="fu">colnames</span>(brain), ]</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>brain<span class="sc">$</span>amulet.nAbove2 <span class="ot">&lt;-</span> amu<span class="sc">$</span>nAbove2</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>brain<span class="sc">$</span>amulet.q       <span class="ot">&lt;-</span> amu<span class="sc">$</span>q.value</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>brain<span class="sc">$</span>amulet.class   <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(amu<span class="sc">$</span>q.value <span class="sc">&lt;</span> <span class="fl">0.01</span>, <span class="st">&quot;Doublet&quot;</span>, <span class="st">&quot;Singlet&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Compare the two callers. How many doublets does each call, and how does that compare with what you expected? In the session AMULET over-called on the deep PBMC data. Is the same true here? Check the relationship with nCount_peaks and the typical value of nAbove2.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="at">scDblFinder =</span> brain<span class="sc">$</span>scDblFinder.class,</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>      <span class="at">amulet      =</span> brain<span class="sc">$</span>amulet.class)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="do">## In the session, AMULET struggled once typical nAbove2 reached ~5 or more,</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="do">## because deep sequencing turns minor repeats/CNVs into many &gt;2-count sites.</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="do">## Compare this sample&#39;s depth and nAbove2 with that.</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(brain<span class="sc">$</span>amulet.nAbove2)</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="fu">VlnPlot</span>(brain, <span class="at">features =</span> <span class="st">&quot;nCount_peaks&quot;</span>, <span class="at">group.by =</span> <span class="st">&quot;amulet.class&quot;</span>, <span class="at">pt.size =</span> <span class="fl">0.1</span>)</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="fu">VlnPlot</span>(brain, <span class="at">features =</span> <span class="st">&quot;nCount_peaks&quot;</span>, <span class="at">group.by =</span> <span class="st">&quot;scDblFinder.class&quot;</span>, <span class="at">pt.size =</span> <span class="fl">0.1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Exercise 6</strong> - <strong>Filtering cells</strong></p>
+<ul>
+<li>Plot all your QC metrics together, and make density scatters of nCount_peaks against TSS enrichment and against FRiP.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">VlnPlot</span>(</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">object   =</span> brain,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">features =</span> <span class="fu">c</span>(<span class="st">&quot;nCount_peaks&quot;</span>, <span class="st">&quot;TSS.enrichment&quot;</span>, <span class="st">&quot;excl_prop&quot;</span>,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>               <span class="st">&quot;nucleosome_signal&quot;</span>, <span class="st">&quot;pct_reads_in_peaks&quot;</span>),</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">pt.size  =</span> <span class="fl">0.1</span>,</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">ncol     =</span> <span class="dv">5</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>) <span class="sc">&amp;</span> <span class="fu">theme</span>(<span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">8</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">DensityScatter</span>(brain, <span class="at">x =</span> <span class="st">&quot;nCount_peaks&quot;</span>, <span class="at">y =</span> <span class="st">&quot;TSS.enrichment&quot;</span>,</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>               <span class="at">log_x =</span> <span class="cn">TRUE</span>, <span class="at">quantiles =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="fu">DensityScatter</span>(brain, <span class="at">x =</span> <span class="st">&quot;nCount_peaks&quot;</span>, <span class="at">y =</span> <span class="st">&quot;pct_reads_in_peaks&quot;</span>,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>               <span class="at">log_x =</span> <span class="cn">TRUE</span>, <span class="at">quantiles =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Choose thresholds for this sample and filter the object. Justify each one. Which of the session’s PBMC thresholds would be a bad choice here, and why?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="do">## This is frozen, heterogeneous tissue, so we start at the &quot;lower quality&quot; end</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="do">## of the ranges from the session and stay conservative. We can tighten after</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="do">## clustering if a low-quality cluster shows up.</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="do">##  * nCount_peaks &gt; 1500: trims the sparse low tail in the density scatter.</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="do">##  * nCount_peaks below the 98th percentile: skims the top ~2% as likely</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="do">##    doublets/multiplets. Just picking ~ 30000 would be good. </span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="do">##  * TSS.enrichment &gt; 2: The PBMC cut-off of 4 would remove most cells.</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="do">##  * nucleosome_signal &lt; 2: the few cells above 2 have almost no</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="do">##    nucleosome-free fragments in the histogram, i.e. failed tagmentation.</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="do">##  * FRiP &gt; 15: the PBMC cut-off of 40 would remove ~95% of this sample. Low</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a><span class="do">##    FRiP here partly reflects the peak set and cell type, not only cell quality.</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a><span class="do">##  * excl_prop &lt; 0.05: the low-quality guideline from the session.</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>max_count <span class="ot">&lt;-</span> <span class="fu">quantile</span>(brain<span class="sc">$</span>nCount_peaks, <span class="fl">0.98</span>)</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>max_count</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a><span class="do">## How many cells does each threshold remove on its own?</span></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>fails <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">low_count  =</span> brain<span class="sc">$</span>nCount_peaks <span class="sc">&lt;=</span> <span class="dv">1500</span>,</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">high_count =</span> brain<span class="sc">$</span>nCount_peaks <span class="sc">&gt;=</span> max_count,</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">low_tss    =</span> brain<span class="sc">$</span>TSS.enrichment <span class="sc">&lt;=</span> <span class="dv">2</span>,</span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">high_ns    =</span> brain<span class="sc">$</span>nucleosome_signal <span class="sc">&gt;=</span> <span class="dv">2</span>,</span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">low_frip   =</span> brain<span class="sc">$</span>pct_reads_in_peaks <span class="sc">&lt;=</span> <span class="dv">15</span>,</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">high_excl  =</span> brain<span class="sc">$</span>excl_prop <span class="sc">&gt;=</span> <span class="fl">0.05</span></span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a><span class="fu">colSums</span>(fails)</span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(<span class="fu">rowSums</span>(fails) <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a>brain</span>
+<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a>brain <span class="ot">&lt;-</span> <span class="fu">subset</span>(</span>
+<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a>  <span class="at">x      =</span> brain,</span>
+<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a>  <span class="at">subset =</span> nCount_peaks <span class="sc">&gt;</span> <span class="dv">1500</span> <span class="sc">&amp;</span></span>
+<span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a>           nCount_peaks <span class="sc">&lt;</span> max_count <span class="sc">&amp;</span></span>
+<span id="cb21-33"><a href="#cb21-33" aria-hidden="true" tabindex="-1"></a>           TSS.enrichment <span class="sc">&gt;</span> <span class="dv">2</span> <span class="sc">&amp;</span></span>
+<span id="cb21-34"><a href="#cb21-34" aria-hidden="true" tabindex="-1"></a>           nucleosome_signal <span class="sc">&lt;</span> <span class="dv">2</span> <span class="sc">&amp;</span></span>
+<span id="cb21-35"><a href="#cb21-35" aria-hidden="true" tabindex="-1"></a>           pct_reads_in_peaks <span class="sc">&gt;</span> <span class="dv">15</span> <span class="sc">&amp;</span></span>
+<span id="cb21-36"><a href="#cb21-36" aria-hidden="true" tabindex="-1"></a>           excl_prop <span class="sc">&lt;</span> <span class="fl">0.05</span></span>
+<span id="cb21-37"><a href="#cb21-37" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-38"><a href="#cb21-38" aria-hidden="true" tabindex="-1"></a>brain</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>What fraction of cells did you remove? Compare that with the PBMC data. Is there anything you are unsure about that you’d want to re-check after clustering?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Keep the doublet calls as metadata rather than filtering on them for now.</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="do">## Look again once we have clusters, as we did in the session.</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(brain<span class="sc">$</span>scDblFinder.class)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Exercise 7</strong> - <strong>TF-IDF normalization and feature selection</strong></p>
+<ul>
+<li>Run TF-IDF normalization and look at a corner of the normalized matrix. Where are the raw counts kept?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>brain <span class="ot">&lt;-</span> <span class="fu">RunTFIDF</span>(brain)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="do">## Normalized values live in the &quot;data&quot; layer. Raw counts stay in &quot;counts&quot;.</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>brain[[<span class="st">&quot;peaks&quot;</span>]]<span class="sc">@</span>data[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Select top features with the Signac default (q5). How many peaks are kept? Look at the distribution of total counts per peak. Would you change the cut-off for this dataset?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>brain <span class="ot">&lt;-</span> <span class="fu">FindTopFeatures</span>(brain, <span class="at">min.cutoff =</span> <span class="st">&quot;q5&quot;</span>)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">VariableFeatures</span>(brain))</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>peak_counts <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(<span class="fu">GetAssayData</span>(brain, <span class="at">assay =</span> <span class="st">&quot;peaks&quot;</span>, <span class="at">layer =</span> <span class="st">&quot;counts&quot;</span>))</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(peak_counts, <span class="fu">c</span>(<span class="fl">0.05</span>, <span class="fl">0.25</span>, <span class="fl">0.5</span>, <span class="fl">0.75</span>))</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(<span class="fu">log10</span>(peak_counts), <span class="at">breaks =</span> <span class="dv">50</span>, <span class="at">main =</span> <span class="st">&quot;Total counts per peak&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
 
 </main>
 <!-- /main column -->

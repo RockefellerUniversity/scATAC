@@ -94,6 +94,48 @@ VlnPlot(
   ncol       = 3
 )
 
+# library(Herper)
+# 
+# install_CondaTools("macs","peak.calling", pathToMiniConda = "~/Documents/mini")
+# 
+
+# peaks <- CallPeaks(
+#   object                = pbmc,
+#   group.by              = "seurat_clusters",
+#   macs2.path            = "~/Documents/mini/env/peak.calling/macs3",
+#   effective.genome.size = 2.7e9,
+#   combine.peaks         = TRUE
+# )
+
+# peaks <- keepStandardChromosomes(peaks, pruning.mode = "coarse")
+# peaks <- subsetByOverlaps(peaks, blacklist_hg38_unified, invert = TRUE)
+
+# head(peaks$peak_called_in)
+
+# combined_peaks <- reduce(c(peaks_sample1, peaks_sample2))
+# 
+# peak_widths    <- width(combined_peaks)
+# combined_peaks <- combined_peaks[peak_widths > 20 & peak_widths < 10000]
+
+# macs_counts <- FeatureMatrix(
+#   fragments = Fragments(pbmc),
+#   features  = peaks,
+#   cells     = colnames(pbmc)
+# )
+# 
+# pbmc[["macs_peaks"]] <- CreateChromatinAssay(
+#   counts     = macs_counts,
+#   fragments  = Fragments(pbmc),
+#   annotation = Annotation(pbmc)
+# )
+
+# DefaultAssay(pbmc) <- "macs_peaks"
+# 
+# pbmc <- RunTFIDF(pbmc)
+# pbmc <- FindTopFeatures(pbmc, min.cutoff = "q5")
+# pbmc <- RunSVD(pbmc)
+# pbmc <- RunUMAP(pbmc, reduction = "lsi", dims = 2:30, seed.use = 42)
+
 gene.activities <- GeneActivity(pbmc)
 
 pbmc[["RNA"]] <- CreateAssayObject(counts = gene.activities)
@@ -106,6 +148,21 @@ pbmc <- NormalizeData(
 )
 
 DefaultAssay(pbmc) <- "RNA"
+
+# FeaturePlot(
+#   object     = pbmc,
+#   features   = c(
+#     "MS4A1",   # B cells
+#     "CD3D",    # T cells
+#     "LEF1",    # naive T cells
+#     "NKG7",    # NK cells
+#     "TREM1",   # monocytes
+#     "LYZ"      # monocytes/DCs
+#   ),
+#   pt.size    = 0.1,
+#   max.cutoff = "q95",
+#   ncol       = 3
+# )
 
 FeaturePlot(
   object     = pbmc,
@@ -174,3 +231,25 @@ DimPlot(
   label    = TRUE,
   repel    = TRUE
 ) + NoLegend()
+
+# DefaultAssay(pbmc) <- "RNA"
+# t_cells <- subset(pbmc, predicted.id %in% c("CD4 Naive", "CD4 Memory", "CD8 Naive", "CD8 effector"))
+# 
+# DotPlot(
+#   object   = t_cells,
+#   assay    = "RNA",
+#   features = c("CD8A", "CD8B", "BACH2", "TCF7", "LEF1", "CD44", "NKG7", "GZMB", "CCL5"),
+#   group.by = "predicted.id"
+# ) + RotatedAxis()
+# 
+
+DefaultAssay(pbmc) <- "RNA"
+t_cells <- subset(pbmc, predicted.id %in% c("CD4 Naive", "CD4 Memory", "CD8 Naive", "CD8 effector"))
+
+DotPlot(
+  object   = t_cells,
+  assay    = "RNA",
+  features = c("CD8A", "CD8B", "BACH2", "TCF7", "LEF1", "CD44", "NKG7", "GZMB", "CCL5"),
+  group.by = "predicted.id"
+) + RotatedAxis()
+

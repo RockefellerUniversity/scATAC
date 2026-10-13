@@ -3076,12 +3076,59 @@ vertical-align: -.125em;
  
 </p>
 <p>These exercises are about differential accessibility testing and coverage plots in <a href="https://rockefelleruniversity.github.io/scATAC/">Single-cell ATAC-seq</a>.</p>
-<p><strong>Exercise 1</strong> - <strong>??Ex 1 title??</strong></p>
+<p>We continue with the E18 mouse brain object from the Session 3 exercise. In the session we found markers for a cell type in blood. Here we look for the regulatory elements that separate <strong>progenitors</strong> from <strong>neurons</strong> in the developing cortex.</p>
+<p><strong>Exercise 1</strong> - <strong>Choosing groups to compare</strong></p>
 <ul>
-<li>??What is the first question??</li>
+<li>Load your annotated object from the Session 3 exercise. Set the default assay to peaks and use your clusters as the identities.</li>
 </ul>
 <ul>
-<li>??What is the second question??</li>
+<li>Use the gene activity assay to find the cluster with the highest <em>Pax6</em> activity (radial glia) and the cluster with the highest <em>Neurod6</em> activity (excitatory neurons). Don’t just read it off a plot. Compute the average per cluster.</li>
+</ul>
+<ul>
+<li>What did label transfer from the adult Allen reference call the cells in these two clusters? Does that fit what you expected?</li>
+</ul>
+<p><strong>Exercise 2</strong> - <strong>Differential accessibility</strong></p>
+<ul>
+<li>Find peaks more accessible in the progenitor cluster than in all other cells. Use logistic regression with sequencing depth as a latent variable, as in the session. Why do we include depth?</li>
+</ul>
+<ul>
+<li>Now compare the progenitor cluster directly against the neuron cluster, keeping both directions. How many peaks are significantly more open in each? What does a negative avg_log2FC mean here?</li>
+</ul>
+<ul>
+<li>Make a volcano plot of the pairwise result.</li>
+</ul>
+<ul>
+<li>Your volcano plot probably has two separate “wings” of points at very large fold changes (around ±12). What are these peaks? Should you rank peaks by fold change?</li>
+</ul>
+<p><strong>Exercise 3</strong> - <strong>What genes are nearby?</strong></p>
+<ul>
+<li>Annotate the significant pairwise peaks with their closest gene. Look at the most significant ones in each direction. Do you recognise any genes from the developing cortex?</li>
+</ul>
+<ul>
+<li>Check whether known progenitor and neuron genes appear among the nearest genes, and on which side.</li>
+</ul>
+<ul>
+<li>What fraction of significant peaks are more than 10 kb from their closest gene? What kind of elements are these likely to be, and why is “nearest gene” a weak assumption for them?</li>
+</ul>
+<p><strong>Exercise 4</strong> - <strong>Coverage plots</strong></p>
+<ul>
+<li>Draw a coverage plot at <em>Pax6</em> and at <em>Neurod6</em> for all clusters, with gene activity shown alongside. Do the tracks agree with your choice of clusters?</li>
+</ul>
+<ul>
+<li>In the session the panel next to the coverage plot was labelled as expression. What is it actually showing for us, and why does that matter?</li>
+</ul>
+<ul>
+<li>Plot the most significant progenitor-specific and neuron-specific peaks from your pairwise test, showing only the two clusters you compared.</li>
+</ul>
+<p><strong>Exercise 5</strong> - <strong>Markers as QC</strong></p>
+<ul>
+<li>Look at the one-vs-rest progenitor markers with a critical eye. Are any on chrX, chrY or chrM? Are any driven by very few cells (low pct.1)? What would each of these tell you?</li>
+</ul>
+<ul>
+<li>Is the progenitor cluster unusual for any QC metric? Could any of its markers be explained by quality instead of biology?</li>
+</ul>
+<ul>
+<li>In the session we ran <code>FindAllMarkers()</code> on 500 cells and it took ~40 minutes. This dataset has ~8x more cells. What could you change to make it practical? (No need to run it.)</li>
 </ul>
 
 </main>

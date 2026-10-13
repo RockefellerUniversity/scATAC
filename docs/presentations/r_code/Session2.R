@@ -5,51 +5,51 @@ library(Signac)
 library(Seurat)
 
 
-# # read in h5 file
-# library(Signac)
-# library(Seurat)
-# 
-# counts <- Read10X_h5(filename = "~/Desktop/ATAC.data.500.cell/atac_pbmc_500_nextgem_filtered_peak_bc_matrix.h5")
-# 
-# std_chr   <- paste0("chr", c(1:22, "X", "Y"))
-# peak_chr  <- as.character(seqnames(StringToGRanges(rownames(counts), sep = c(":", "-"))))
-# counts    <- counts[peak_chr %in% std_chr, ]
-# 
-# metadata <- read.csv(
-#   file = "~/Desktop/ATAC.data.500.cell/atac_pbmc_500_nextgem_singlecell.csv",
-#   header = TRUE,
-#   row.names = 1
-# )
-# 
-# chrom_assay <- CreateChromatinAssay(
-#   counts = counts,
-#   sep = c(":", "-"),
-#   fragments = "~/Desktop/ATAC.data.500.cell/atac_pbmc_500_nextgem_fragments.tsv.gz",
-#   min.cells = 10,
-#   min.features = 200
-# )
-# 
-# pbmc <- CreateSeuratObject(
-#   counts = chrom_assay,
-#   assay = "peaks",
-#   meta.data = metadata
-# )
+library(Signac)
+library(Seurat)
+
+counts <- Read10X_h5(filename = "data/atac_pbmc_500_nextgem_filtered_peak_bc_matrix.h5")
+
+std_chr   <- paste0("chr", c(1:22, "X", "Y"))
+peak_chr  <- as.character(seqnames(StringToGRanges(rownames(counts), sep = c(":", "-"))))
+counts    <- counts[peak_chr %in% std_chr, ]
+
+metadata <- read.csv(
+  file = "data/atac_pbmc_500_nextgem_singlecell.csv",
+  header = TRUE,
+  row.names = 1
+)
+
+chrom_assay <- CreateChromatinAssay(
+  counts = counts,
+  sep = c(":", "-"),
+  fragments = "data/atac_pbmc_500_nextgem_fragments.tsv.gz",
+  min.cells = 10,
+  min.features = 200
+)
+
+pbmc <- CreateSeuratObject(
+  counts = chrom_assay,
+  assay = "peaks",
+  meta.data = metadata
+)
+
+
 
 pbmc <- readRDS("data/pbmc_start.rds")
 
 
 
 
-
 library(AnnotationHub)
 ah <- AnnotationHub()
-
 query(ah, "EnsDb.Hsapiens.v98")
+
+
 ensdb_v98 <- ah[["AH75011"]]
-
 annotations <- GetGRangesFromEnsDb(ensdb = ensdb_v98)
-
 head(annotations)
+
 
 
 seqlevels(annotations) <- paste0('chr', seqlevels(annotations))
@@ -94,6 +94,14 @@ pbmc$pct_reads_in_peaks <- pbmc$peak_region_fragments /
                             pbmc$passed_filters * 100
 
 VlnPlot(pbmc, features = "pct_reads_in_peaks")
+
+CoveragePlot(
+  object            = pbmc,
+  region            = "chr9-134164478-134165354",
+  extend.upstream   = 5000,
+  extend.downstream = 5000
+)
+
 
 Signac::blacklist_hg38
 
@@ -149,6 +157,8 @@ amu <- amulet(
   barcodes         = colnames(pbmc),
   regionsToExclude = excl
 )
+
+
 
 amu <- amu[colnames(pbmc), ]
 
@@ -238,5 +248,3 @@ quantile(peak_counts, c(0.05, 0.25, 0.5, 0.75))
 hist(log10(peak_counts), breaks = 50, main = "Total counts per peak")
 abline(v = log10(22), col = "red", linetype = "dashed", lwd = 2)
 
-
-# saveRDS(pbmc,"~/Desktop/ATAC.data.500.cell/pbmc_filtered_tfidf.rds")

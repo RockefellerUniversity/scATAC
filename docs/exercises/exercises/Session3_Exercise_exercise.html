@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
 width: 0.8em;
 margin: 0 0.8em 0.2em -1em;  vertical-align: middle;
 }
+
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+}
+pre.numberSource { margin-left: 3em; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -3076,12 +3110,70 @@ vertical-align: -.125em;
  
 </p>
 <p>These exercises are about LSI, UMAP, clustering, gene activity scores and label transfer in <a href="https://rockefelleruniversity.github.io/scATAC/">Single-cell ATAC-seq</a>.</p>
-<p><strong>Exercise 1</strong> - <strong>??Ex 1 title??</strong></p>
+<p>We carry on with the E18 mouse brain dataset from the Session 2 exercise. Start from your filtered, TF-IDF normalized object (or load ours below).</p>
+<p>Developing brain is very different from blood. Rather than a handful of distinct, well-separated cell types, there is a <strong>continuum</strong>: progenitors in the ventricular zone become intermediate progenitors and then neurons as they migrate outwards. Keep that in mind when you judge your clusters.</p>
+<p><strong>Exercise 1</strong> - <strong>LSI</strong></p>
 <ul>
-<li>??What is the first question??</li>
+<li>Load the object from the Session 2 exercise and run SVD. Which LSI components should you drop? Check with <code>DepthCor()</code>.</li>
+</ul>
+<p><strong>Exercise 2</strong> - <strong>UMAP</strong></p>
+<ul>
+<li>Run UMAP on LSI components 2:30 (seed 42) and plot it.</li>
 </ul>
 <ul>
-<li>??What is the second question??</li>
+<li>Now run it again <em>including</em> LSI 1 and colour both UMAPs by nCount_peaks. What changes?</li>
+</ul>
+<p><strong>Exercise 3</strong> - <strong>Clustering</strong></p>
+<ul>
+<li>Build the neighbour graph on LSI 2:30 and cluster with the SLM algorithm (seed 42) at the default resolution. How many clusters do you get?</li>
+</ul>
+<ul>
+<li>Try a coarser (0.4) and a finer (1.5) resolution. Given that this tissue is a developmental continuum, what resolution would you pick, and why is there no single right answer?</li>
+</ul>
+<p><strong>Exercise 4</strong> - <strong>QC revisited</strong></p>
+<ul>
+<li>Plot your QC metrics on the UMAP and by cluster. Does any cluster look like it is driven by low quality, or by doublets?</li>
+</ul>
+<ul>
+<li>In the Session 2 exercise we used a fairly permissive FRiP threshold. Is low FRiP spread evenly, or concentrated in some clusters? What could cause a cell type to have low FRiP without being low quality?</li>
+</ul>
+<p><strong>Exercise 5</strong> - <strong>Gene activity</strong></p>
+<ul>
+<li>Compute gene activity scores, add them as an “RNA” assay and log-normalize them as in the session.</li>
+</ul>
+<ul>
+<li>Plot gene activity for known markers of the developing cortex. Mouse gene symbols are title case (e.g. <em>Pax6</em>, not <em>PAX6</em>). Which clusters look like progenitors, which like neurons, and are there any non-neural cells?</li>
+</ul>
+<ul>
+<li>Give each cluster a provisional label based on the markers. Which clusters are you least confident about?</li>
+</ul>
+<p><strong>Exercise 6</strong> - <strong>Label transfer from an imperfect reference</strong></p>
+<p>We don’t have an annotated scRNA-seq reference for E18 mouse brain that is small and freely downloadable. Instead we use the reference from the <a href="https://stuartlab.org/signac/articles/mouse_brain_vignette">Signac mouse brain vignette</a>: scRNA-seq of <strong>adult</strong> mouse cortex from the Allen Institute (~1.2 GB).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">timeout =</span> <span class="dv">3600</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">url      =</span> <span class="st">&quot;https://signac-objects.s3.amazonaws.com/allen_brain.rds&quot;</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">destfile =</span> <span class="st">&quot;data/allen_brain.rds&quot;</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">mode     =</span> <span class="st">&quot;wb&quot;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Before running anything: this is adult cortex and our sample is embryonic cortex, hippocampus and ventricular zone. Which of our cell types do you expect to be <strong>missing</strong> from the reference? What do you think label transfer will do with those cells?</li>
+</ul>
+<ul>
+<li>Load the reference and explore its metadata. How old are the mice, and which brain regions were sampled? Which columns hold cell type labels, and at what level of detail?</li>
+</ul>
+<ul>
+<li>Find transfer anchors between the reference and your gene activity assay, and transfer the <code>subclass</code> labels. Use LSI 2:30 for the weighting, as in the session.</li>
+</ul>
+<ul>
+<li>Look at the prediction scores. Where on the UMAP are the low-confidence cells, and which of your marker-based clusters do they match? Was your prediction right?</li>
+</ul>
+<ul>
+<li>Cross-tabulate transferred labels against your clusters. Pick one cluster where the transferred label disagrees with your marker-based label. Which do you trust, and why? (Hint: look at how many cells get adult interneuron labels such as Sst, Vip and Pvalb, and compare that with <em>Gad2</em>/<em>Dlx2</em> activity.)</li>
+</ul>
+<ul>
+<li>If you were analyzing this dataset for real, what reference would you look for? What properties does a good reference need?</li>
 </ul>
 
 </main>

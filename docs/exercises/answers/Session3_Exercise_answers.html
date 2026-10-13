@@ -3110,18 +3110,304 @@ vertical-align: -.125em;
  
 </p>
 <p>These exercises are about LSI, UMAP, clustering, gene activity scores and label transfer in <a href="https://rockefelleruniversity.github.io/scATAC/">Single-cell ATAC-seq</a>.</p>
-<p><strong>Exercise 1</strong> - <strong>??Ex 1 title??</strong></p>
+<p>We carry on with the E18 mouse brain dataset from the Session 2 exercise. Start from your filtered, TF-IDF normalized object (or load ours below).</p>
+<p>Developing brain is very different from blood. Rather than a handful of distinct, well-separated cell types, there is a <strong>continuum</strong>: progenitors in the ventricular zone become intermediate progenitors and then neurons as they migrate outwards. Keep that in mind when you judge your clusters.</p>
+<p><strong>Exercise 1</strong> - <strong>LSI</strong></p>
 <ul>
-<li>??What is the first question??</li>
+<li>Load the object from the Session 2 exercise and run SVD. Which LSI components should you drop? Check with <code>DepthCor()</code>.</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="do">## ?? Solution here — shown only in the answers version (echo=toMessage) ??</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Signac)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Seurat)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>brain <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;data/brain_filtered_tfidf.rds&quot;</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>brain <span class="ot">&lt;-</span> <span class="fu">RunSVD</span>(brain)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">DepthCor</span>(brain)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="do">## LSI 1 tracks sequencing depth, as in the PBMC data, so we drop it. Check</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="do">## whether any later component is also strongly depth-correlated (|r| &gt; ~0.5).</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Exercise 2</strong> - <strong>UMAP</strong></p>
+<ul>
+<li>Run UMAP on LSI components 2:30 (seed 42) and plot it.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>brain <span class="ot">&lt;-</span> <span class="fu">RunUMAP</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">object    =</span> brain,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">reduction =</span> <span class="st">&quot;lsi&quot;</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">dims      =</span> <span class="dv">2</span><span class="sc">:</span><span class="dv">30</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed.use  =</span> <span class="dv">42</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">DimPlot</span>(brain) <span class="sc">+</span> <span class="fu">NoLegend</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <ul>
-<li>??What is the second question??</li>
+<li>Now run it again <em>including</em> LSI 1 and colour both UMAPs by nCount_peaks. What changes?</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="do">## ?? Solution here ??</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>brain_lsi1 <span class="ot">&lt;-</span> <span class="fu">RunUMAP</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">object    =</span> brain,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">reduction =</span> <span class="st">&quot;lsi&quot;</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">dims      =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed.use  =</span> <span class="dv">42</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">FeaturePlot</span>(brain,      <span class="at">features =</span> <span class="st">&quot;nCount_peaks&quot;</span>, <span class="at">max.cutoff =</span> <span class="st">&quot;q95&quot;</span>) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">&quot;LSI 2:30&quot;</span>) <span class="sc">|</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">FeaturePlot</span>(brain_lsi1, <span class="at">features =</span> <span class="st">&quot;nCount_peaks&quot;</span>, <span class="at">max.cutoff =</span> <span class="st">&quot;q95&quot;</span>) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">&quot;LSI 1:30&quot;</span>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(brain_lsi1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Exercise 3</strong> - <strong>Clustering</strong></p>
+<ul>
+<li>Build the neighbour graph on LSI 2:30 and cluster with the SLM algorithm (seed 42) at the default resolution. How many clusters do you get?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>brain <span class="ot">&lt;-</span> <span class="fu">FindNeighbors</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">object    =</span> brain,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">reduction =</span> <span class="st">&quot;lsi&quot;</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">dims      =</span> <span class="dv">2</span><span class="sc">:</span><span class="dv">30</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>brain <span class="ot">&lt;-</span> <span class="fu">FindClusters</span>(</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">object      =</span> brain,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">algorithm   =</span> <span class="dv">3</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">resolution  =</span> <span class="fl">0.8</span>,</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">random.seed =</span> <span class="dv">42</span>,</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">verbose     =</span> <span class="cn">FALSE</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">levels</span>(brain<span class="sc">$</span>seurat_clusters))</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="fu">DimPlot</span>(brain, <span class="at">label =</span> <span class="cn">TRUE</span>) <span class="sc">+</span> <span class="fu">NoLegend</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Try a coarser (0.4) and a finer (1.5) resolution. Given that this tissue is a developmental continuum, what resolution would you pick, and why is there no single right answer?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>brain <span class="ot">&lt;-</span> <span class="fu">FindClusters</span>(brain, <span class="at">algorithm =</span> <span class="dv">3</span>, <span class="at">resolution =</span> <span class="fl">0.4</span>, <span class="at">random.seed =</span> <span class="dv">42</span>, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>brain <span class="ot">&lt;-</span> <span class="fu">FindClusters</span>(brain, <span class="at">algorithm =</span> <span class="dv">3</span>, <span class="at">resolution =</span> <span class="fl">1.5</span>, <span class="at">random.seed =</span> <span class="dv">42</span>, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">DimPlot</span>(brain, <span class="at">group.by =</span> <span class="st">&quot;peaks_snn_res.0.4&quot;</span>, <span class="at">label =</span> <span class="cn">TRUE</span>) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">&quot;Resolution 0.4&quot;</span>) <span class="sc">+</span> <span class="fu">NoLegend</span>()</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">DimPlot</span>(brain, <span class="at">group.by =</span> <span class="st">&quot;peaks_snn_res.1.5&quot;</span>, <span class="at">label =</span> <span class="cn">TRUE</span>) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">&quot;Resolution 1.5&quot;</span>) <span class="sc">+</span> <span class="fu">NoLegend</span>()</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>p1 <span class="sc">+</span> p2</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="do">## Along a differentiation trajectory, higher resolutions mostly cut the same</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="do">## continuum into more pieces rather than revealing new discrete types. Pick</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="do">## the resolution that matches the question (broad lineages vs. maturation</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="do">## stages) and check that the extra clusters have distinct markers.</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="do">## Carry on with resolution 0.8</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="fu">Idents</span>(brain) <span class="ot">&lt;-</span> <span class="st">&quot;peaks_snn_res.0.8&quot;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Exercise 4</strong> - <strong>QC revisited</strong></p>
+<ul>
+<li>Plot your QC metrics on the UMAP and by cluster. Does any cluster look like it is driven by low quality, or by doublets?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">FeaturePlot</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  brain,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">features   =</span> <span class="fu">c</span>(<span class="st">&quot;nCount_peaks&quot;</span>, <span class="st">&quot;TSS.enrichment&quot;</span>, <span class="st">&quot;nucleosome_signal&quot;</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                 <span class="st">&quot;pct_reads_in_peaks&quot;</span>, <span class="st">&quot;scDblFinder.score&quot;</span>),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">max.cutoff =</span> <span class="st">&quot;q95&quot;</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">ncol       =</span> <span class="dv">3</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">VlnPlot</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  brain,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">features =</span> <span class="fu">c</span>(<span class="st">&quot;nCount_peaks&quot;</span>, <span class="st">&quot;TSS.enrichment&quot;</span>, <span class="st">&quot;pct_reads_in_peaks&quot;</span>, <span class="st">&quot;scDblFinder.score&quot;</span>),</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">pt.size  =</span> <span class="dv">0</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">ncol     =</span> <span class="dv">2</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Proportion of scDblFinder doublets per cluster: a cluster made up mostly of</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="do">## doublets is a candidate for removal.</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">prop.table</span>(<span class="fu">table</span>(<span class="fu">Idents</span>(brain), brain<span class="sc">$</span>scDblFinder.class), <span class="at">margin =</span> <span class="dv">1</span>), <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>In the Session 2 exercise we used a fairly permissive FRiP threshold. Is low FRiP spread evenly, or concentrated in some clusters? What could cause a cell type to have low FRiP without being low quality?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Cell Ranger called peaks on the pooled cells. Peaks specific to rarer cell</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="do">## types are under-represented, so those cells have fewer fragments in peaks,</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="do">## and so a lower FRiP, even when they are fine. Re-calling peaks per cluster</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="do">## (MACS2 via CallPeaks) is the fix if this matters.</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="fu">VlnPlot</span>(brain, <span class="at">features =</span> <span class="st">&quot;pct_reads_in_peaks&quot;</span>, <span class="at">pt.size =</span> <span class="dv">0</span>) <span class="sc">+</span> <span class="fu">NoLegend</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Exercise 5</strong> - <strong>Gene activity</strong></p>
+<ul>
+<li>Compute gene activity scores, add them as an “RNA” assay and log-normalize them as in the session.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>gene.activities <span class="ot">&lt;-</span> <span class="fu">GeneActivity</span>(brain)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>brain[[<span class="st">&quot;RNA&quot;</span>]] <span class="ot">&lt;-</span> <span class="fu">CreateAssayObject</span>(<span class="at">counts =</span> gene.activities)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>brain <span class="ot">&lt;-</span> <span class="fu">NormalizeData</span>(</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">object               =</span> brain,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">assay                =</span> <span class="st">&quot;RNA&quot;</span>,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">normalization.method =</span> <span class="st">&quot;LogNormalize&quot;</span>,</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">scale.factor         =</span> <span class="fu">median</span>(brain<span class="sc">$</span>nCount_RNA)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="fu">DefaultAssay</span>(brain) <span class="ot">&lt;-</span> <span class="st">&quot;RNA&quot;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Plot gene activity for known markers of the developing cortex. Mouse gene symbols are title case (e.g. <em>Pax6</em>, not <em>PAX6</em>). Which clusters look like progenitors, which like neurons, and are there any non-neural cells?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>markers <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Pax6&quot;</span>, <span class="st">&quot;Sox2&quot;</span>, <span class="st">&quot;Hes5&quot;</span>,      <span class="co"># radial glia / apical progenitors</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Mki67&quot;</span>,                     <span class="co"># cycling cells</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Eomes&quot;</span>,                     <span class="co"># intermediate progenitors (Tbr2)</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Neurod2&quot;</span>, <span class="st">&quot;Neurod6&quot;</span>,        <span class="co"># excitatory neurons</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Tbr1&quot;</span>, <span class="st">&quot;Bcl11b&quot;</span>, <span class="st">&quot;Satb2&quot;</span>,   <span class="co"># deep-layer / upper-layer cortical neurons</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Gad2&quot;</span>, <span class="st">&quot;Dlx2&quot;</span>,              <span class="co"># inhibitory interneurons</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Olig2&quot;</span>,                     <span class="co"># oligodendrocyte lineage / glial progenitors</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;Reln&quot;</span>                       <span class="co"># Cajal-Retzius cells</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="fu">FeaturePlot</span>(brain, <span class="at">features =</span> markers, <span class="at">pt.size =</span> <span class="fl">0.1</span>, <span class="at">max.cutoff =</span> <span class="st">&quot;q95&quot;</span>, <span class="at">ncol =</span> <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">DotPlot</span>(brain, <span class="at">features =</span> markers) <span class="sc">+</span> <span class="fu">RotatedAxis</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Give each cluster a provisional label based on the markers. Which clusters are you least confident about?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="do">## One way to make this systematic: average gene activity per cluster for each</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="do">## group of markers, then take the group with the highest score. Treat the</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="do">## result as a starting point and check it against the dot plot.</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>marker_groups <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Radial glia</span><span class="st">`</span>              <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;Pax6&quot;</span>, <span class="st">&quot;Sox2&quot;</span>, <span class="st">&quot;Hes5&quot;</span>),</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Intermediate progenitor</span><span class="st">`</span>  <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;Eomes&quot;</span>),</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Deep-layer excitatory</span><span class="st">`</span>    <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;Tbr1&quot;</span>, <span class="st">&quot;Bcl11b&quot;</span>, <span class="st">&quot;Neurod6&quot;</span>),</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Upper-layer excitatory</span><span class="st">`</span>   <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;Satb2&quot;</span>),</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Interneuron</span><span class="st">`</span>              <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;Gad2&quot;</span>, <span class="st">&quot;Dlx2&quot;</span>),</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  <span class="st">`</span><span class="at">Cajal-Retzius</span><span class="st">`</span>            <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;Reln&quot;</span>)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>avg <span class="ot">&lt;-</span> <span class="fu">AverageExpression</span>(brain, <span class="at">assay =</span> <span class="st">&quot;RNA&quot;</span>, <span class="at">features =</span> <span class="fu">unlist</span>(marker_groups),</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>                         <span class="at">group.by =</span> <span class="st">&quot;peaks_snn_res.0.8&quot;</span>)<span class="sc">$</span>RNA</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="do">## Scale each gene across clusters so highly-scored genes don&#39;t dominate</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>avg_z <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">scale</span>(<span class="fu">t</span>(<span class="fu">as.matrix</span>(avg))))</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>group_scores <span class="ot">&lt;-</span> <span class="fu">sapply</span>(marker_groups, <span class="cf">function</span>(g) <span class="fu">colMeans</span>(avg_z[g, , <span class="at">drop =</span> <span class="cn">FALSE</span>]))</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">cluster =</span> <span class="fu">rownames</span>(group_scores),</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>           <span class="at">provisional =</span> <span class="fu">colnames</span>(group_scores)[<span class="fu">apply</span>(group_scores, <span class="dv">1</span>, which.max)])</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a><span class="do">## Least clear-cut here: the large Reln-high cluster (Reln is broad in</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a><span class="do">## gene activity, and true Cajal-Retzius cells are rare) and clusters with</span></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a><span class="do">## weak, mixed markers, which are likely immature or migrating neurons</span></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a><span class="do">## between progenitor and neuron states.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Exercise 6</strong> - <strong>Label transfer from an imperfect reference</strong></p>
+<p>We don’t have an annotated scRNA-seq reference for E18 mouse brain that is small and freely downloadable. Instead we use the reference from the <a href="https://stuartlab.org/signac/articles/mouse_brain_vignette">Signac mouse brain vignette</a>: scRNA-seq of <strong>adult</strong> mouse cortex from the Allen Institute (~1.2 GB).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">timeout =</span> <span class="dv">3600</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">url      =</span> <span class="st">&quot;https://signac-objects.s3.amazonaws.com/allen_brain.rds&quot;</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">destfile =</span> <span class="st">&quot;data/allen_brain.rds&quot;</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">mode     =</span> <span class="st">&quot;wb&quot;</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Before running anything: this is adult cortex and our sample is embryonic cortex, hippocampus and ventricular zone. Which of our cell types do you expect to be <strong>missing</strong> from the reference? What do you think label transfer will do with those cells?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="do">## The adult cortex has no radial glia, intermediate progenitors or migrating</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="do">## immature neurons. Label transfer always assigns the closest reference label,</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="do">## so those cells will still get a label (e.g. an astrocyte or neuron type),</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="do">## but with a lower prediction score. It cannot say &quot;none of the above&quot;.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Load the reference and explore its metadata. How old are the mice, and which brain regions were sampled? Which columns hold cell type labels, and at what level of detail?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>allen_rna <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;data/allen_brain.rds&quot;</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>allen_rna <span class="ot">&lt;-</span> <span class="fu">UpdateSeuratObject</span>(allen_rna)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>allen_rna</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="do">## Adult animals (~P50-P90), and primary visual cortex (VISp) only. Our</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="do">## sample is embryonic and also has hippocampus and ventricular zone.</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(allen_rna<span class="sc">$</span>age_days)</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(allen_rna<span class="sc">$</span>brain_region)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="do">## &quot;class&quot; is coarse, &quot;subclass&quot; mid-level (we use this), &quot;cluster&quot; finest.</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(allen_rna<span class="sc">$</span>class)</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(allen_rna<span class="sc">$</span>subclass)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Find transfer anchors between the reference and your gene activity assay, and transfer the <code>subclass</code> labels. Use LSI 2:30 for the weighting, as in the session.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>allen_rna <span class="ot">&lt;-</span> <span class="fu">FindVariableFeatures</span>(allen_rna, <span class="at">nfeatures =</span> <span class="dv">5000</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="fu">DefaultAssay</span>(brain) <span class="ot">&lt;-</span> <span class="st">&quot;RNA&quot;</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>transfer.anchors <span class="ot">&lt;-</span> <span class="fu">FindTransferAnchors</span>(</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">reference       =</span> allen_rna,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">query           =</span> brain,</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">features        =</span> <span class="fu">VariableFeatures</span>(<span class="at">object =</span> allen_rna),</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">reference.assay =</span> <span class="st">&quot;RNA&quot;</span>,</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">query.assay     =</span> <span class="st">&quot;RNA&quot;</span>,</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">reduction       =</span> <span class="st">&quot;cca&quot;</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>predictions <span class="ot">&lt;-</span> <span class="fu">TransferData</span>(</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">anchorset        =</span> transfer.anchors,</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">refdata          =</span> allen_rna<span class="sc">$</span>subclass,</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">weight.reduction =</span> brain[[<span class="st">&quot;lsi&quot;</span>]],</span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">dims             =</span> <span class="dv">2</span><span class="sc">:</span><span class="dv">30</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>brain <span class="ot">&lt;-</span> <span class="fu">AddMetaData</span>(brain, <span class="at">metadata =</span> predictions)</span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(allen_rna)   <span class="co"># ~1 GB we no longer need</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">DimPlot</span>(brain, <span class="at">group.by =</span> <span class="st">&quot;predicted.id&quot;</span>, <span class="at">label =</span> <span class="cn">TRUE</span>, <span class="at">repel =</span> <span class="cn">TRUE</span>) <span class="sc">+</span> <span class="fu">NoLegend</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Look at the prediction scores. Where on the UMAP are the low-confidence cells, and which of your marker-based clusters do they match? Was your prediction right?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(brain<span class="sc">$</span>prediction.score.max, <span class="at">breaks =</span> <span class="dv">50</span>,</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;Max prediction score&quot;</span>, <span class="at">main =</span> <span class="st">&quot;Label transfer confidence&quot;</span>)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="fu">FeaturePlot</span>(brain, <span class="at">features =</span> <span class="st">&quot;prediction.score.max&quot;</span>)</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="do">## Median confidence per cluster. Confidence is low (well below 0.5) almost</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="do">## everywhere, not only in progenitors: embryonic neurons are not yet like</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="do">## adult cortical neurons either. The radial glia cluster is typically the</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="do">## lowest, and is mostly called &quot;Astro&quot;, the closest adult relative.</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="fu">sort</span>(<span class="fu">tapply</span>(brain<span class="sc">$</span>prediction.score.max, <span class="fu">Idents</span>(brain), median))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Cross-tabulate transferred labels against your clusters. Pick one cluster where the transferred label disagrees with your marker-based label. Which do you trust, and why? (Hint: look at how many cells get adult interneuron labels such as Sst, Vip and Pvalb, and compare that with <em>Gad2</em>/<em>Dlx2</em> activity.)</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>xtab <span class="ot">&lt;-</span> <span class="fu">table</span>(<span class="at">cluster =</span> <span class="fu">Idents</span>(brain), <span class="at">predicted =</span> brain<span class="sc">$</span>predicted.id)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>xtab</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Clusters differ a lot in size, so show the fraction of each cluster given</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="do">## each label (rows sum to 1) rather than raw counts.</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>xtab_prop <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">prop.table</span>(xtab, <span class="at">margin =</span> <span class="dv">1</span>))</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(xtab_prop, <span class="fu">aes</span>(<span class="at">x =</span> predicted, <span class="at">y =</span> cluster, <span class="at">fill =</span> Freq)) <span class="sc">+</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_tile</span>() <span class="sc">+</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_gradient</span>(<span class="at">low =</span> <span class="st">&quot;white&quot;</span>, <span class="at">high =</span> <span class="st">&quot;firebrick&quot;</span>,</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>                      <span class="at">name =</span> <span class="st">&quot;Fraction of</span><span class="sc">\n</span><span class="st">cluster&quot;</span>) <span class="sc">+</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;Transferred label (adult Allen reference)&quot;</span>, <span class="at">y =</span> <span class="st">&quot;Cluster&quot;</span>) <span class="sc">+</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>If you were analyzing this dataset for real, what reference would you look for? What properties does a good reference need?</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Same species and genome annotation, the same tissue/region, and above all</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="do">## the same developmental stage, so every query cell type is present. Ideally</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="do">## also annotated at the resolution you need (e.g. progenitor subtypes), from a</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="do">## similar technology. For E18 cortex, developmental atlases (e.g. Di Bella et al.</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="do">## 2021, or the Allen developing mouse cortex data) are much better matches</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="do">## than adult cortex.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 
 </main>

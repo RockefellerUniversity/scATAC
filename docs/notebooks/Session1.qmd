@@ -1014,12 +1014,6 @@ outs/
 # Cell Ranger Web Summary {background-color="#23373B" .center .middle}
 
 
-## QC outputs
-
-Assessment of the overall quality of a scATAC-seq experiment after Cell Ranger gives us our first chance to dig into the quality of the dataset and gain insight into any issues we might face in data analysis.
-
-
-
 ## QC is essential
 
 ::: {.columns}
@@ -1030,9 +1024,10 @@ Assessment of the overall quality of a scATAC-seq experiment after Cell Ranger g
 There are many potential issues which can arise in scATAC-seq data including:
 
 - Ambient DNA contamination
-- Empty droplets
-- Low quality cells (dead or dying)
 - Doublets 
+- Low quality cells (dead or dying)
+- Empty droplets
+
 
 
 
@@ -1050,21 +1045,12 @@ There are many potential issues which can arise in scATAC-seq data including:
 :::
 
 
-## Metrics and Web Summary
-
-Cell Ranger will also output summaries of useful metrics as a text file _(summary.csv)_ and as an intuitive web-page _(web_summary.html)_.
-
-Metrics include:
-
-- fragments per cell.
-- Number of cells detected.
-- percent duplicates/library complexity
-- t-sne/UMAP with default clustering.
-- TSS enrichment
-- Insert size distribution
-
 
 ## Metrics and Web Summary
+
+As we saw in the output files, Cell Ranger generates summaries of useful metrics as a text file _(summary.csv)_ and as an intuitive web-page _(web_summary.html)_.
+
+<br> 
 
 While it often takes a deeper look into the results to understand QC issues, the Cell Ranger summary can give our first insight into key issues we might face.
 

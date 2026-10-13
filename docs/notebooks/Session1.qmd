@@ -123,10 +123,10 @@ source: [Illumina](https://www.illumina.com/documents/products/illumina_sequenci
 <img src="../imgs/fastq1.png" height="250" width="600">
 </div>
 
-- "@" followed by identifier.
-- Sequence information.
+- "@" followed by identifier
+- Sequence information
 - "+" 
-- Quality scores encoded as ASCII.
+- Quality scores encoded as ASCII
 
 
 
@@ -152,26 +152,16 @@ source: [Illumina](https://www.illumina.com/documents/products/illumina_sequenci
 <img src="../imgs/fastq3.png" height="250" width="600">
 </div>
  
-- Qualities follow "+" line.
-- −10·log10(probability of base being wrong). 
 - Encoded in ASCII to save space.
 - Used in quality assessment and downstream analysis
+- −10·log10(probability of base being wrong)
+- For example, (Q)30 = -10*log10(0.001), or 1 in 1000 change of being wrong
  
-
-
-## Sequencing use cases
-
-- CUT&RUN/ChIP-seq - Study transcription factor binding
-- RNA-seq - Study genome wide transcriptomics
-- Whole Genome/Exome Sequencing - Study genome variation/changes
-- MNase-seq/DNase-seq/ATAC-seq - Study chromatin structure/accessibility
-- CRISPR screens - Study genome wide phenotypes
-- And many more..
 
 
 ## Bulk sequencing methods
 
-For many years, NGS sequencing was performed on bulk tissue or cells. 
+For many years, NGS sequencing was performed on bulk tissue or cells (e.g. RNA-seq, ChIP-seq, ATAC-seq). 
 
 This effectively allows us to understand differences between tissues, conditions (cancer vs healthy), treatments (drug vs control), or genetic perturbations (WT vs KO). 
 
@@ -212,7 +202,7 @@ Single-cell sequencing, as with bulk sequencing, has now been applied to the stu
 
 - scRNA-seq/snRNA-seq - Transcriptomics
 - **scATAC-seq/snATAC-seq - Chromatin accessibility**
-- CITE-seq - Surface protein expression
+- scCUT&TAG - Histone modifications/TF binding
 - AIRR - TCR/BCR profiling
 - Spatial-seq - Spatial profiling of gene expression.
 
@@ -228,6 +218,8 @@ Single-cell sequencing, as with bulk sequencing, has now been applied to the stu
 - BD Rhapsody - microwell based
 
 10x is the most popular and is known to produce high quality data. 
+
+<br>
 
 Combinatorial methods scale better, don't require specialized equipment, and are more cost effective. Though they lack a developed commercial product right now for scATAC.  
 
@@ -314,8 +306,11 @@ source: [ 10x scATAC User Guide](https://cdn.10xgenomics.com/image/upload/v17280
 ::: {.column width="50%"}
 ::: {style="font-size: 90%;"}
 <br>
-<br>
 - The GEMs are then chemically broken, and the P7 sequence and sample index are added in bulk via the Read 2N Tn5 adapter sequence by PCR.
+
+<br>
+
+- Now we have an amplified library that is sequenced to capture the sample index, cell barcode, and both ends of the fragment. 
 :::
 :::
 
@@ -440,12 +435,15 @@ atac_pbmc_500_nextgem_fastqs/
 ## From Sequences to Processed data
 
 ::: {style="font-size: 90%;"}
-Similar to standard ATAC sequencing data, the next steps are to align the data to a reference genome and call peaks. Single cell ATAC requires the additional steps of identifying cells and summarizing data to a peak matrix.
+Similar to standard ATAC sequencing, now that we have our FASTQ files the next steps are to align the data to a reference genome and call peaks. 
 
-Options for these steps include:
+Single cell ATAC requires the additional steps of identifying cells and summarizing data to a cell by peak count matrix.
+
+<br>
+Software options for these steps include:
 
 - Cell Ranger ATAC (from 10x) aligns to a reference (uses BWA), generates fragments, and calls peaks using fragments pooled from all barcodes.
-- chromap is another scATAC-centric software to get fragments (cell and peak calling done manually)
+- [chromap](https://github.com/haowenz/chromap){target="_blank"} is another scATAC-centric software to get fragments. Its lighter weight and faster, though cell and peak calling is done manually
 - custom alignment  
 :::
 
@@ -454,8 +452,9 @@ Options for these steps include:
 
 ## Cell Ranger ATAC
 
-Cell Ranger ATAC is the typical approach we use to process 10x data that works well out of the box. This is an intensive program, so we will not be running this locally on your laptops. Instead we run it on remote systems, like the HPC.
+Cell Ranger ATAC is the typical approach we use to process 10x data that works well out of the box. This is an intensive program that is only available for Linux machines, so we will not be running this locally on your laptops. Instead we run it on remote systems, like the HPC.
 
+<br>
 If you are working with your own data, the data will often be provided as the Cell Ranger output by the Genomics/Bioinformatics teams, like here at Rockefeller University. 
 
 
@@ -507,7 +506,7 @@ In this session we will give a brief overview of running this tool and then dive
 
 :::
 
-## Cell Ranger ATAC
+## Cell Ranger ATAC Download
 
 - Cell Ranger only runs on linux machines (CentOS/RedHat 7.0+ and Ubuntu 14.04+).
 - Due to memory requirements, typically users run Cell Ranger on a remote server and not their own machines
@@ -520,11 +519,12 @@ wget -O cellranger-atac-2.2.0.tar.gz "https://cf.10xgenomics.com/releases/cell-a
 ```
 
 
-## Cell Ranger ATAC
+## Cell Ranger ATAC Reference
 
 Download reference genome for Cell Ranger i.e. Human genome (GRCh38)
 
-Below we download the reference from 10x designed for multiome analysis (ATAC + RNA, referred to on 10x as the *ARC* pipeline). It is also used for cellranger-atac, and contains elements that are specific to ATAC analysis, such as genome alignment, TSS enrichment, and motifs.
+- Below we download the reference from 10x designed for multiome analysis (ATAC + RNA, referred to on 10x as the *ARC* pipeline). 
+- It is also used for cellranger-atac, and contains elements that are specific to ATAC analysis, such as genome alignment, TSS enrichment, and motifs.
 
 ```{shell, eval=FALSE}
 wget "https://cf.10xgenomics.com/supp/cell-arc/refdata-cellranger-arc-GRCh38-2024-A.tar.gz"
@@ -554,7 +554,7 @@ export PATH=/PATH_TO_CELLRANGER_DIRECTORY/cellranger-atac-2.2.0:$PATH
 
  <br>
  <br>
-Now we have the downloaded Cell Ranger software and the reference we can start the processing of our fastQ files.
+Now we have the downloaded Cell Ranger software and the reference we can start the processing of our FASTQ files.
  <br>
  <br>
 With the Cell Ranger software and pre-built reference files, we can generate fragments and counts from our directory of FASTQ files.
@@ -609,34 +609,39 @@ To create your own references you will need two additional files.
 
 ## GTF (Gene Transfer Format)
 
- <div align="center">
-<img src="../imgs/gff.png" height="150" width="700">
-</div>
-
 - Stores position, feature (exon) and meta-feature (transcript/gene) information.
-- Used in scATAC for locating TSSs and annotating peaks to genes 
+- Used in scATAC for locating TSSs and annotating peaks to genes
+- Column 9 holds key–value attributes, including the **gene_biotype** used for filtering.
 
+
+![](../imgs/gtf_human.png){.nostretch fig-align="center" style="max-width: none; max-height: none; width: 100%;"}
+
+::: {style="font-size: 30%;"}
+Ensembl GRCh38 release 116 GTF
+:::
 
 ## Filter GTF
 
-::: {style="font-size: 80%;"}
-An optional step is to clean up the GTF and remove unwanted or low-confidence annotations. This can be done manually by filtering the GTF *gene_biotype* column to key types, such as 'protein_coding' and 'lncRNA'. 
-
-GTF files can be read into or exported from R using the *import* and *export* functions from the rtracklayer package. 
-
+An optional step is to clean up the GTF by removing unwanted or low-confidence annotations. This can be done manually by filtering the GTF *gene_biotype* column to key types, such as 'protein_coding' and 'lncRNA'. 
+<br>
+<br>
+ 
+Manual filtering of GTF files can done by reading into or exporting from R using the *import* and *export* functions from the rtracklayer package. 
+<br>
+<br>
 10x also provides scripts [at this link](https://www.10xgenomics.com/support/software/cell-ranger-atac/downloads/ref-build-steps) showing how their references are built and filtered. 
-:::
+
 
 
 
 ## Generate Cell Ranger mkref config file
 
+
+Following filtering of your GTF to the required biotypes, we can use the Cell Ranger ATAC *mkref* tool to create our custom reference. This requires a config file with key:value pairs. 
+
 ::: {style="font-size: 80%;"}
-Following filtering of your GTF to the required biotypes, we can use the Cell Ranger ATAC mkref tool to create our custom reference.
-
-This requires a config file with key:value pairs. The *non_nuclear_contigs* pair indicates which contigs are not part of nuclear genome and reads aligning to them will be excluded from peak calling. 
-
-The *input_motifs* pair is optional and will trigger an additional TF enrichment analysis.
+  - The *non_nuclear_contigs* pair indicates which contigs are not part of nuclear genome and reads aligning to them will be excluded from peak calling. 
+  - The *input_motifs* pair is optional and will trigger an additional TF enrichment analysis.
 :::
 
 ```{shell, eval=FALSE}
@@ -670,9 +675,11 @@ cellranger-atac mkref --config=/path/to/references/custom_GRCh38.config
 ::: {.columns}
 
 ::: {.column width="50%"}
-Having completed the Cell Ranger count step, the user will have created a folder, with the name set by the **--id** flag from the count command.
-
+Having completed running *cellranger-atac count*, we will have created a folder with the name set by the **--id** flag in the function call.
+<br>
 Within this folder there will be the **outs/** directory and descriptions of each file/folder can be found [here](https://www.10xgenomics.com/support/software/cell-ranger-atac/latest/analysis/outputs/understanding-output){target="_blank"}
+<br>
+We will go through the files generally used in our downstream processing.
 :::
 
 ::: {.column width="50%"}
@@ -1275,7 +1282,7 @@ With a reasonable number of fragments per cell, we expect the fraction of duplic
 The **Mapping** panel shows the mapping rate (ideally > 85%) and the percent of unmapped reads (<5%), in addition to a few key ATAC-seq metrics. 
 
 - Fragments in nucleosome-free regions - percent of fragments passing all mapping filters with length < 124 bases (>40%)
-- Fragments flanking a single nucleosome - fragments between 124 and 296 bases (i.e. the second bump in the plot below). This should be lower than nucleosome-free, but still a meaningful number of reads to indicate expected chromatin structure. 
+- Fragments flanking a single nucleosome - fragments between 124 and 296 bases (i.e. the second bump below). This should be lower than nucleosome-free, but still a meaningful number of reads suggesting good chromatin structure. 
 :::
 
 ![](../imgs/webSumm_mapping.png){fig-align="center" style="max-width: none; max-height: none; width: 65%;"}
@@ -1565,6 +1572,7 @@ frags_updated <- UpdatePath(
 )
 Fragments(pbmc) <- NULL
 Fragments(pbmc) <- frags_updated
+
 ```
 
 ## Updating the fragments path 

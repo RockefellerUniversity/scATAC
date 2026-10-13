@@ -56,11 +56,10 @@ pbmc <- readRDS("data/pbmc_start.rds")
 # chrom_assay <- CreateChromatinAssay(
 #   counts = counts,
 #   sep = c(":", "-"),
-#   fragments = "data/pbmc500_fragments.tsv.gz",
+#   fragments = "~/Downloads/atac_pbmc_500_nextgem_fragments.tsv.gz",
 #   min.cells = 10,
 #   min.features = 200
 # )
-# 
 # class(chrom_assay)
 
 class(pbmc@assays$peaks)
@@ -87,7 +86,7 @@ GetFragmentData(frags[[1]], "path")
 
 # frags_updated <- UpdatePath(
 #   frags[[1]],
-#   new.path = "~/Downloads/atac_pbmc_500_nextgem_fragments.tsv.gz"
+#   new.path = "~/Desktop/atac_pbmc_500_nextgem_fragments.tsv.gz"
 # )
 # Fragments(pbmc) <- NULL
 # Fragments(pbmc) <- frags_updated

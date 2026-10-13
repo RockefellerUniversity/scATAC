@@ -155,7 +155,7 @@ source: [Illumina](https://www.illumina.com/documents/products/illumina_sequenci
 - Encoded in ASCII to save space.
 - Used in quality assessment and downstream analysis
 - −10·log10(probability of base being wrong)
-- For example, (Q)30 = -10*log10(0.001), or 1 in 1000 change of being wrong
+- For example, (Q)30 = -10*log10(0.001), or 1 in 1000 chance of being wrong
  
 
 
@@ -163,7 +163,11 @@ source: [Illumina](https://www.illumina.com/documents/products/illumina_sequenci
 
 For many years, NGS sequencing was performed on bulk tissue or cells (e.g. RNA-seq, ChIP-seq, ATAC-seq). 
 
+<br>
+
 This effectively allows us to understand differences between tissues, conditions (cancer vs healthy), treatments (drug vs control), or genetic perturbations (WT vs KO). 
+
+<br>
 
 However, analysis of the bulk characteristics of data prevents an understanding of the heterogeneity of a sample.
 
@@ -450,13 +454,6 @@ Software options for these steps include:
 
 # Cell Ranger {background-color="#23373B" .center .middle}
 
-## Cell Ranger ATAC
-
-Cell Ranger ATAC is the typical approach we use to process 10x data that works well out of the box. This is an intensive program that is only available for Linux machines, so we will not be running this locally on your laptops. Instead we run it on remote systems, like the HPC.
-
-<br>
-If you are working with your own data, the data will often be provided as the Cell Ranger output by the Genomics/Bioinformatics teams, like here at Rockefeller University. 
-
 
 ## Cell Ranger ATAC
 
@@ -553,11 +550,20 @@ export PATH=/PATH_TO_CELLRANGER_DIRECTORY/cellranger-atac-2.2.0:$PATH
 ## Running Cell Ranger ATAC count
 
  <br>
- <br>
-Now we have the downloaded Cell Ranger software and the reference we can start the processing of our FASTQ files.
+Now that we have the downloaded Cell Ranger software and the reference, we can start the processing of our FASTQ files.
  <br>
  <br>
 With the Cell Ranger software and pre-built reference files, we can generate fragments and counts from our directory of FASTQ files.
+
+```{=html}
+<pre class="tree">
+atac_pbmc_500_nextgem_fastqs/
+├── atac_pbmc_500_nextgem_S1_L001_I1_001.fastq.gz ← sample index 
+├── atac_pbmc_500_nextgem_S1_L001_R1_001.fastq.gz ← fragment read 1
+├── atac_pbmc_500_nextgem_S1_L001_R2_001.fastq.gz ← cell barcode
+└── atac_pbmc_500_nextgem_S1_L001_R3_001.fastq.gz ← fragment read 2
+</pre>
+```
 
 ## Running Cell Ranger ATAC count
 
@@ -566,7 +572,7 @@ The *cellranger-atac count* function will align reads (with BWA), call peaks, an
 ::: {style="font-size: 80%;"}
 - --id will be used to name output files
 - the --sample argument is used to select samples from the fastq folder. 
-  + fastq filenames with this string will be used and multiple names can be separated by commas
+  + fastq filenames that contain this string will be used and multiple names can be separated by commas
 :::
 
 ```{shell, eval=FALSE}
@@ -584,14 +590,6 @@ If you are working with a genome which is not human or mouse you will need to fi
 - Luckily many references are pre-built by other consortiums.
 - We can build our own references using other tools in Cell Ranger using the *mkref* functions.
 - For this you just need a FASTA file (DNA sequence) and a GTF file (Gene Annotation) for your reference.
-
-
-## Creating your own reference
-
-To create your own references you will need two additional files.
-
-- FASTA file - File containing the full genome sequence for the reference of interest
-- GTF file - File containing the gene/transcript models for the reference of interest.
 
 
 ## FASTA file (Genome sequence)
@@ -676,9 +674,13 @@ cellranger-atac mkref --config=/path/to/references/custom_GRCh38.config
 
 ::: {.column width="50%"}
 Having completed running *cellranger-atac count*, we will have created a folder with the name set by the **--id** flag in the function call.
+
 <br>
+
 Within this folder there will be the **outs/** directory and descriptions of each file/folder can be found [here](https://www.10xgenomics.com/support/software/cell-ranger-atac/latest/analysis/outputs/understanding-output){target="_blank"}
+
 <br>
+
 We will go through the files generally used in our downstream processing.
 :::
 
@@ -724,13 +726,14 @@ outs/
 
   + each row displays the location, cell barcode, and read counts (duplicates)
 
+::: {style="font-size: 70%;"}
 ``` {.text code-line-numbers="false"}
-chr1	10073	10327	CCACGTTCAGTAACTC-1	1	-
+chr1  10073	10327	CCACGTTCAGTAACTC-1	1	-
 chr1	10083	10346	GCGAGAAGTCCACCAG-1	1	-
 chr1	10097	10333	TTCGATTCATCTCTCG-1	1	-
 ```
 :::
-
+:::
 :::
 
 ::: {.column width="50%"}
@@ -1014,12 +1017,6 @@ outs/
 # Cell Ranger Web Summary {background-color="#23373B" .center .middle}
 
 
-## QC outputs
-
-Assessment of the overall quality of a scATAC-seq experiment after Cell Ranger gives us our first chance to dig into the quality of the dataset and gain insight into any issues we might face in data analysis.
-
-
-
 ## QC is essential
 
 ::: {.columns}
@@ -1030,9 +1027,10 @@ Assessment of the overall quality of a scATAC-seq experiment after Cell Ranger g
 There are many potential issues which can arise in scATAC-seq data including:
 
 - Ambient DNA contamination
-- Empty droplets
-- Low quality cells (dead or dying)
 - Doublets 
+- Low quality cells (dead or dying)
+- Empty droplets
+
 
 
 
@@ -1050,21 +1048,12 @@ There are many potential issues which can arise in scATAC-seq data including:
 :::
 
 
-## Metrics and Web Summary
-
-Cell Ranger will also output summaries of useful metrics as a text file _(summary.csv)_ and as an intuitive web-page _(web_summary.html)_.
-
-Metrics include:
-
-- fragments per cell.
-- Number of cells detected.
-- percent duplicates/library complexity
-- t-sne/UMAP with default clustering.
-- TSS enrichment
-- Insert size distribution
-
 
 ## Metrics and Web Summary
+
+As we saw in the output files, Cell Ranger generates summaries of useful metrics as a text file _(summary.csv)_ and as an intuitive web-page _(web_summary.html)_.
+
+<br> 
 
 While it often takes a deeper look into the results to understand QC issues, the Cell Ranger summary can give our first insight into key issues we might face.
 
@@ -1141,7 +1130,7 @@ The **Cells** panel highlights some of the most important metrics, including som
 
 - Estimated Number of Cells - Total number of barcodes associated to at least one cell (500-10k).
 - Mean raw read pairs per cell -  Total sequenced read pairs divided by number of cells
-- Fraction of high-quality fragments in cells - fraction of high quality fragments (map to genome, mapQ > 30, no chimeric or duplicate) with a called cell barcode (>40%)
+- Fraction of high-quality fragments in cells - fraction of high quality fragments with a called cell barcode (>40%)
 - Fraction of transposition events in peaks in cells - fraction of Tn5 cut sites (fragment ends) from called cell barcodes that fall within a peak (>15%)
 - Median fragments per Cell - Median number of fragments per called cell barcode
 :::
@@ -1388,6 +1377,8 @@ Both have advantages handling large data compared to Signac.
 
 ::: {style="font-size: 80%;"}
 
+Now we want to take our Cell Ranger results and bring them into R for analysis.
+
 Let's remember what outputs we have from Cell Ranger ATAC
 
 The key files we will need are:
@@ -1476,7 +1467,7 @@ counts[1:5, 1:2]
 
 ## Reading into Signac - ChromatinAssay object
 
-The counts and a path to the fragments file are provided to the *CreateChromatinAssay* function from Signac to create a **ChromatinAssay** object.
+The counts and a path to the fragments file are provided to the *CreateChromatinAssay* function from Signac to create a **ChromatinAssay** object. Download the fragments file and its index [here](https://www.10xgenomics.com/datasets/500-peripheral-blood-mononuclear-cells-pbm-cs-from-a-healthy-donor-next-gem-v-1-1-1-1-standard-2-0-0){target="_blank"}
 
 We can set the 'min.cells' and 'min.features' arguments to filter out low quality peaks and cells. 
 
@@ -1488,11 +1479,10 @@ pbmc <- readRDS("data/pbmc_start.rds")
 chrom_assay <- CreateChromatinAssay(
   counts = counts,
   sep = c(":", "-"),
-  fragments = "data/pbmc500_fragments.tsv.gz",
+  fragments = "~/Downloads/atac_pbmc_500_nextgem_fragments.tsv.gz",
   min.cells = 10,
   min.features = 200
 )
-
 class(chrom_assay)
 ```
 
@@ -1523,6 +1513,11 @@ pbmc
 
 ## Seurat object for scATAC/Signac
 
+::: {.columns}
+
+::: {.column width="50%"}
+
+
 This Seurat object can be handled like any other, with a few additional pieces of information specific to scATAC-seq.
 
 Seurat object accessor functions will work as expected: 
@@ -1532,6 +1527,16 @@ DefaultAssay(pbmc)
 Layers(pbmc)
 ```
 
+::: {.absolute bottom="0" left="0" style="font-size: 30%;"}
+[Source: biostatsquid.com](https://biostatsquid.com/seurat-objects-explained/){target="_blank"}
+:::
+:::
+
+::: {.column width="50%"}
+
+![](../imgs/seurat_diagram.png){width="100%"}
+:::
+:::
 ## Seurat object for scATAC/Signac
 
 There are functions to access pieces of the ChromatinAssay object, where much of the scATAC-specific information is kept. Detailed information on this data structure and how to interact with it can be found [here](https://stuartlab.org/signac/articles/data_structures){target="_blank"}. 
@@ -1563,12 +1568,12 @@ Importantly, there is a pointer to the file path we provided, and if the fragmen
 
 Any function that requires access to the actual fragments will fail if the pointer is wrong (TSS enrichment, peak calling). 
 
-You can download the **fragments file and the index** used in this course and update the path to align your object with your system ([link to dataset files](https://www.10xgenomics.com/datasets/500-peripheral-blood-mononuclear-cells-pbm-cs-from-a-healthy-donor-next-gem-v-1-1-1-1-standard-2-0-0){target="_blank"}).    
+I have a copy on my Desktop, so let's update the pointer to that path:
 
 ```{r,echo=T, eval=F}
 frags_updated <- UpdatePath(
   frags[[1]],
-  new.path = "~/Downloads/atac_pbmc_500_nextgem_fragments.tsv.gz"
+  new.path = "~/Desktop/atac_pbmc_500_nextgem_fragments.tsv.gz"
 )
 Fragments(pbmc) <- NULL
 Fragments(pbmc) <- frags_updated

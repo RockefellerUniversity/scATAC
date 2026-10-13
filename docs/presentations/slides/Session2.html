@@ -1355,7 +1355,7 @@ Bioinformatics Resource Center - Rockefeller University<p></p>
 </section>
 <section id="what-is-tss-enrichment" class="slide level2">
 <h2>What is TSS Enrichment?</h2>
-<p>The purpose of ATAC is to detect open chraomtin regions, so good quality ATAC is enriched near open chromatin sites like Transcription Start Sites (TSS). A cell with a <strong>high TSS enrichment score</strong> have many reads at TSSs — evidence of good signal-to-noise.</p>
+<p>The purpose of ATAC is to detect open chromatin regions, so good quality ATAC is enriched near open chromatin sites like Transcription Start Sites (TSS). A cell with a <strong>high TSS enrichment score</strong> have many reads at TSSs — evidence of good signal-to-noise.</p>
 <p>A <strong>low score</strong> suggests:</p>
 <ul>
 <li>Dead or dying cells</li>
@@ -1367,7 +1367,7 @@ Bioinformatics Resource Center - Rockefeller University<p></p>
 <h2>How to calculate TSS enrichment?</h2>
 <div class="columns">
 <div class="column" style="width:50%;">
-<p><strong>Signac definition</strong>: <em>It is calculated by aggregating the signal at all TSS +/- 1kb and then normalizing against the signal at the flank of that range. The final TSSe score is the enrichment at the center of this range</em></p>
+<p><strong>Signac definition</strong>: <em>It is calculated by aggregating the signal at all TSS +/- 1kb and then normalizing against the signal at the flank of that range. The final TSSE score is the enrichment at the center of this range</em></p>
 <p>Often the whole metaplot is visualized.</p>
 <p>A key note is that TSSE is calculated slightly differently by different tools. ArchR and <a href="https://www.encodeproject.org/data-standards/terms/"><em>ENCODE</em></a> for example, opt for +/- 2kb instead.</p>
 </div><div class="column" style="width:50%;">
@@ -1555,7 +1555,7 @@ Bioinformatics Resource Center - Rockefeller University<p></p>
 <li>passed_filters - Total number of high-quality, usable fragments that passed filtering for each cell</li>
 <li>peak_region_fragments - Total number of fragments falling within the peaks called for that cell</li>
 </ol>
-<p>We can easily calcualte FRiP from this.</p>
+<p>We can easily calculate FRiP from this.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href></a>pbmc<span class="sc">$</span>pct_reads_in_peaks <span class="ot">&lt;-</span> pbmc<span class="sc">$</span>peak_region_fragments <span class="sc">/</span></span>
 <span id="cb16-2"><a href></a>                            pbmc<span class="sc">$</span>passed_filters <span class="sc">*</span> <span class="dv">100</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -1697,7 +1697,7 @@ Bioinformatics Resource Center - Rockefeller University<p></p>
 </section>
 <section id="scdblfinder" class="slide level2">
 <h2>scDblFinder</h2>
-<p>scDblFinder is a Bioconductor pacakge, so we have to coerce our Signac object into the Bioconductor specific SingleCellExperiment object type.</p>
+<p>scDblFinder is a Bioconductor package, so we have to coerce our Signac object into the Bioconductor specific SingleCellExperiment object type.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href></a><span class="fu">library</span>(scDblFinder)</span>
 <span id="cb22-2"><a href></a><span class="fu">library</span>(SingleCellExperiment)</span>
@@ -1712,7 +1712,7 @@ Bioinformatics Resource Center - Rockefeller University<p></p>
 <p>We also use several ATAC-specific arguments:</p>
 <ul>
 <li>aggregateFeatures = TRUE - Relative to scRNA, scATAC has many more features, with each having lower signal. For ATAC we aggregate signal at many features (peaks) together.</li>
-<li>nfeatures = 25 - The feature are aggregated into meta-features. We can then choose how mnay meta-features to use.</li>
+<li>nfeatures = 25 - The feature are aggregated into meta-features. We can then choose how many meta-features to use.</li>
 <li>processing = “normFeatures” - As we have a low number of meta-features, we can stick to basic normalization without full dimension reduction.</li>
 <li>dbr = NULL - You can provide an expected doublet rate. For scATAC it is typically low, especially this kind of PBMC data.</li>
 </ul>
@@ -1738,7 +1738,7 @@ Bioinformatics Resource Center - Rockefeller University<p></p>
 <section id="amulet-1" class="slide level2">
 <h2>AMULET</h2>
 <p>We also want to mask any genome ranges that are considered problems because they have high chances of inappropriate mapping i.e. mitochondria, sex chromosomes, repeats and exclude ranges.</p>
-<p>Most of these are easy to do/we laready have loaded in. We just need to grab extra repeat information by getting the <a href="https://github.com/Dfam-consortium/RepeatMasker/">RepeatMasker</a> for our genome. We can use AnnotationHub again.</p>
+<p>Most of these are easy to do/we already have loaded in. We just need to grab extra repeat information by getting the <a href="https://github.com/Dfam-consortium/RepeatMasker/">RepeatMasker</a> for our genome. We can use AnnotationHub again.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href></a><span class="fu">library</span>(AnnotationHub)</span>
 <span id="cb25-2"><a href></a>ah <span class="ot">&lt;-</span> <span class="fu">AnnotationHub</span>()</span>
@@ -1930,7 +1930,7 @@ scDblFinder Doublet Singlet
 <li>Apply conservative context-specific thresholds initially</li>
 <li>UMAP and Cluster</li>
 <li>Double-check QC metrics on UMAP to see if anything is sticking out</li>
-<li>Update filters and go back to 2, until there are no remaning QC concerns.</li>
+<li>Update filters and go back to 2, until there are no remaining QC concerns.</li>
 </ol>
 </section>
 <section id="typical-thresholds-1" class="slide level2">
@@ -1973,8 +1973,8 @@ scDblFinder Doublet Singlet
 </tbody>
 </table>
 </section>
-<section id="theshold-ranges" class="slide level2">
-<h2>Theshold Ranges</h2>
+<section id="threshold-ranges" class="slide level2">
+<h2>Threshold Ranges</h2>
 <p>PBMC datasets are typically good data, so thresholds end up more stringent. The experimental context impacts chosen thresholds a lot.</p>
 <ul>
 <li><em>High quality data:</em> Fresh blood, cell lines, deep sequencing.</li>
@@ -2175,7 +2175,7 @@ Active assay: peaks (61638 features, 0 variable features)
 <div class="cell">
 <div class="sourceCode cell-code" id="cb44"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href></a><span class="fu">ATACqc</span>(pbmc)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Similarly is you want to use ArchR or snapATAC2 you will use the same appraoch but just different functions specific to those packages.</p>
+<p>Similarly is you want to use ArchR or snapATAC2 you will use the same approach but just different functions specific to those packages.</p>
 </section></section>
 <section>
 <section id="normalization-with-tf-idf" class="title-slide slide level1 center middle" data-background-color="#23373B">

@@ -40,7 +40,7 @@ Differentially accessible (DA) peaks can point to:
 
 ## Considerations for DA Testing in scATAC-seq
 
-DA testing in scATAC-seq is harder than in scRNA-seq, for simiilar reasons to what we have discussed already. 
+DA testing in scATAC-seq is harder than in scRNA-seq, for similar reasons to what we have discussed already. 
 
 | Challenge | Why it matters |
 |---|---|
@@ -57,7 +57,7 @@ The solution depends on your experimental design — cluster markers within a si
 
 Signac recommends **logistic regression** for single-cell DA testing.
 
-Accessibility is modelled as a binary outcome, with cell type as the predictor and **sequencing depth as a latent variable** to prevent depth confounding the result.
+Accessibility is modeled as a binary outcome, with cell type as the predictor and **sequencing depth as a latent variable** to prevent depth confounding the result.
 
 ## Lets grab the data
 
@@ -146,7 +146,7 @@ head(closest[, c("gene_name", "distance", "query_region")])
 
 The top accessible peaks are generally related to genes that are known to be associated with CD14+ Monocytes or more generally immune cell developmental genes.
 
-That said there is a peak/gene that sticks out: FAM174B. The peak is right at the gene so it's likely to be a direct effect. A quick lit review suggests that its associated with golgi and stress. It could be relatively high because Monocytes do a lot of secretion. These cells are supposed to be from a healthy patient but maybe there is some immune activation. 
+That said there is a peak/gene that sticks out: FAM174B. The peak is right at the gene so it's likely to be a direct effect. A quick lit review suggests that its associated with Golgi and stress. It could be relatively high because Monocytes do a lot of secretion. These cells are supposed to be from a healthy patient but maybe there is some immune activation. 
 
 Often there are a few peaks that could make sense, but require a little more thought. It is important to rationalize these markers and assess in the context of the all the QC and other markers.
 
@@ -199,7 +199,7 @@ CoveragePlot(
 
 ## Lets check known quantity
 
-For comparison lets check a known quantitiy: IL1B is a known to be highest in CD14+ Monocytes, but also CD16+ Monocytes and Dendritic cells. This matches the scATAC. 
+For comparison lets check a known quantity: IL1B is a known to be highest in CD14+ Monocytes, but also CD16+ Monocytes and Dendritic cells. This matches the scATAC. 
 
 ```{r coveragePlotIL1B}
 CoveragePlot(
@@ -326,13 +326,13 @@ have_integrated <- file.exists("data/pbmc_integrated.rds")
 have_fragments  <- FALSE   # set once the integrated object is loaded
 ```
 
-## Harmonising Cell Type Labels
+## Harmonizing Cell Type Labels
 
 The two samples were labelled with different references, so the same cells have different names, e.g. "CD14+ Monocytes" vs "CD14 Mono". Pseudobulk compares the **same cell type across samples**, so we first map both onto one shared set of labels.
 
 We collapse to the level both references support, e.g. CD4 TCM, CD4 TEM and Treg all become "CD4 Memory".
 
-## Harmonising Cell Type Labels {.scrollable}
+## Harmonizing Cell Type Labels {.scrollable}
 
 Every label in either sample gets an entry. Labels with no counterpart in the other sample (HSPC, Plasma, Platelet) map to `NA` and are dropped.
 
@@ -481,7 +481,7 @@ DimPlot(pbmc_int, reduction = "umap_unintegrated",
 
 ## Multiomic data
 
-As a quick aside these datasets are not great replicates. Multiomic data is much poorer data in general, as you can see here. That said depsite these clear QC differnces the cell type signature is very strong. 
+As a quick aside these datasets are not great replicates. Multiomic data is much poorer data in general, as you can see here. That said despite these clear QC differnces the cell type signature is very strong. 
 
 ```{r}
 VlnPlot(pbmc_int, "TSS.enrichment", split.by = "sample")
@@ -490,7 +490,7 @@ VlnPlot(pbmc_int, "TSS.enrichment", split.by = "sample")
 
 ## Integrating with Reciprocal LSI
 
-Signac's recommended approach projects each sample into the other's LSI space to find **anchors**: pairs of matching cells across samples. These are then used to correct the shared LSI embedding. This is similat to what we do with label transfer, but is specific to the lsi space of scATAC.
+Signac's recommended approach projects each sample into the others LSI space to find **anchors**: pairs of matching cells across samples. These are then used to correct the shared LSI embedding. This is similar to what we do with label transfer, but is specific to the lsi space of scATAC.
 
 ```{r integrateLSI, eval=FALSE}
 obj_list <- SplitObject(combined, split.by = "sample")
@@ -584,7 +584,7 @@ col_data
 
 ## DESeq2 DA Analysis
 
-Now lets run DESeq2. We need to provide all the count and metadata information to create our DESeq object. We are also going to icnlude Sample as a covariate in our model. We know that Sample will have a big impact in this dataset, but in others this may not be necessary. 
+Now lets run DESeq2. We need to provide all the count and metadata information to create our DESeq object. We are also going to include Sample as a covariate in our model. We know that Sample will have a big impact in this dataset, but in others this may not be necessary. 
 
 ```{r}
 # Pseudobulks summed from only a few cells are mostly noise, and DESeq2 shares
@@ -679,15 +679,15 @@ Open in both cell types, so the per-cell contrast is weak. But summed across cel
 
 ## FindMarkers vs Pseudobulk
 
-To recap there are key differences and restrictions for differntial methods. 
+To recap there are key differences and restrictions for differential methods. 
 
 | | `FindMarkers()` (per cell) | Pseudobulk (DESeq2 / edgeR) |
 |---|---|---|
 | Unit of replication | Each **cell** | Each **sample** |
 | Needs replicates? | No | Yes, ideally 3+ per group |
-| Sample/donor effects | Ignored | Modelled (`~ sample + celltype`) |
+| Sample/donor effects | Ignored | Modeled (`~ sample + celltype`) |
 | p-values | Over-confident with many cells | Reflect sample-level variation |
-| Best for | Exploring markers within one sample | Comparisons you want to generalise beyond your samples |
+| Best for | Exploring markers within one sample | Comparisons you want to generalize beyond your samples |
 
 The difference matters most for **subtle effects**, e.g. patient vs control within one cell type. There, sample-to-sample variation is as large as the effect itself, and per-cell tests produce many false positives.
 
@@ -712,14 +712,11 @@ For a benchmark of these methods on scATAC data, see [Teo, Squair & Courtine, 20
 
 # Where to Go Next {background-color="#23373B" .center .middle}
 
-## Next Steps: Peaks and Motifs
-
-* **Better peaks**
-  - Re-call peaks per cell type with MACS ([`CallPeaks(group.by = ...)`](https://stuartlab.org/signac/reference/callpeaks)) to capture peaks from rare cell types, then re-count before differential accessibility
+## Next Steps: Motifs
 
 * **Interpreting DA peaks**
   - Annotate peaks to genes and genomic features with [ChIPseeker](https://bioconductor.org/packages/ChIPseeker/)
-  - Test for functional enrichment of nearby genes with [rGREAT](https://bioconductor.org/packages/rGREAT/)
+  - Test for functional enrichment of nearby genes with [rGREAT](https://bioconductor.org/packages/rGREAT/) and [clusterProfiler](https://bioconductor.org/packages/release/bioc/html/clusterProfiler.html)
 
 * **Motifs**
   - Signac [`FindMotifs()`](https://stuartlab.org/signac/articles/motif_vignette): which TF motifs are enriched in a set of peaks, e.g. your DA peaks
@@ -728,14 +725,14 @@ For a benchmark of these methods on scATAC data, see [Teo, Squair & Courtine, 20
 
 ## Next Steps: Regulation and Beyond
 
-* **Gene regulation**
-  - [Cicero](https://cole-trapnell-lab.github.io/cicero-release/): links regulatory regions (e.g. enhancers to promoters) by co-accessibility. Works on scATAC alone
-  - [Epiregulon](https://bioconductor.org/packages/epiregulon/): TF activity per cell. Needs gene expression too, from multiome or from a separate scRNA-seq dataset integrated with your ATAC data
-  - [SCENIC+](https://github.com/aertslab/scenicplus): regulatory networks from paired accessibility and expression (Python)
-
 * **Multiome data**
   - Seurat [WNN](https://satijalab.org/seurat/articles/weighted_nearest_neighbor_analysis) (`FindMultiModalNeighbors()`): cluster using RNA and ATAC together
   - Signac [`LinkPeaks()`](https://stuartlab.org/signac/articles/pbmc_multiomic): link peaks to genes by correlating accessibility with expression in the same cells
+
+* **Gene regulation**
+  - [Cicero](https://cole-trapnell-lab.github.io/cicero-release/): links regulatory regions (e.g. enhancers to promoters) by co-accessibility. Works on scATAC alone
+  - [Epiregulon](https://bioconductor.org/packages/epiregulon/): TF activity per cell. Needs gene expression too, from multiome or from a separate scRNA-seq dataset integrated with your ATAC data
+  - [SCENIC+](https://github.com/aertslab/scenicplus): regulatory networks from paired accessibility and expression
 
 * **Trajectories**
   - [Monocle 3](https://cole-trapnell-lab.github.io/monocle3/), which Cicero builds on, or [ArchR's trajectory tools](https://www.archrproject.com/bookdown/trajectory-analysis-with-archr.html), to order cells along a differentiation path
@@ -756,7 +753,7 @@ For a benchmark of these methods on scATAC data, see [Teo, Squair & Courtine, 20
 
 - TSS enrichment, nucleosome signal, FRiP, blacklist ratio
 - Iterative threshold-setting and filtering
-- TF-IDF normalisation; `FindTopFeatures()`
+- TF-IDF normalization; `FindTopFeatures()`
 :::
 
 ::: {.column width="50%"}
@@ -766,7 +763,7 @@ For a benchmark of these methods on scATAC data, see [Teo, Squair & Courtine, 20
 - UMAP; graph-based clustering; tuning resolution
 - QC as a cyclical process; gene activity; label transfer
 
-**Session 4 — Differential Accessibility & Visualisation**
+**Session 4 — Differential Accessibility & Visualization**
 
 - `FindMarkers()` with logistic regression + depth covariate
 - Pseudobulk approaches with DESeq2/edgeR

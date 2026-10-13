@@ -8,7 +8,7 @@ author:
 
 ```{r,include=FALSE,purl=FALSE}
 suppressPackageStartupMessages(require(knitr))
-knitr::opts_chunk$set(echo = TRUE, tidy = T)
+knitr::opts_chunk$set(echo = TRUE, tidy = FALSE)
 ```
 
 ```{=html}

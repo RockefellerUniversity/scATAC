@@ -151,7 +151,7 @@ if (file.exists(frag_local)) {
 
 ## What is TSS Enrichment?
 
-The purpose of ATAC is to detect open chraomtin regions, so good quality ATAC is enriched near open chromatin sites like Transcription Start Sites (TSS). A cell with a **high TSS enrichment score** have many reads at TSSs — evidence of good signal-to-noise.
+The purpose of ATAC is to detect open chromatin regions, so good quality ATAC is enriched near open chromatin sites like Transcription Start Sites (TSS). A cell with a **high TSS enrichment score** have many reads at TSSs — evidence of good signal-to-noise.
 
 A **low score** suggests:
 
@@ -165,7 +165,7 @@ A **low score** suggests:
 ::: {.columns}
 
 ::: {.column width="50%"}
-**Signac definition**: *It is calculated by aggregating the signal at all TSS +/- 1kb and then normalizing against the signal at the flank of that range. The final TSSe score is the enrichment at the center of this range*
+**Signac definition**: *It is calculated by aggregating the signal at all TSS +/- 1kb and then normalizing against the signal at the flank of that range. The final TSSE score is the enrichment at the center of this range*
 
 Often the whole metaplot is visualized.
 
@@ -325,7 +325,7 @@ When you read Cell Ranger objects into Signac several metrics come for free. Thi
 1. passed_filters - Total number of high-quality, usable fragments that passed filtering for each cell
 2. peak_region_fragments - Total number of fragments falling within the peaks called for that cell
 
-We can easily calcualte FRiP from this.
+We can easily calculate FRiP from this.
 
 ```{r frip}
 pbmc$pct_reads_in_peaks <- pbmc$peak_region_fragments /
@@ -453,7 +453,7 @@ As both these methods use very different approaches they are seen as complementa
 
 ## scDblFinder 
 
-scDblFinder is a Bioconductor pacakge, so we have to coerce our Signac object into the Bioconductor specific SingleCellExperiment object type. 
+scDblFinder is a Bioconductor package, so we have to coerce our Signac object into the Bioconductor specific SingleCellExperiment object type. 
 
 ```{r}
 
@@ -471,7 +471,7 @@ Before we can run scDblFinder we must first set a seed. This is important for re
 We also use several ATAC-specific arguments:
 
 * aggregateFeatures = TRUE - Relative to scRNA, scATAC has many more features, with each having lower signal. For ATAC we aggregate signal at many features (peaks) together. 
-* nfeatures = 25 - The feature are aggregated into meta-features. We can then choose how mnay meta-features to use. 
+* nfeatures = 25 - The feature are aggregated into meta-features. We can then choose how many meta-features to use. 
 * processing = "normFeatures" - As we have a low number of meta-features, we can stick to basic normalization without full dimension reduction. 
 * dbr = NULL - You can provide an expected doublet rate. For scATAC it is typically low, especially this kind of PBMC data. 
 
@@ -503,7 +503,7 @@ frag_path <- GetFragmentData(Fragments(pbmc)[[1]], slot = "path")
 
 We also want to mask any genome ranges that are considered problems because they have high chances of inappropriate mapping i.e. mitochondria, sex chromosomes, repeats and exclude ranges.
 
-Most of these are easy to do/we laready have loaded in. We just need to grab extra repeat information by getting the [RepeatMasker](https://github.com/Dfam-consortium/RepeatMasker/) for our genome. We can use AnnotationHub again. 
+Most of these are easy to do/we already have loaded in. We just need to grab extra repeat information by getting the [RepeatMasker](https://github.com/Dfam-consortium/RepeatMasker/) for our genome. We can use AnnotationHub again. 
 
 ```{r}
 
@@ -707,7 +707,7 @@ Let's remember:
 1. Apply conservative context-specific thresholds initially
 2. UMAP and Cluster
 3. Double-check QC metrics on UMAP to see if anything is sticking out
-4. Update filters and go back to 2, until there are no remaning QC concerns. 
+4. Update filters and go back to 2, until there are no remaining QC concerns. 
 
 
 ## Typical Thresholds
@@ -722,7 +722,7 @@ Let's remember:
 | pct_reads_in_peaks | 15 | — |
 | blacklist_ratio | — | 0.05 |
 
-## Theshold Ranges
+## Threshold Ranges
 
 PBMC datasets are typically good data, so thresholds end up more stringent. The experimental context impacts chosen thresholds a lot. 
 
@@ -845,7 +845,7 @@ ATACqc(pbmc)
 
 ```
 
-Similarly is you want to use ArchR or snapATAC2 you will use the same appraoch but just different functions specific to those packages. 
+Similarly is you want to use ArchR or snapATAC2 you will use the same approach but just different functions specific to those packages. 
 
 # Normalization with TF-IDF {background-color="#23373B" .center .middle}
 

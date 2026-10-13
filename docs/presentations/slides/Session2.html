@@ -1753,7 +1753,11 @@ AH99003  UCSC RepeatMasker an..     GRanges https://functionalge..
 AH107310 hg38.Reddy.wgEncodeD..     GRanges https://drive.google..
 AH111333 UCSC RepeatMasker an..     GRanges https://functionalge..</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href></a>rmsk <span class="ot">&lt;-</span> rm_q[[<span class="fu">which</span>(rm_q<span class="sc">$</span>rdataclass <span class="sc">==</span> <span class="st">&quot;GRanges&quot;</span>)[<span class="dv">1</span>]]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href></a><span class="co"># Downloading the repeats is only needed to run AMULET, which the render loads</span></span>
+<span id="cb27-2"><a href></a><span class="co"># from a checkpoint (see below), so it only runs when rebuilding checkpoints.</span></span>
+<span id="cb27-3"><a href></a>rmsk <span class="ot">&lt;-</span> rm_q[[<span class="fu">which</span>(rm_q<span class="sc">$</span>rdataclass <span class="sc">==</span> <span class="st">&quot;GRanges&quot;</span>)[<span class="dv">1</span>]]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="amulet-2" class="slide level2">

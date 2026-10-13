@@ -3095,15 +3095,132 @@ vertical-align: -.125em;
 <li>Per Barcode metrics (CSV): this is the singlecell.csv metadata file</li>
 </ul></li>
 </ul>
-<pre class="text"><code>An object of class Seurat 
+<div class="cell">
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: SeuratObject</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: sp</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>&#39;SeuratObject&#39; was built under R 4.6.0 but the current version is
+4.6.1; it is recomended that you reinstall &#39;SeuratObject&#39; as the ABI
+for R may have changed</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>&#39;SeuratObject&#39; was built with package &#39;Matrix&#39; 1.7.5 but the current
+version is 1.7.6; it is recomended that you reinstall &#39;SeuratObject&#39; as
+the ABI for &#39;Matrix&#39; may have changed</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: &#39;SeuratObject&#39;</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    intersect, t</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>v5.6 adds significant improvements in speed and efficiency, particularly for large datasets.
+For more information, see https://satijalab.org/seurat/articles/announcements.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: stats4</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: BiocGenerics</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: generics</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: &#39;generics&#39;</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    as.difftime, as.factor, as.ordered, intersect, is.element, setdiff,
+    setequal, union</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: &#39;BiocGenerics&#39;</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from &#39;package:stats&#39;:
+
+    IQR, mad, sd, var, xtabs</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    anyDuplicated, aperm, append, as.data.frame, basename, cbind,
+    colnames, dirname, do.call, duplicated, eval, evalq, Filter, Find,
+    get, grep, grepl, is.unsorted, lapply, Map, mapply, match, mget,
+    order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+    rbind, Reduce, rownames, sapply, saveRDS, table, tapply, unique,
+    unsplit, which.max, which.min</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: S4Vectors</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: &#39;S4Vectors&#39;</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from &#39;package:utils&#39;:
+
+    findMatches</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    expand.grid, I, unname</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: IRanges</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: &#39;IRanges&#39;</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from &#39;package:sp&#39;:
+
+    %over%</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: Seqinfo</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `StringToGRanges()` was deprecated in Signac 1.17.0.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Computing hash</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>An object of class Seurat 
 53735 features across 3776 samples within 1 assay 
 Active assay: peaks (53735 features, 0 variable features)
  2 layers present: counts, data</code></pre>
+</div>
+</div>
 <ul>
 <li>Print out the hash and the path of the fragment file from within the Seurat object</li>
 </ul>
-<pre class="text"><code>[1] &quot;81f260f61c7101de5d154449720b053b&quot; &quot;884aa46b4bb08be53234caf9d1c72519&quot;</code></pre>
-<pre class="text"><code>[1] &quot;~/Downloads/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</code></pre>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] &quot;81f260f61c7101de5d154449720b053b&quot; &quot;884aa46b4bb08be53234caf9d1c72519&quot;</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] &quot;/tmp/Rtmp3R8KY7/compileCourses_26e6f7c7026/extdata/data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</code></pre>
+</div>
+</div>
 <ul>
 <li>Move the fragment file and its index to a different folder and update the path in the Seurat object.</li>
 </ul>
@@ -3111,7 +3228,9 @@ Active assay: peaks (53735 features, 0 variable features)
 <ul>
 <li>Look at the peaks that were called by Cell Ranger ATAC and are contained within this object.</li>
 </ul>
-<pre class="text"><code>GRanges object with 53735 ranges and 0 metadata columns:
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>GRanges object with 53735 ranges and 0 metadata columns:
           seqnames            ranges strand
              &lt;Rle&gt;         &lt;IRanges&gt;  &lt;Rle&gt;
       [1]     chr1   3094695-3095385      *
@@ -3127,20 +3246,30 @@ Active assay: peaks (53735 features, 0 variable features)
   [53735]     chrY 90810766-90810946      *
   -------
   seqinfo: 21 sequences from an unspecified genome; no seqlengths</code></pre>
+</div>
+</div>
 <ul>
 <li><p>Identify the peak with the highest total raw counts</p>
 <ul>
 <li>HINT: use the peak counts</li>
 </ul></li>
 </ul>
-<pre class="text"><code>[1] &quot;chr17-39842785-39849048&quot;</code></pre>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] &quot;chr17-39842785-39849048&quot;</code></pre>
+</div>
+</div>
 <ul>
 <li><p>Identify the cell barcode with the highest total raw counts in peaks</p>
 <ul>
 <li>HINT: cell barcode metadata can be accessed with the seu_obj@meta.data</li>
 </ul></li>
 </ul>
-<pre class="text"><code>[1] &quot;AACATCGGTTGGCTAT-1&quot;</code></pre>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] &quot;AACATCGGTTGGCTAT-1&quot;</code></pre>
+</div>
+</div>
 
 </main>
 <!-- /main column -->

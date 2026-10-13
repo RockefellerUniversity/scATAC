@@ -3130,94 +3130,205 @@ vertical-align: -.125em;
 </ul></li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">&quot;https://cf.10xgenomics.com/samples/cell-atac/1.2.0/atac_v1_E18_brain_flash_5k/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</span>,</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">destfile =</span> <span class="st">&quot;~/Downloads/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">&quot;https://cf.10xgenomics.com/samples/cell-atac/1.2.0/atac_v1_E18_brain_flash_5k/atac_v1_E18_brain_flash_5k_fragments.tsv.gz.tbi&quot;</span>,</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">destfile =</span> <span class="st">&quot;~/Downloads/atac_v1_E18_brain_flash_5k_fragments.tsv.gz.tbi&quot;</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">&quot;https://cf.10xgenomics.com/samples/cell-atac/1.2.0/atac_v1_E18_brain_flash_5k/atac_v1_E18_brain_flash_5k_filtered_peak_bc_matrix.h5&quot;</span>,</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">destfile =</span> <span class="st">&quot;~/Downloads/atac_v1_E18_brain_flash_5k_filtered_peak_bc_matrix.h5&quot;</span>)</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">&quot;https://cf.10xgenomics.com/samples/cell-atac/1.2.0/atac_v1_E18_brain_flash_5k/atac_v1_E18_brain_flash_5k_singlecell.csv&quot;</span>,</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">destfile =</span> <span class="st">&quot;~/Downloads/atac_v1_E18_brain_flash_5k_singlecell.csv&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">timeout =</span> <span class="dv">3600</span>)   <span class="co"># the fragment file is ~1.1 GB</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">&quot;data&quot;</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">&quot;https://cf.10xgenomics.com/samples/cell-atac/1.2.0/atac_v1_E18_brain_flash_5k/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">destfile =</span> <span class="st">&quot;data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</span>, <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">&quot;https://cf.10xgenomics.com/samples/cell-atac/1.2.0/atac_v1_E18_brain_flash_5k/atac_v1_E18_brain_flash_5k_fragments.tsv.gz.tbi&quot;</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">destfile =</span> <span class="st">&quot;data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz.tbi&quot;</span>, <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">&quot;https://cf.10xgenomics.com/samples/cell-atac/1.2.0/atac_v1_E18_brain_flash_5k/atac_v1_E18_brain_flash_5k_filtered_peak_bc_matrix.h5&quot;</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">destfile =</span> <span class="st">&quot;data/atac_v1_E18_brain_flash_5k_filtered_peak_bc_matrix.h5&quot;</span>, <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">&quot;https://cf.10xgenomics.com/samples/cell-atac/1.2.0/atac_v1_E18_brain_flash_5k/atac_v1_E18_brain_flash_5k_singlecell.csv&quot;</span>,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>              <span class="at">destfile =</span> <span class="st">&quot;data/atac_v1_E18_brain_flash_5k_singlecell.csv&quot;</span>, <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Signac)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Seurat)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>metadata <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">file =</span> <span class="st">&quot;~/Downloads/atac_v1_E18_brain_flash_5k_singlecell.csv&quot;</span>,</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">header =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="dv">1</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>counts <span class="ot">&lt;-</span> <span class="fu">Read10X_h5</span>(<span class="at">filename =</span> <span class="st">&quot;~/Downloads/atac_v1_E18_brain_flash_5k_filtered_peak_bc_matrix.h5&quot;</span>)</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>std_chr   <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;chr&quot;</span>, <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">19</span>, <span class="st">&quot;X&quot;</span>, <span class="st">&quot;Y&quot;</span>))</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>peak_chr  <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="fu">seqnames</span>(<span class="fu">StringToGRanges</span>(<span class="fu">rownames</span>(counts), <span class="at">sep =</span> <span class="fu">c</span>(<span class="st">&quot;:&quot;</span>, <span class="st">&quot;-&quot;</span>))))</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>counts    <span class="ot">&lt;-</span> counts[peak_chr <span class="sc">%in%</span> std_chr, ]</span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>chrom_assay <span class="ot">&lt;-</span> <span class="fu">CreateChromatinAssay</span>(</span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">counts =</span> counts,</span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">sep =</span> <span class="fu">c</span>(<span class="st">&quot;:&quot;</span>, <span class="st">&quot;-&quot;</span>),</span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">fragments =</span> <span class="st">&quot;~/Downloads/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</span>,</span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">min.cells =</span> <span class="dv">10</span>,</span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">min.features =</span> <span class="dv">200</span></span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>seu_obj <span class="ot">&lt;-</span> <span class="fu">CreateSeuratObject</span>(</span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>  <span class="at">counts =</span> chrom_assay,</span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>  <span class="at">assay =</span> <span class="st">&quot;peaks&quot;</span>,</span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>  <span class="at">meta.data =</span> metadata</span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>seu_obj</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Seurat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: SeuratObject</code></pre>
 </div>
-<pre class="text"><code>An object of class Seurat 
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: sp</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>&#39;SeuratObject&#39; was built under R 4.6.0 but the current version is
+4.6.1; it is recomended that you reinstall &#39;SeuratObject&#39; as the ABI
+for R may have changed</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>&#39;SeuratObject&#39; was built with package &#39;Matrix&#39; 1.7.5 but the current
+version is 1.7.6; it is recomended that you reinstall &#39;SeuratObject&#39; as
+the ABI for &#39;Matrix&#39; may have changed</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: &#39;SeuratObject&#39;</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    intersect, t</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>v5.6 adds significant improvements in speed and efficiency, particularly for large datasets.
+For more information, see https://satijalab.org/seurat/articles/announcements.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GenomicRanges)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: stats4</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: BiocGenerics</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: generics</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: &#39;generics&#39;</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    as.difftime, as.factor, as.ordered, intersect, is.element, setdiff,
+    setequal, union</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: &#39;BiocGenerics&#39;</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from &#39;package:stats&#39;:
+
+    IQR, mad, sd, var, xtabs</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    anyDuplicated, aperm, append, as.data.frame, basename, cbind,
+    colnames, dirname, do.call, duplicated, eval, evalq, Filter, Find,
+    get, grep, grepl, is.unsorted, lapply, Map, mapply, match, mget,
+    order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+    rbind, Reduce, rownames, sapply, saveRDS, table, tapply, unique,
+    unsplit, which.max, which.min</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: S4Vectors</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: &#39;S4Vectors&#39;</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from &#39;package:utils&#39;:
+
+    findMatches</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    expand.grid, I, unname</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: IRanges</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: &#39;IRanges&#39;</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from &#39;package:sp&#39;:
+
+    %over%</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: Seqinfo</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>metadata <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">file =</span> <span class="st">&quot;data/atac_v1_E18_brain_flash_5k_singlecell.csv&quot;</span>,</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">header =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="dv">1</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>counts <span class="ot">&lt;-</span> <span class="fu">Read10X_h5</span>(<span class="at">filename =</span> <span class="st">&quot;data/atac_v1_E18_brain_flash_5k_filtered_peak_bc_matrix.h5&quot;</span>)</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>std_chr   <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;chr&quot;</span>, <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">19</span>, <span class="st">&quot;X&quot;</span>, <span class="st">&quot;Y&quot;</span>))</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>peak_chr  <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="fu">seqnames</span>(<span class="fu">StringToGRanges</span>(<span class="fu">rownames</span>(counts), <span class="at">sep =</span> <span class="fu">c</span>(<span class="st">&quot;:&quot;</span>, <span class="st">&quot;-&quot;</span>))))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `StringToGRanges()` was deprecated in Signac 1.17.0.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>counts    <span class="ot">&lt;-</span> counts[peak_chr <span class="sc">%in%</span> std_chr, ]</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>chrom_assay <span class="ot">&lt;-</span> <span class="fu">CreateChromatinAssay</span>(</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">counts =</span> counts,</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">sep =</span> <span class="fu">c</span>(<span class="st">&quot;:&quot;</span>, <span class="st">&quot;-&quot;</span>),</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">fragments =</span> <span class="st">&quot;data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</span>,</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">min.cells =</span> <span class="dv">10</span>,</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">min.features =</span> <span class="dv">200</span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Computing hash</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>seu_obj <span class="ot">&lt;-</span> <span class="fu">CreateSeuratObject</span>(</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">counts =</span> chrom_assay,</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">assay =</span> <span class="st">&quot;peaks&quot;</span>,</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">meta.data =</span> metadata</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>seu_obj</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>An object of class Seurat 
 53735 features across 3776 samples within 1 assay 
 Active assay: peaks (53735 features, 0 variable features)
  2 layers present: counts, data</code></pre>
+</div>
+</div>
 <ul>
 <li>Print out the hash and the path of the fragment file from within the Seurat object</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>frags <span class="ot">&lt;-</span> <span class="fu">Fragments</span>(seu_obj)  </span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">GetFragmentData</span>(frags[[<span class="dv">1</span>]], <span class="st">&quot;hash&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>frags <span class="ot">&lt;-</span> <span class="fu">Fragments</span>(seu_obj)  </span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="fu">GetFragmentData</span>(frags[[<span class="dv">1</span>]], <span class="st">&quot;hash&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] &quot;81f260f61c7101de5d154449720b053b&quot; &quot;884aa46b4bb08be53234caf9d1c72519&quot;</code></pre>
 </div>
-<pre class="text"><code>[1] &quot;81f260f61c7101de5d154449720b053b&quot; &quot;884aa46b4bb08be53234caf9d1c72519&quot;</code></pre>
+</div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">GetFragmentData</span>(frags[[<span class="dv">1</span>]], <span class="st">&quot;path&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">GetFragmentData</span>(frags[[<span class="dv">1</span>]], <span class="st">&quot;path&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] &quot;/tmp/Rtmp3R8KY7/compileCourses_26e6f7c7026/extdata/data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</code></pre>
 </div>
-<pre class="text"><code>[1] &quot;~/Downloads/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</code></pre>
+</div>
 <ul>
 <li>Move the fragment file and its index to a different folder and update the path in the Seurat object.</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">file.rename</span>(<span class="st">&quot;~/Downloads/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</span>, </span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;~/Desktop/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</span>)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">file.rename</span>(<span class="st">&quot;~/Downloads/atac_v1_E18_brain_flash_5k_fragments.tsv.gz.tbi&quot;</span>, </span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;~/Desktop/atac_v1_E18_brain_flash_5k_fragments.tsv.gz.tbi&quot;</span>)</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>frags_updated <span class="ot">&lt;-</span> <span class="fu">UpdatePath</span>(</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  frags[[<span class="dv">1</span>]],</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">new.path =</span> <span class="st">&quot;~/Desktop/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="fu">Fragments</span>(seu_obj) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="fu">Fragments</span>(seu_obj) <span class="ot">&lt;-</span> frags_updated</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="fu">GetFragmentData</span>(<span class="fu">Fragments</span>(seu_obj)[[<span class="dv">1</span>]], <span class="st">&quot;path&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">file.rename</span>(<span class="st">&quot;data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</span>, </span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;~/Desktop/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</span>)</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="fu">file.rename</span>(<span class="st">&quot;data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz.tbi&quot;</span>, </span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;~/Desktop/atac_v1_E18_brain_flash_5k_fragments.tsv.gz.tbi&quot;</span>)</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>frags_updated <span class="ot">&lt;-</span> <span class="fu">UpdatePath</span>(</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>  frags[[<span class="dv">1</span>]],</span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">new.path =</span> <span class="st">&quot;~/Desktop/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</span></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a><span class="fu">Fragments</span>(seu_obj) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a><span class="fu">Fragments</span>(seu_obj) <span class="ot">&lt;-</span> frags_updated</span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a><span class="fu">GetFragmentData</span>(<span class="fu">Fragments</span>(seu_obj)[[<span class="dv">1</span>]], <span class="st">&quot;path&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <pre class="text"><code>[1] &quot;~/Desktop/atac_v1_E18_brain_flash_5k_fragments.tsv.gz&quot;</code></pre>
 <ul>
 <li>Look at the peaks that were called by Cell Ranger ATAC and are contained within this object.</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>peaks_seu <span class="ot">&lt;-</span> <span class="fu">granges</span>(seu_obj)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>peaks_seu</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<pre class="text"><code>GRanges object with 53735 ranges and 0 metadata columns:
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>peaks_seu <span class="ot">&lt;-</span> <span class="fu">granges</span>(seu_obj)</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>peaks_seu</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>GRanges object with 53735 ranges and 0 metadata columns:
           seqnames            ranges strand
              &lt;Rle&gt;         &lt;IRanges&gt;  &lt;Rle&gt;
       [1]     chr1   3094695-3095385      *
@@ -3233,6 +3344,8 @@ Active assay: peaks (53735 features, 0 variable features)
   [53735]     chrY 90810766-90810946      *
   -------
   seqinfo: 21 sequences from an unspecified genome; no seqlengths</code></pre>
+</div>
+</div>
 <ul>
 <li><p>Identify the peak with the highest total raw counts</p>
 <ul>
@@ -3240,12 +3353,14 @@ Active assay: peaks (53735 features, 0 variable features)
 </ul></li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>counts_seu <span class="ot">&lt;-</span> <span class="fu">GetAssayData</span>(seu_obj, <span class="at">assay =</span> <span class="st">&quot;peaks&quot;</span>, <span class="at">layer =</span> <span class="st">&quot;counts&quot;</span>)</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>peak_sums <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(counts_seu)</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>max_peak_index <span class="ot">&lt;-</span> <span class="fu">which.max</span>(peak_sums)</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(max_peak_index)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>counts_seu <span class="ot">&lt;-</span> <span class="fu">GetAssayData</span>(seu_obj, <span class="at">assay =</span> <span class="st">&quot;peaks&quot;</span>, <span class="at">layer =</span> <span class="st">&quot;counts&quot;</span>)</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>peak_sums <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(counts_seu)</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>max_peak_index <span class="ot">&lt;-</span> <span class="fu">which.max</span>(peak_sums)</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(max_peak_index)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] &quot;chr17-39842785-39849048&quot;</code></pre>
 </div>
-<pre class="text"><code>[1] &quot;chr17-39842785-39849048&quot;</code></pre>
+</div>
 <ul>
 <li><p>Identify the cell barcode with the highest total raw counts in peaks</p>
 <ul>
@@ -3253,11 +3368,13 @@ Active assay: peaks (53735 features, 0 variable features)
 </ul></li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>meta_seu <span class="ot">&lt;-</span> seu_obj<span class="sc">@</span>meta.data</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>max_meta_index <span class="ot">&lt;-</span> <span class="fu">which.max</span>(meta_seu<span class="sc">$</span>nCount_peaks)</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(meta_seu)[max_meta_index]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>meta_seu <span class="ot">&lt;-</span> seu_obj<span class="sc">@</span>meta.data</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>max_meta_index <span class="ot">&lt;-</span> <span class="fu">which.max</span>(meta_seu<span class="sc">$</span>nCount_peaks)</span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(meta_seu)[max_meta_index]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] &quot;AACATCGGTTGGCTAT-1&quot;</code></pre>
 </div>
-<pre class="text"><code>[1] &quot;AACATCGGTTGGCTAT-1&quot;</code></pre>
+</div>
 
 </main>
 <!-- /main column -->

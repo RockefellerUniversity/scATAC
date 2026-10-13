@@ -3135,11 +3135,9 @@ vertical-align: -.125em;
   <ul class="collapse">
   <li><a href="#next-steps-peaks-and-motifs" id="toc-next-steps-peaks-and-motifs" class="nav-link" data-scroll-target="#next-steps-peaks-and-motifs">Next Steps: Peaks and Motifs</a></li>
   <li><a href="#next-steps-regulation-and-beyond" id="toc-next-steps-regulation-and-beyond" class="nav-link" data-scroll-target="#next-steps-regulation-and-beyond">Next Steps: Regulation and Beyond</a></li>
-  <li><a href="#time-for-an-exercise" id="toc-time-for-an-exercise" class="nav-link" data-scroll-target="#time-for-an-exercise">Time for an exercise!</a></li>
-  <li><a href="#answers-to-exercises" id="toc-answers-to-exercises" class="nav-link" data-scroll-target="#answers-to-exercises">Answers to exercises</a></li>
   <li><a href="#course-summary" id="toc-course-summary" class="nav-link" data-scroll-target="#course-summary">Course Summary</a></li>
   <li><a href="#further-resources" id="toc-further-resources" class="nav-link" data-scroll-target="#further-resources">Further Resources</a></li>
-  <li><a href="#time-for-an-exercise-1" id="toc-time-for-an-exercise-1" class="nav-link" data-scroll-target="#time-for-an-exercise-1">Time for an exercise!</a></li>
+  <li><a href="#time-for-an-exercise" id="toc-time-for-an-exercise" class="nav-link" data-scroll-target="#time-for-an-exercise">Time for an exercise!</a></li>
   <li><a href="#answers-to-exercise." id="toc-answers-to-exercise." class="nav-link" data-scroll-target="#answers-to-exercise.">Answers to exercise.</a></li>
   </ul></li>
   </ul>
@@ -3254,8 +3252,11 @@ Bioinformatics Resource Center - Rockefeller University<p></p>
 <p>If you don’t have the annotated object from the end of Session 3, you can download it:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">timeout =</span> <span class="dv">600</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="at">url =</span> <span class="st">&quot;https://www.dropbox.com/scl/fi/a6dcb7ipvh1epzswtq9t1/pbmc_annotated.rds?rlkey=33f90hbganthzp5yi3r196z72&amp;st=c4giu9vl&amp;dl=1&quot;</span>,</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">destfile =</span> <span class="st">&quot;data/pbmc_annotated.rds&quot;</span>, <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">url      =</span> <span class="st">&quot;https://www.dropbox.com/scl/fi/a6dcb7ipvh1epzswtq9t1/pbmc_annotated.rds?rlkey=33f90hbganthzp5yi3r196z72&amp;st=c4giu9vl&amp;dl=1&quot;</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">destfile =</span> <span class="st">&quot;data/pbmc_annotated.rds&quot;</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">mode     =</span> <span class="st">&quot;wb&quot;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>We can set our Idents(). The Idents corresponds to which are the active grouping metadata being used in our dataset. Often this is cell type labels or clusters. We will set this to “predicted.id”.</p>
 <div class="cell">
@@ -3328,9 +3329,10 @@ chr22-30270592-30271507   5.489702e-30   4.570531 0.427 0.024 3.383743e-25</code
 <h2 class="anchored" data-anchor-id="annotating-da-peaks-to-nearest-genes">Annotating DA Peaks to Nearest Genes</h2>
 <p>There are several methods to start functionally annotating peaks to genes. The easiest (and often the most parsimonious) is to use the nearest gene. We can do this easily from our DA output.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>significant_peaks <span class="ot">&lt;-</span> <span class="fu">subset</span>(da_peaks, p_val_adj <span class="sc">&lt;</span> <span class="fl">0.05</span> <span class="sc">&amp;</span> avg_log2FC <span class="sc">&gt;</span> <span class="fl">0.5</span>)</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>closest <span class="ot">&lt;-</span> <span class="fu">ClosestFeature</span>(pbmc, <span class="at">regions =</span> <span class="fu">rownames</span>(significant_peaks))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>significant_peaks <span class="ot">&lt;-</span> <span class="fu">subset</span>(da_peaks,</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>                              p_val_adj <span class="sc">&lt;</span> <span class="fl">0.05</span> <span class="sc">&amp;</span> avg_log2FC <span class="sc">&gt;</span> <span class="fl">0.5</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>closest <span class="ot">&lt;-</span> <span class="fu">ClosestFeature</span>(pbmc, <span class="at">regions =</span> <span class="fu">rownames</span>(significant_peaks))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: `ClosestFeature()` was deprecated in Signac 1.17.0.</code></pre>
 </div>
@@ -3375,8 +3377,13 @@ ENSE00001048398       OSM     3740   chr22-30270592-30271507</code></pre>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">DefaultAssay</span>(pbmc) <span class="ot">&lt;-</span> <span class="st">&quot;peaks&quot;</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="fu">CoveragePlot</span>(<span class="at">object =</span> pbmc, <span class="at">region =</span> <span class="st">&quot;FAM174B&quot;</span>, <span class="at">expression.assay =</span> <span class="st">&quot;RNA&quot;</span>, <span class="at">extend.upstream =</span> <span class="dv">500</span>,</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">extend.downstream =</span> <span class="dv">10000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="fu">CoveragePlot</span>(</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">object           =</span> pbmc,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">region           =</span> <span class="st">&quot;FAM174B&quot;</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">expression.assay =</span> <span class="st">&quot;RNA&quot;</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">extend.upstream   =</span> <span class="dv">500</span>,</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">extend.downstream =</span> <span class="dv">10000</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
 ℹ Please use `linewidth` instead.
@@ -3406,7 +3413,12 @@ ENSE00001048398       OSM     3740   chr22-30270592-30271507</code></pre>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>top_peak <span class="ot">&lt;-</span> closest<span class="sc">$</span>query_region[closest<span class="sc">$</span>gene_name <span class="sc">==</span> <span class="st">&quot;TRPV4&quot;</span>][<span class="dv">1</span>]</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="fu">CoveragePlot</span>(<span class="at">object =</span> pbmc, <span class="at">region =</span> top_peak, <span class="at">extend.upstream =</span> <span class="dv">1000</span>, <span class="at">extend.downstream =</span> <span class="dv">1000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="fu">CoveragePlot</span>(</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">object            =</span> pbmc,</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">region            =</span> top_peak,</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">extend.upstream   =</span> <span class="dv">1000</span>,</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">extend.downstream =</span> <span class="dv">1000</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: Removed 106 rows containing missing values or values outside the scale range
 (`geom_segment()`).</code></pre>
@@ -3428,8 +3440,13 @@ ENSE00001048398       OSM     3740   chr22-30270592-30271507</code></pre>
 <h2 class="anchored" data-anchor-id="lets-check-known-quantity">Lets check known quantity</h2>
 <p>For comparison lets check a known quantitiy: IL1B is a known to be highest in CD14+ Monocytes, but also CD16+ Monocytes and Dendritic cells. This matches the scATAC.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">CoveragePlot</span>(<span class="at">object =</span> pbmc, <span class="at">region =</span> <span class="st">&quot;IL1B&quot;</span>, <span class="at">expression.assay =</span> <span class="st">&quot;RNA&quot;</span>, <span class="at">extend.upstream =</span> <span class="dv">500</span>,</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">extend.downstream =</span> <span class="dv">10000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">CoveragePlot</span>(</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">object           =</span> pbmc,</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">region           =</span> <span class="st">&quot;IL1B&quot;</span>,</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">expression.assay =</span> <span class="st">&quot;RNA&quot;</span>,</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">extend.upstream   =</span> <span class="dv">500</span>,</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">extend.downstream =</span> <span class="dv">10000</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -3473,7 +3490,12 @@ Warning
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>all_markers <span class="ot">&lt;-</span> <span class="fu">FindAllMarkers</span>(<span class="at">object =</span> pbmc, <span class="at">only.pos =</span> <span class="cn">TRUE</span>, <span class="at">test.use =</span> <span class="st">&quot;LR&quot;</span>, <span class="at">latent.vars =</span> <span class="st">&quot;nCount_peaks&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>all_markers <span class="ot">&lt;-</span> <span class="fu">FindAllMarkers</span>(</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">object      =</span> pbmc,</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">only.pos    =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">test.use    =</span> <span class="st">&quot;LR&quot;</span>,</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">latent.vars =</span> <span class="st">&quot;nCount_peaks&quot;</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(all_markers)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -3512,8 +3534,8 @@ Attaching package: &#39;dplyr&#39;</code></pre>
     intersect, setdiff, setequal, union</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>top2 <span class="ot">&lt;-</span> all_markers <span class="sc">|&gt;</span></span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(cluster) <span class="sc">|&gt;</span></span>
-<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">slice_max</span>(<span class="at">order_by =</span> avg_log2FC, <span class="at">n =</span> <span class="dv">2</span>)</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(cluster) <span class="sc">|&gt;</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_max</span>(<span class="at">order_by =</span> avg_log2FC, <span class="at">n =</span> <span class="dv">2</span>)</span>
 <span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(top2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -3536,8 +3558,8 @@ Attaching package: &#39;dplyr&#39;</code></pre>
 <p>DotPlot is another very useful function to review multiple markers.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="fu">DotPlot</span>(pbmc, top2<span class="sc">$</span>gene) <span class="sc">+</span> <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>,</span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="dv">8</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="fu">DotPlot</span>(pbmc,top2<span class="sc">$</span>gene)<span class="sc">+</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>, <span class="at">size =</span> <span class="dv">8</span> ))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -3566,8 +3588,11 @@ Attaching package: &#39;dplyr&#39;</code></pre>
 <p>Combining two samples takes a few extra steps, which we walk through next. They take a while to run, so we have run them for you and provide the final object.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">timeout =</span> <span class="dv">600</span>)</span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="at">url =</span> <span class="st">&quot;https://www.dropbox.com/scl/fi/qavpfxt969y4j9fl9e4x9/pbmc_integrated.rds?rlkey=bwwxg3s55a31o2o15yp1gx73g&amp;st=25qa5j3z&amp;dl=1&quot;</span>,</span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">destfile =</span> <span class="st">&quot;data/pbmc_integrated.rds&quot;</span>, <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">url      =</span> <span class="st">&quot;https://www.dropbox.com/scl/fi/qavpfxt969y4j9fl9e4x9/pbmc_integrated.rds?rlkey=bwwxg3s55a31o2o15yp1gx73g&amp;st=25qa5j3z&amp;dl=1&quot;</span>,</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">destfile =</span> <span class="st">&quot;data/pbmc_integrated.rds&quot;</span>,</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">mode     =</span> <span class="st">&quot;wb&quot;</span></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="harmonising-cell-type-labels" class="level2">
@@ -3620,14 +3645,14 @@ Attaching package: &#39;dplyr&#39;</code></pre>
 <p>Each sample had its peaks called separately, so the two peak sets do not line up. Before we can compare them, both samples need to be counted on <strong>the same features</strong>.</p>
 <p>We take the union of both peak sets and merge any that overlap. Very narrow or very wide merged regions are dropped.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>peaks_500 <span class="ot">&lt;-</span> <span class="fu">read.table</span>(<span class="st">&quot;data/atac_pbmc_500_nextgem_peaks.bed&quot;</span>, <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">&quot;chr&quot;</span>,</span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;start&quot;</span>, <span class="st">&quot;end&quot;</span>))</span>
-<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>peaks_500 <span class="ot">&lt;-</span> <span class="fu">makeGRangesFromDataFrame</span>(peaks_500)</span>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>peaks_500   <span class="ot">&lt;-</span> <span class="fu">read.table</span>(<span class="st">&quot;data/atac_pbmc_500_nextgem_peaks.bed&quot;</span>,</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>                          <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">&quot;chr&quot;</span>, <span class="st">&quot;start&quot;</span>, <span class="st">&quot;end&quot;</span>))</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>peaks_500   <span class="ot">&lt;-</span> <span class="fu">makeGRangesFromDataFrame</span>(peaks_500)</span>
 <span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>peaks_multi <span class="ot">&lt;-</span> <span class="fu">granges</span>(multi[[<span class="st">&quot;peaks&quot;</span>]])</span>
 <span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>combined_peaks <span class="ot">&lt;-</span> <span class="fu">reduce</span>(<span class="fu">c</span>(peaks_500, peaks_multi))</span>
-<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>combined_peaks <span class="ot">&lt;-</span> combined_peaks[<span class="fu">width</span>(combined_peaks) <span class="sc">&gt;</span> <span class="dv">20</span> <span class="sc">&amp;</span> <span class="fu">width</span>(combined_peaks) <span class="sc">&lt;</span></span>
-<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>    <span class="dv">10000</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>combined_peaks <span class="ot">&lt;-</span> combined_peaks[<span class="fu">width</span>(combined_peaks) <span class="sc">&gt;</span> <span class="dv">20</span> <span class="sc">&amp;</span></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>                                 <span class="fu">width</span>(combined_peaks) <span class="sc">&lt;</span> <span class="dv">10000</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="re-counting-each-sample" class="level2 scrollable">
@@ -3635,32 +3660,48 @@ Attaching package: &#39;dplyr&#39;</code></pre>
 <p>We then count each sample’s fragments in the shared peaks, straight from its own fragment file, and build a new Signac object for each.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co"># PBMC 500</span></span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>counts_500 <span class="ot">&lt;-</span> <span class="fu">FeatureMatrix</span>(<span class="at">fragments =</span> <span class="fu">Fragments</span>(pbmc), <span class="at">features =</span> combined_peaks,</span>
-<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">cells =</span> <span class="fu">colnames</span>(pbmc))</span>
-<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>obj_500 <span class="ot">&lt;-</span> <span class="fu">CreateSeuratObject</span>(<span class="at">counts =</span> <span class="fu">CreateChromatinAssay</span>(<span class="at">counts =</span> counts_500,</span>
-<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">fragments =</span> <span class="fu">Fragments</span>(pbmc), <span class="at">annotation =</span> <span class="fu">Annotation</span>(pbmc)), <span class="at">assay =</span> <span class="st">&quot;peaks&quot;</span>,</span>
-<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">meta.data =</span> pbmc[[]])</span>
-<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a><span class="co"># PBMC Multiome</span></span>
-<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>counts_multi <span class="ot">&lt;-</span> <span class="fu">FeatureMatrix</span>(<span class="at">fragments =</span> <span class="fu">Fragments</span>(multi), <span class="at">features =</span> combined_peaks,</span>
-<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">cells =</span> <span class="fu">colnames</span>(multi))</span>
-<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a>obj_multi <span class="ot">&lt;-</span> <span class="fu">CreateSeuratObject</span>(<span class="at">counts =</span> <span class="fu">CreateChromatinAssay</span>(<span class="at">counts =</span> counts_multi,</span>
-<span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">fragments =</span> <span class="fu">Fragments</span>(multi), <span class="at">annotation =</span> <span class="fu">Annotation</span>(pbmc)), <span class="at">assay =</span> <span class="st">&quot;peaks&quot;</span>,</span>
-<span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">meta.data =</span> multi[[]])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>counts_500 <span class="ot">&lt;-</span> <span class="fu">FeatureMatrix</span>(</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">fragments =</span> <span class="fu">Fragments</span>(pbmc),</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">features  =</span> combined_peaks,</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">cells     =</span> <span class="fu">colnames</span>(pbmc)</span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>obj_500 <span class="ot">&lt;-</span> <span class="fu">CreateSeuratObject</span>(</span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">counts    =</span> <span class="fu">CreateChromatinAssay</span>(<span class="at">counts     =</span> counts_500,</span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">fragments  =</span> <span class="fu">Fragments</span>(pbmc),</span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">annotation =</span> <span class="fu">Annotation</span>(pbmc)),</span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">assay     =</span> <span class="st">&quot;peaks&quot;</span>,</span>
+<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">meta.data =</span> pbmc[[]]</span>
+<span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-16"><a href="#cb38-16" aria-hidden="true" tabindex="-1"></a><span class="co"># PBMC Multiome</span></span>
+<span id="cb38-17"><a href="#cb38-17" aria-hidden="true" tabindex="-1"></a>counts_multi <span class="ot">&lt;-</span> <span class="fu">FeatureMatrix</span>(</span>
+<span id="cb38-18"><a href="#cb38-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">fragments =</span> <span class="fu">Fragments</span>(multi),</span>
+<span id="cb38-19"><a href="#cb38-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">features  =</span> combined_peaks,</span>
+<span id="cb38-20"><a href="#cb38-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">cells     =</span> <span class="fu">colnames</span>(multi)</span>
+<span id="cb38-21"><a href="#cb38-21" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb38-22"><a href="#cb38-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-23"><a href="#cb38-23" aria-hidden="true" tabindex="-1"></a>obj_multi <span class="ot">&lt;-</span> <span class="fu">CreateSeuratObject</span>(</span>
+<span id="cb38-24"><a href="#cb38-24" aria-hidden="true" tabindex="-1"></a>  <span class="at">counts    =</span> <span class="fu">CreateChromatinAssay</span>(<span class="at">counts     =</span> counts_multi,</span>
+<span id="cb38-25"><a href="#cb38-25" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">fragments  =</span> <span class="fu">Fragments</span>(multi),</span>
+<span id="cb38-26"><a href="#cb38-26" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">annotation =</span> <span class="fu">Annotation</span>(pbmc)),</span>
+<span id="cb38-27"><a href="#cb38-27" aria-hidden="true" tabindex="-1"></a>  <span class="at">assay     =</span> <span class="st">&quot;peaks&quot;</span>,</span>
+<span id="cb38-28"><a href="#cb38-28" aria-hidden="true" tabindex="-1"></a>  <span class="at">meta.data =</span> multi[[]]</span>
+<span id="cb38-29"><a href="#cb38-29" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="merging-the-samples" class="level2">
 <h2 class="anchored" data-anchor-id="merging-the-samples">Merging the Samples</h2>
 <p>With both samples on the same peaks, we can merge them. Both use 10x barcodes ending in “-1”, so we add a prefix to keep every cell name unique.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>combined <span class="ot">&lt;-</span> <span class="fu">merge</span>(obj_500, <span class="at">y =</span> obj_multi, <span class="at">add.cell.ids =</span> <span class="fu">c</span>(<span class="st">&quot;pbmc500&quot;</span>, <span class="st">&quot;multiome&quot;</span>))</span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>combined <span class="ot">&lt;-</span> <span class="fu">RunTFIDF</span>(combined)</span>
-<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>combined <span class="ot">&lt;-</span> <span class="fu">FindTopFeatures</span>(combined, <span class="at">min.cutoff =</span> <span class="dv">10</span>)</span>
-<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>combined <span class="ot">&lt;-</span> <span class="fu">RunSVD</span>(combined, <span class="at">seed.use =</span> <span class="dv">42</span>)</span>
-<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>combined <span class="ot">&lt;-</span> <span class="fu">RunUMAP</span>(combined, <span class="at">reduction =</span> <span class="st">&quot;lsi&quot;</span>, <span class="at">dims =</span> <span class="dv">2</span><span class="sc">:</span><span class="dv">30</span>, <span class="at">seed.use =</span> <span class="dv">42</span>, <span class="at">reduction.name =</span> <span class="st">&quot;umap_unintegrated&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>combined <span class="ot">&lt;-</span> <span class="fu">merge</span>(obj_500, <span class="at">y =</span> obj_multi,</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>                  <span class="at">add.cell.ids =</span> <span class="fu">c</span>(<span class="st">&quot;pbmc500&quot;</span>, <span class="st">&quot;multiome&quot;</span>))</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>combined <span class="ot">&lt;-</span> <span class="fu">RunTFIDF</span>(combined)</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>combined <span class="ot">&lt;-</span> <span class="fu">FindTopFeatures</span>(combined, <span class="at">min.cutoff =</span> <span class="dv">10</span>)</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>combined <span class="ot">&lt;-</span> <span class="fu">RunSVD</span>(combined, <span class="at">seed.use =</span> <span class="dv">42</span>)</span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>combined <span class="ot">&lt;-</span> <span class="fu">RunUMAP</span>(combined, <span class="at">reduction =</span> <span class="st">&quot;lsi&quot;</span>, <span class="at">dims =</span> <span class="dv">2</span><span class="sc">:</span><span class="dv">30</span>, <span class="at">seed.use =</span> <span class="dv">42</span>,</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>                    <span class="at">reduction.name =</span> <span class="st">&quot;umap_unintegrated&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="sample-effects-before-integration" class="level2">
@@ -3695,8 +3736,8 @@ Active assay: peaks (106894 features, 0 variable features)
 </div>
 <p>Each cell type splits into two groups, one per sample. Differences between samples, here different 10x technologies, donors and processing, dominate the embedding.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">DimPlot</span>(pbmc_int, <span class="at">reduction =</span> <span class="st">&quot;umap_unintegrated&quot;</span>, <span class="at">group.by =</span> <span class="fu">c</span>(<span class="st">&quot;sample&quot;</span>, <span class="st">&quot;celltype&quot;</span>),</span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">label =</span> <span class="cn">TRUE</span>, <span class="at">repel =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">DimPlot</span>(pbmc_int, <span class="at">reduction =</span> <span class="st">&quot;umap_unintegrated&quot;</span>,</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>        <span class="at">group.by =</span> <span class="fu">c</span>(<span class="st">&quot;sample&quot;</span>, <span class="st">&quot;celltype&quot;</span>), <span class="at">label =</span> <span class="cn">TRUE</span>, <span class="at">repel =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -3734,26 +3775,35 @@ This message will be shown once per session.</code></pre>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>obj_list <span class="ot">&lt;-</span> <span class="fu">SplitObject</span>(combined, <span class="at">split.by =</span> <span class="st">&quot;sample&quot;</span>)</span>
 <span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>obj_list <span class="ot">&lt;-</span> <span class="fu">lapply</span>(obj_list, <span class="cf">function</span>(x) {</span>
-<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> <span class="fu">FindTopFeatures</span>(x, <span class="at">min.cutoff =</span> <span class="dv">10</span>)</span>
-<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> <span class="fu">RunTFIDF</span>(x)</span>
-<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">RunSVD</span>(x, <span class="at">seed.use =</span> <span class="dv">42</span>)</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">FindTopFeatures</span>(x, <span class="at">min.cutoff =</span> <span class="dv">10</span>)</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">RunTFIDF</span>(x)</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">RunSVD</span>(x, <span class="at">seed.use =</span> <span class="dv">42</span>)</span>
 <span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>})</span>
 <span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>anchors <span class="ot">&lt;-</span> <span class="fu">FindIntegrationAnchors</span>(<span class="at">object.list =</span> obj_list, <span class="at">anchor.features =</span> <span class="fu">rownames</span>(combined),</span>
-<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">reduction =</span> <span class="st">&quot;rlsi&quot;</span>, <span class="at">dims =</span> <span class="dv">2</span><span class="sc">:</span><span class="dv">30</span>)</span>
-<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a>combined <span class="ot">&lt;-</span> <span class="fu">IntegrateEmbeddings</span>(<span class="at">anchorset =</span> anchors, <span class="at">reductions =</span> combined[[<span class="st">&quot;lsi&quot;</span>]],</span>
-<span id="cb47-12"><a href="#cb47-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">new.reduction.name =</span> <span class="st">&quot;integrated_lsi&quot;</span>, <span class="at">dims.to.integrate =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>)</span>
-<span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a>combined <span class="ot">&lt;-</span> <span class="fu">RunUMAP</span>(combined, <span class="at">reduction =</span> <span class="st">&quot;integrated_lsi&quot;</span>, <span class="at">dims =</span> <span class="dv">2</span><span class="sc">:</span><span class="dv">30</span>, <span class="at">seed.use =</span> <span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>anchors <span class="ot">&lt;-</span> <span class="fu">FindIntegrationAnchors</span>(</span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">object.list     =</span> obj_list,</span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">anchor.features =</span> <span class="fu">rownames</span>(combined),</span>
+<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">reduction       =</span> <span class="st">&quot;rlsi&quot;</span>,</span>
+<span id="cb47-12"><a href="#cb47-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">dims            =</span> <span class="dv">2</span><span class="sc">:</span><span class="dv">30</span></span>
+<span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-15"><a href="#cb47-15" aria-hidden="true" tabindex="-1"></a>combined <span class="ot">&lt;-</span> <span class="fu">IntegrateEmbeddings</span>(</span>
+<span id="cb47-16"><a href="#cb47-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">anchorset          =</span> anchors,</span>
+<span id="cb47-17"><a href="#cb47-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">reductions         =</span> combined[[<span class="st">&quot;lsi&quot;</span>]],</span>
+<span id="cb47-18"><a href="#cb47-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">new.reduction.name =</span> <span class="st">&quot;integrated_lsi&quot;</span>,</span>
+<span id="cb47-19"><a href="#cb47-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">dims.to.integrate  =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span></span>
+<span id="cb47-20"><a href="#cb47-20" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb47-21"><a href="#cb47-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-22"><a href="#cb47-22" aria-hidden="true" tabindex="-1"></a>combined <span class="ot">&lt;-</span> <span class="fu">RunUMAP</span>(combined, <span class="at">reduction =</span> <span class="st">&quot;integrated_lsi&quot;</span>,</span>
+<span id="cb47-23"><a href="#cb47-23" aria-hidden="true" tabindex="-1"></a>                    <span class="at">dims =</span> <span class="dv">2</span><span class="sc">:</span><span class="dv">30</span>, <span class="at">seed.use =</span> <span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="after-integration" class="level2">
 <h2 class="anchored" data-anchor-id="after-integration">After Integration</h2>
 <p>The samples now overlap, and cells group by cell type rather than by sample.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">DimPlot</span>(pbmc_int, <span class="at">reduction =</span> <span class="st">&quot;umap&quot;</span>, <span class="at">group.by =</span> <span class="fu">c</span>(<span class="st">&quot;sample&quot;</span>, <span class="st">&quot;celltype&quot;</span>), <span class="at">label =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">repel =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">DimPlot</span>(pbmc_int, <span class="at">reduction =</span> <span class="st">&quot;umap&quot;</span>,</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>        <span class="at">group.by =</span> <span class="fu">c</span>(<span class="st">&quot;sample&quot;</span>, <span class="st">&quot;celltype&quot;</span>), <span class="at">label =</span> <span class="cn">TRUE</span>, <span class="at">repel =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -3956,8 +4006,12 @@ Attaching package: &#39;SummarizedExperiment&#39;</code></pre>
 
     Assays</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb86"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a>bulk <span class="ot">&lt;-</span> <span class="fu">AggregateExpression</span>(pbmc_int, <span class="at">assays =</span> <span class="st">&quot;peaks&quot;</span>, <span class="at">return.seurat =</span> <span class="cn">FALSE</span>, <span class="at">group.by =</span> <span class="fu">c</span>(<span class="st">&quot;celltype&quot;</span>,</span>
-<span id="cb86-2"><a href="#cb86-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;sample&quot;</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb86"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a>bulk <span class="ot">&lt;-</span> <span class="fu">AggregateExpression</span>(</span>
+<span id="cb86-2"><a href="#cb86-2" aria-hidden="true" tabindex="-1"></a>  pbmc_int,</span>
+<span id="cb86-3"><a href="#cb86-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">assays       =</span> <span class="st">&quot;peaks&quot;</span>,</span>
+<span id="cb86-4"><a href="#cb86-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">return.seurat =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb86-5"><a href="#cb86-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">group.by     =</span> <span class="fu">c</span>(<span class="st">&quot;celltype&quot;</span>,<span class="st">&quot;sample&quot;</span>)</span>
+<span id="cb86-6"><a href="#cb86-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Names of identity class contain underscores (&#39;_&#39;), replacing with dashes (&#39;-&#39;)
 This message is displayed once every 8 hours.</code></pre>
@@ -3987,13 +4041,17 @@ chr1-629503-630399 5 1 4 2 1 1 2 1 4 . 2 1 6 3 . . . . 1 1 . .</code></pre>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb92"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a>parts <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, <span class="fu">strsplit</span>(<span class="fu">colnames</span>(counts_bulk), <span class="st">&quot;_&quot;</span>))</span>
 <span id="cb92-2"><a href="#cb92-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb92-3"><a href="#cb92-3" aria-hidden="true" tabindex="-1"></a>col_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">celltype =</span> parts[, <span class="dv">1</span>], <span class="at">sample =</span> parts[, <span class="dv">2</span>], <span class="at">row.names =</span> <span class="fu">colnames</span>(counts_bulk))</span>
-<span id="cb92-4"><a href="#cb92-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb92-5"><a href="#cb92-5" aria-hidden="true" tabindex="-1"></a><span class="co"># How many cells went into each pseudobulk. AggregateExpression turns &#39;_&#39;</span></span>
-<span id="cb92-6"><a href="#cb92-6" aria-hidden="true" tabindex="-1"></a><span class="co"># inside a value into &#39;-&#39;, so match that when building the group names.</span></span>
-<span id="cb92-7"><a href="#cb92-7" aria-hidden="true" tabindex="-1"></a>pb_group <span class="ot">&lt;-</span> <span class="fu">paste</span>(pbmc_int<span class="sc">$</span>celltype, <span class="fu">gsub</span>(<span class="st">&quot;_&quot;</span>, <span class="st">&quot;-&quot;</span>, pbmc_int<span class="sc">$</span>sample), <span class="at">sep =</span> <span class="st">&quot;_&quot;</span>)</span>
-<span id="cb92-8"><a href="#cb92-8" aria-hidden="true" tabindex="-1"></a>col_data<span class="sc">$</span>n_cells <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(<span class="fu">table</span>(pb_group)[<span class="fu">rownames</span>(col_data)])</span>
-<span id="cb92-9"><a href="#cb92-9" aria-hidden="true" tabindex="-1"></a>col_data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb92-3"><a href="#cb92-3" aria-hidden="true" tabindex="-1"></a>col_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb92-4"><a href="#cb92-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">celltype  =</span> parts[, <span class="dv">1</span>],</span>
+<span id="cb92-5"><a href="#cb92-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">sample    =</span> parts[, <span class="dv">2</span>],</span>
+<span id="cb92-6"><a href="#cb92-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="fu">colnames</span>(counts_bulk)</span>
+<span id="cb92-7"><a href="#cb92-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb92-8"><a href="#cb92-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb92-9"><a href="#cb92-9" aria-hidden="true" tabindex="-1"></a><span class="co"># How many cells went into each pseudobulk. AggregateExpression turns &quot;_&quot;</span></span>
+<span id="cb92-10"><a href="#cb92-10" aria-hidden="true" tabindex="-1"></a><span class="co"># inside a value into &quot;-&quot;, so match that when building the group names.</span></span>
+<span id="cb92-11"><a href="#cb92-11" aria-hidden="true" tabindex="-1"></a>pb_group <span class="ot">&lt;-</span> <span class="fu">paste</span>(pbmc_int<span class="sc">$</span>celltype, <span class="fu">gsub</span>(<span class="st">&quot;_&quot;</span>, <span class="st">&quot;-&quot;</span>, pbmc_int<span class="sc">$</span>sample), <span class="at">sep =</span> <span class="st">&quot;_&quot;</span>)</span>
+<span id="cb92-12"><a href="#cb92-12" aria-hidden="true" tabindex="-1"></a>col_data<span class="sc">$</span>n_cells <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(<span class="fu">table</span>(pb_group)[<span class="fu">rownames</span>(col_data)])</span>
+<span id="cb92-13"><a href="#cb92-13" aria-hidden="true" tabindex="-1"></a>col_data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                                     celltype        sample n_cells
 B_pbmc-multiome                             B pbmc-multiome      81
@@ -4024,13 +4082,15 @@ pDC_pbmc500                               pDC       pbmc500       3</code></pre>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb94"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pseudobulks summed from only a few cells are mostly noise, and DESeq2 shares</span></span>
 <span id="cb94-2"><a href="#cb94-2" aria-hidden="true" tabindex="-1"></a><span class="co"># its variance estimates across all columns, so drop them before fitting</span></span>
-<span id="cb94-3"><a href="#cb94-3" aria-hidden="true" tabindex="-1"></a>keep_cols <span class="ot">&lt;-</span> col_data<span class="sc">$</span>n_cells <span class="sc">&gt;=</span> <span class="dv">10</span></span>
+<span id="cb94-3"><a href="#cb94-3" aria-hidden="true" tabindex="-1"></a>keep_cols   <span class="ot">&lt;-</span> col_data<span class="sc">$</span>n_cells <span class="sc">&gt;=</span> <span class="dv">10</span></span>
 <span id="cb94-4"><a href="#cb94-4" aria-hidden="true" tabindex="-1"></a>counts_keep <span class="ot">&lt;-</span> counts_bulk[, keep_cols]</span>
-<span id="cb94-5"><a href="#cb94-5" aria-hidden="true" tabindex="-1"></a>col_keep <span class="ot">&lt;-</span> col_data[keep_cols, ]</span>
+<span id="cb94-5"><a href="#cb94-5" aria-hidden="true" tabindex="-1"></a>col_keep    <span class="ot">&lt;-</span> col_data[keep_cols, ]</span>
 <span id="cb94-6"><a href="#cb94-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb94-7"><a href="#cb94-7" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">DESeqDataSetFromMatrix</span>(<span class="at">countData =</span> counts_keep, <span class="at">colData =</span> col_keep, <span class="at">design =</span> <span class="sc">~</span>sample <span class="sc">+</span></span>
-<span id="cb94-8"><a href="#cb94-8" aria-hidden="true" tabindex="-1"></a>    celltype  <span class="co"># sample is the replicate/blocking factor</span></span>
-<span id="cb94-9"><a href="#cb94-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb94-7"><a href="#cb94-7" aria-hidden="true" tabindex="-1"></a>dds <span class="ot">&lt;-</span> <span class="fu">DESeqDataSetFromMatrix</span>(</span>
+<span id="cb94-8"><a href="#cb94-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">countData =</span> counts_keep,</span>
+<span id="cb94-9"><a href="#cb94-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">colData   =</span> col_keep,</span>
+<span id="cb94-10"><a href="#cb94-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">design    =</span> <span class="sc">~</span> sample <span class="sc">+</span> celltype   <span class="co"># sample is the replicate/blocking factor</span></span>
+<span id="cb94-11"><a href="#cb94-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>converting counts to integer mode</code></pre>
 </div>
@@ -4154,18 +4214,30 @@ This message will be shown once per session</code></pre>
 <h2 class="anchored" data-anchor-id="example-findmarkers-only">Example: FindMarkers Only</h2>
 <p>That is not all the differences.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb114"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb114-1"><a href="#cb114-1" aria-hidden="true" tabindex="-1"></a><span class="fu">CoveragePlot</span>(<span class="at">object =</span> pbmc_int, <span class="at">region =</span> <span class="st">&quot;chr6-106702055-106703095&quot;</span>, <span class="at">group.by =</span> <span class="st">&quot;celltype&quot;</span>,</span>
-<span id="cb114-2"><a href="#cb114-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">split.by =</span> <span class="st">&quot;sample&quot;</span>, <span class="at">idents =</span> <span class="fu">c</span>(<span class="st">&quot;CD14+ Monocytes&quot;</span>, <span class="st">&quot;B&quot;</span>), <span class="at">extend.upstream =</span> <span class="dv">2000</span>,</span>
-<span id="cb114-3"><a href="#cb114-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">extend.downstream =</span> <span class="dv">2000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb114"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb114-1"><a href="#cb114-1" aria-hidden="true" tabindex="-1"></a><span class="fu">CoveragePlot</span>(</span>
+<span id="cb114-2"><a href="#cb114-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">object            =</span> pbmc_int,</span>
+<span id="cb114-3"><a href="#cb114-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">region            =</span> <span class="st">&quot;chr6-106702055-106703095&quot;</span>,</span>
+<span id="cb114-4"><a href="#cb114-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">group.by          =</span> <span class="st">&quot;celltype&quot;</span>,</span>
+<span id="cb114-5"><a href="#cb114-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">split.by          =</span> <span class="st">&quot;sample&quot;</span>,</span>
+<span id="cb114-6"><a href="#cb114-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">idents            =</span> <span class="fu">c</span>(<span class="st">&quot;CD14+ Monocytes&quot;</span>, <span class="st">&quot;B&quot;</span>),</span>
+<span id="cb114-7"><a href="#cb114-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">extend.upstream   =</span> <span class="dv">2000</span>,</span>
+<span id="cb114-8"><a href="#cb114-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">extend.downstream =</span> <span class="dv">2000</span></span>
+<span id="cb114-9"><a href="#cb114-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Open in B cells in <strong>both</strong> samples, absent in monocytes. The per-cell test is very confident. Pseudobulk is not: the peak has signal in only 2 of the pseudobulks, so DESeq2 cannot estimate its variance well, and its average count is low enough that DESeq2’s independent filtering may not test it at all (<code>padj</code> is <code>NA</code>). This one is probably real: per-cell tests are not always wrong, but pseudobulk only calls what it can back with sample-level evidence.</p>
 </section>
 <section id="example-pseudobulk-only" class="level2">
 <h2 class="anchored" data-anchor-id="example-pseudobulk-only">Example: Pseudobulk Only</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb115"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb115-1"><a href="#cb115-1" aria-hidden="true" tabindex="-1"></a><span class="fu">CoveragePlot</span>(<span class="at">object =</span> pbmc_int, <span class="at">region =</span> <span class="st">&quot;chr6-41934567-41943790&quot;</span>, <span class="at">group.by =</span> <span class="st">&quot;celltype&quot;</span>,</span>
-<span id="cb115-2"><a href="#cb115-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">split.by =</span> <span class="st">&quot;sample&quot;</span>, <span class="at">idents =</span> <span class="fu">c</span>(<span class="st">&quot;CD14+ Monocytes&quot;</span>, <span class="st">&quot;B&quot;</span>), <span class="at">extend.upstream =</span> <span class="dv">2000</span>,</span>
-<span id="cb115-3"><a href="#cb115-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">extend.downstream =</span> <span class="dv">2000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb115"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb115-1"><a href="#cb115-1" aria-hidden="true" tabindex="-1"></a><span class="fu">CoveragePlot</span>(</span>
+<span id="cb115-2"><a href="#cb115-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">object            =</span> pbmc_int,</span>
+<span id="cb115-3"><a href="#cb115-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">region            =</span> <span class="st">&quot;chr6-41934567-41943790&quot;</span>,</span>
+<span id="cb115-4"><a href="#cb115-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">group.by          =</span> <span class="st">&quot;celltype&quot;</span>,</span>
+<span id="cb115-5"><a href="#cb115-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">split.by          =</span> <span class="st">&quot;sample&quot;</span>,</span>
+<span id="cb115-6"><a href="#cb115-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">idents            =</span> <span class="fu">c</span>(<span class="st">&quot;CD14+ Monocytes&quot;</span>, <span class="st">&quot;B&quot;</span>),</span>
+<span id="cb115-7"><a href="#cb115-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">extend.upstream   =</span> <span class="dv">2000</span>,</span>
+<span id="cb115-8"><a href="#cb115-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">extend.downstream =</span> <span class="dv">2000</span></span>
+<span id="cb115-9"><a href="#cb115-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Open in both cell types, so the per-cell contrast is weak. But summed across cells it is consistently higher in monocytes in <strong>both</strong> samples, which pseudobulk can detect with confidence.</p>
 </section>
@@ -4277,14 +4349,6 @@ This message will be shown once per session</code></pre>
 </ul></li>
 </ul>
 </section>
-<section id="time-for-an-exercise" class="level2">
-<h2 class="anchored" data-anchor-id="time-for-an-exercise">Time for an exercise!</h2>
-<p>Session 4 exercises can be found <a href="../../exercises/exercises/scATAC_Exercise4_exercise.html">here</a></p>
-</section>
-<section id="answers-to-exercises" class="level2">
-<h2 class="anchored" data-anchor-id="answers-to-exercises">Answers to exercises</h2>
-<p>Answers can be found <a href="../../exercises/answers/scATAC_Exercise4_answers.html">here</a></p>
-</section>
 <section id="course-summary" class="level2">
 <h2 class="anchored" data-anchor-id="course-summary">Course Summary</h2>
 <div class="columns">
@@ -4352,8 +4416,8 @@ This message will be shown once per session</code></pre>
 </table>
 <p><strong>Questions?</strong> Contact the Bioinformatics Resource Center at <strong>brc@rockefeller.edu</strong></p>
 </section>
-<section id="time-for-an-exercise-1" class="level2">
-<h2 class="anchored" data-anchor-id="time-for-an-exercise-1">Time for an exercise!</h2>
+<section id="time-for-an-exercise" class="level2">
+<h2 class="anchored" data-anchor-id="time-for-an-exercise">Time for an exercise!</h2>
 <p>Exercise on differential accessibility and visualization can be found <a href="../../exercises/exercises/Session4_Exercise_exercise.html">here</a></p>
 </section>
 <section id="answers-to-exercise." class="level2">

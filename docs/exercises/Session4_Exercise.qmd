@@ -17,9 +17,6 @@ params:
 ```{r, setup,include=FALSE, purl=FALSE}
 toMessage <- ifelse(!is.null(params$toMessage),params$toMessage,FALSE)
 message(toMessage)
-## Temporarily skip all code in the exercises so the course renders quickly on
-## GitHub; solution code is still shown (echo) but not run. Remove to re-enable.
-knitr::opts_chunk$set(eval = FALSE)
 ```
 
 
@@ -27,6 +24,17 @@ knitr::opts_chunk$set(eval = FALSE)
 These exercises are about differential accessibility testing and coverage plots in [Single-cell ATAC-seq](https://rockefelleruniversity.github.io/scATAC/).
 
 We continue with the E18 mouse brain object from the Session 3 exercise. In the session we found markers for a cell type in blood. Here we look for the regulatory elements that separate **progenitors** from **neurons** in the developing cortex.
+
+If you don't have the object from the Session 3 exercise, download ours into your **data/** folder. It points to the fragment file at `data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz`, so you also need the fragment file and its index there (see the Session 2 exercise).
+
+```{r download_s3_object, eval=FALSE}
+options(timeout = 600)
+download.file(
+  url      = "https://www.dropbox.com/scl/fi/87aj4rcvif8imjhm3dx9x/brain_annotated.rds?rlkey=wkprulmx6wyx6c1qhbfdfqawz&st=eladqt36&dl=1",
+  destfile = "data/brain_annotated.rds",
+  mode     = "wb"
+)
+```
 
 **Exercise 1** - **Choosing groups to compare**
 
@@ -84,7 +92,7 @@ table(brain$predicted.id[Idents(brain) == neuron_cl])
 **Exercise 2** - **Differential accessibility**
 
 - Find peaks more accessible in the progenitor cluster than in all other cells. Use logistic regression with sequencing depth as a latent variable, as in the session. Why do we include depth?
-```{r ex2_one,echo=toMessage,warning=FALSE}
+```{r ex2_one,echo=toMessage,warning=FALSE, eval=identical(Sys.getenv("SCATAC_REBUILD"), "true")}
 ## Cells with more fragments look "open" at more peaks, so without the depth
 ## covariate a cluster of deeply sequenced cells would get spurious markers.
 ## min.pct = 0.05 skips peaks open in <5% of both groups; they can't be
@@ -97,13 +105,29 @@ da_prog <- FindMarkers(
   latent.vars = "nCount_peaks",
   min.pct     = 0.05
 )
+```
+
+```{r ex2_da_checkpoint, include=FALSE, purl=FALSE}
+# Logistic regression on every peak for ~3,100 cells is slow, and exercises
+# render twice per build, so the render loads saved results for both tests.
+# Refresh with SCATAC_REBUILD=true (docker/rebuild_checkpoints.sh).
+if (!identical(Sys.getenv("SCATAC_REBUILD"), "true")) {
+  da_ckpt <- readRDS("data/da_markers_brain_e18.rds")
+  ## The saved results only make sense for the same two clusters
+  stopifnot(identical(da_ckpt$clusters, c(progenitor = progenitor_cl, neuron = neuron_cl)))
+  da_prog <- da_ckpt$da_prog
+  da_pair <- da_ckpt$da_pair
+}
+```
+
+```{r ex2_one_show,echo=toMessage}
 head(da_prog)
 
 sum(da_prog$p_val_adj < 0.05)
 ```
 
 - Now compare the progenitor cluster directly against the neuron cluster, keeping both directions. How many peaks are significantly more open in each? What does a negative avg_log2FC mean here?
-```{r ex2_pair,echo=toMessage,warning=FALSE}
+```{r ex2_pair,echo=toMessage,warning=FALSE, eval=identical(Sys.getenv("SCATAC_REBUILD"), "true")}
 da_pair <- FindMarkers(
   object      = brain,
   ident.1     = progenitor_cl,
@@ -113,7 +137,16 @@ da_pair <- FindMarkers(
   latent.vars = "nCount_peaks",
   min.pct     = 0.05
 )
+```
 
+```{r ex2_pair_checkpoint, include=FALSE, purl=FALSE, eval=identical(Sys.getenv("SCATAC_REBUILD"), "true")}
+saveRDS(list(clusters = c(progenitor = progenitor_cl, neuron = neuron_cl),
+             da_prog  = da_prog,
+             da_pair  = da_pair),
+        "data/da_markers_brain_e18.rds")
+```
+
+```{r ex2_pair_show,echo=toMessage}
 ## Positive log2FC = more open in ident.1 (progenitors), negative = more open
 ## in ident.2 (neurons).
 sig <- subset(da_pair, p_val_adj < 0.05 & abs(avg_log2FC) > 0.5)

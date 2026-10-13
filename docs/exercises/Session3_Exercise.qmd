@@ -17,9 +17,6 @@ params:
 ```{r, setup,include=FALSE, purl=FALSE}
 toMessage <- ifelse(!is.null(params$toMessage),params$toMessage,FALSE)
 message(toMessage)
-## Temporarily skip all code in the exercises so the course renders quickly on
-## GitHub; solution code is still shown (echo) but not run. Remove to re-enable.
-knitr::opts_chunk$set(eval = FALSE)
 ```
 
 
@@ -27,6 +24,17 @@ knitr::opts_chunk$set(eval = FALSE)
 These exercises are about LSI, UMAP, clustering, gene activity scores and label transfer in [Single-cell ATAC-seq](https://rockefelleruniversity.github.io/scATAC/).
 
 We carry on with the E18 mouse brain dataset from the Session 2 exercise. Start from your filtered, TF-IDF normalized object (or load ours below).
+
+If you don't have the object from the Session 2 exercise, download ours into your **data/** folder. It points to the fragment file at `data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz`, so you also need the fragment file and its index there (see the Session 2 exercise).
+
+```{r download_s2_object, eval=FALSE}
+options(timeout = 600)
+download.file(
+  url      = "https://www.dropbox.com/scl/fi/ty9ut753rp402fle26h7t/brain_filtered_tfidf.rds?rlkey=ldvv4lhr9xfpa9g422v5lf5vo&st=xe6a0m77&dl=1",
+  destfile = "data/brain_filtered_tfidf.rds",
+  mode     = "wb"
+)
+```
 
 Developing brain is very different from blood. Rather than a handful of distinct, well-separated cell types, there is a **continuum**: progenitors in the ventricular zone become intermediate progenitors and then neurons as they migrate outwards. Keep that in mind when you judge your clusters.
 
@@ -166,8 +174,24 @@ VlnPlot(brain, features = "pct_reads_in_peaks", pt.size = 0) + NoLegend()
 **Exercise 5** - **Gene activity**
 
 - Compute gene activity scores, add them as an "RNA" assay and log-normalize them as in the session.
-```{r ex5_ga,echo=toMessage}
+```{r ex5_ga,echo=toMessage, eval=identical(Sys.getenv("SCATAC_REBUILD"), "true")}
 gene.activities <- GeneActivity(brain)
+```
+
+```{r ex5_ga_checkpoint, include=FALSE, purl=FALSE}
+# GeneActivity() reads the whole 1.1 GB fragment file, and exercises render
+# twice per build, so the render loads a saved matrix. Refresh it with
+# SCATAC_REBUILD=true (docker/rebuild_checkpoints.sh).
+if (identical(Sys.getenv("SCATAC_REBUILD"), "true")) {
+  saveRDS(gene.activities, "data/gene_activity_brain_e18.rds")
+} else {
+  gene.activities <- readRDS("data/gene_activity_brain_e18.rds")
+}
+stopifnot(identical(sort(colnames(gene.activities)), sort(colnames(brain))))
+gene.activities <- gene.activities[, colnames(brain)]
+```
+
+```{r ex5_ga_add,echo=toMessage}
 
 brain[["RNA"]] <- CreateAssayObject(counts = gene.activities)
 brain <- NormalizeData(
@@ -249,7 +273,7 @@ download.file(
 ```
 
 - Load the reference and explore its metadata. How old are the mice, and which brain regions were sampled? Which columns hold cell type labels, and at what level of detail?
-```{r ex6_ref,echo=toMessage}
+```{r ex6_ref,echo=toMessage, eval=identical(Sys.getenv("SCATAC_REBUILD"), "true")}
 allen_rna <- readRDS("data/allen_brain.rds")
 allen_rna <- UpdateSeuratObject(allen_rna)
 allen_rna
@@ -264,8 +288,30 @@ table(allen_rna$class)
 table(allen_rna$subclass)
 ```
 
+```{r ex6_ref_checkpoint, include=FALSE, purl=FALSE}
+# The Allen reference is ~1.2 GB and label transfer against it is slow, so the
+# render loads the reference summaries and the transferred labels from a small
+# checkpoint instead. Refresh with SCATAC_REBUILD=true.
+if (identical(Sys.getenv("SCATAC_REBUILD"), "true")) {
+  allen_ckpt <- list(age_days     = summary(allen_rna$age_days),
+                     brain_region = table(allen_rna$brain_region),
+                     class        = table(allen_rna$class),
+                     subclass     = table(allen_rna$subclass))
+} else {
+  allen_ckpt <- readRDS("data/allen_transfer_brain_e18.rds")
+}
+```
+
+```{r ex6_ref_show, echo=FALSE, eval=!identical(Sys.getenv("SCATAC_REBUILD"), "true")}
+# Outputs of the chunk above, from the checkpoint.
+allen_ckpt$age_days
+allen_ckpt$brain_region
+allen_ckpt$class
+allen_ckpt$subclass
+```
+
 - Find transfer anchors between the reference and your gene activity assay, and transfer the `subclass` labels. Use LSI 2:30 for the weighting, as in the session.
-```{r ex6_anchors,echo=toMessage}
+```{r ex6_anchors,echo=toMessage, eval=identical(Sys.getenv("SCATAC_REBUILD"), "true")}
 allen_rna <- FindVariableFeatures(allen_rna, nfeatures = 5000)
 
 DefaultAssay(brain) <- "RNA"
@@ -287,6 +333,18 @@ predictions <- TransferData(
 brain <- AddMetaData(brain, metadata = predictions)
 
 rm(allen_rna)   # ~1 GB we no longer need
+```
+
+```{r ex6_anchors_checkpoint, include=FALSE, purl=FALSE}
+if (identical(Sys.getenv("SCATAC_REBUILD"), "true")) {
+  allen_ckpt$predictions <- predictions
+  saveRDS(allen_ckpt, "data/allen_transfer_brain_e18.rds")
+} else {
+  predictions <- allen_ckpt$predictions
+  stopifnot(identical(sort(rownames(predictions)), sort(colnames(brain))))
+  DefaultAssay(brain) <- "RNA"
+  brain <- AddMetaData(brain, metadata = predictions[colnames(brain), ])
+}
 ```
 
 ```{r ex6_umap,echo=toMessage}
@@ -337,7 +395,14 @@ ggplot(xtab_prop, aes(x = predicted, y = cluster, fill = Freq)) +
 ## than adult cortex.
 ```
 
-```{r ex6_save,echo=FALSE,eval=FALSE,include=FALSE}
-## Checkpoint for the Session 4 exercise
+```{r ex6_save,echo=FALSE,include=FALSE,purl=FALSE}
+## Checkpoint for the Session 4 exercise. Store the fragment path relative to
+## the course docs/ folder, as students will have it. UpdatePath() would store
+## an absolute path from this machine, so set the slot directly.
+DefaultAssay(brain) <- "peaks"   # the gene activity assay has no fragments
+frag <- Fragments(brain)[[1]]
+slot(frag, "path") <- "data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz"
+Fragments(brain) <- NULL
+Fragments(brain) <- frag
 saveRDS(brain, "data/brain_annotated.rds")
 ```

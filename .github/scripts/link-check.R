@@ -46,8 +46,19 @@
 # the inlined SVG internal refs that embed-resources produces are not mistaken
 # for page links.
 .extractHrefs <- function(txt) {
-  unique(c(.matchGroup1(txt, '(?<![-:\\w])href\\s*=\\s*"([^"]*)"'),
-           .matchGroup1(txt, "(?<![-:\\w])href\\s*=\\s*'([^']*)'")))
+  unique(.unescapeHtml(c(.matchGroup1(txt, '(?<![-:\\w])href\\s*=\\s*"([^"]*)"'),
+                         .matchGroup1(txt, "(?<![-:\\w])href\\s*=\\s*'([^']*)'"))))
+}
+
+# Attribute values in HTML are entity-encoded (a URL's "&" is written "&amp;"),
+# so decode the common entities before using an href as a URL. Otherwise a
+# query string such as Dropbox's "?rlkey=...&dl=1" is requested with a literal
+# "&amp;" and the server rejects it.
+.unescapeHtml <- function(x) {
+  x <- gsub("&quot;", "\"", x, fixed = TRUE)
+  x <- gsub("&#39;",  "'",  x, fixed = TRUE)
+  x <- gsub("&#38;",  "&",  x, fixed = TRUE)
+  gsub("&amp;", "&", x, fixed = TRUE)
 }
 
 # Fragment targets a document offers: id="..." / name="...".
@@ -99,7 +110,12 @@
       if ("timeout" %in% names(formals(curlGetHeaders))) args$timeout <- timeout
       st <- attr(do.call(curlGetHeaders, args), "status")
       if (is.null(st)) st <- NA_integer_
-      list(ok = !is.na(st) && st >= 200 && st < 400, detail = paste("HTTP", st))
+      ## 401/403/429 mean the server refused an automated request (login wall,
+      ## bot blocking, rate limiting), not that the page is gone, so they are
+      ## reported as unverified rather than broken.
+      list(ok = !is.na(st) && st >= 200 && st < 400,
+           unverified = !is.na(st) && st %in% c(401L, 403L, 429L),
+           detail = paste("HTTP", st))
     }
   }, error = function(e) list(ok = FALSE, detail = conditionMessage(e)))
   cache[[url]] <- res
@@ -149,8 +165,15 @@
       if (grepl("^(https?:)?//", h, ignore.case = TRUE)) {
         if (!checkRemote) { rec(rel, h, "remote", "SKIPPED", "remote check disabled"); next }
         url <- if (grepl("^//", h)) paste0("https:", h) else h
+        ## Links to a server on the reader's own machine (e.g. RStudio in the
+        ## course Docker image) can never resolve from CI.
+        if (.urlHost(url) %in% c("localhost", "127.0.0.1") ||
+            grepl("^(localhost|127\\.0\\.0\\.1):", .urlHost(url))) {
+          rec(rel, h, "remote", "SKIPPED", "local address"); next
+        }
         r <- .remoteStatus(url, remoteCache, timeout)
-        rec(rel, h, "remote", if (r$ok) "PASS" else "FAIL", r$detail)
+        status <- if (r$ok) "PASS" else if (isTRUE(r$unverified)) "SKIPPED" else "FAIL"
+        rec(rel, h, "remote", status, r$detail)
         next
       }
 

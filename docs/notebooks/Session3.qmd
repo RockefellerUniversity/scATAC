@@ -253,7 +253,11 @@ p2 <- DimPlot(pbmc, group.by = "peaks_snn_res.2",   label = TRUE) +
 p1 + p2
 ```
 
+## Tuning the Resolution Parameter
 
+On the first pass we will often just go with clusters that are relatively fine and separate QC metrics, markers and annotations effectively. 
+
+Once you have settled on your final object we will do a more thorough clustering optimization, by reviewing clustering stability and again reviewing the data at multiple resolutions. We review how to do this in our [scRNAseq Bootcamp](https://rockefelleruniversity.github.io/SingleCell_Bootcamp/presentations/singlepage/Session2.html#Clustering)
 
 # QC Revisited {background-color="#23373B" .center .middle}
 
@@ -764,6 +768,13 @@ We looked at this example UMAP in the context of TSSE earlier. Here instead a ma
 We used a combination of markers to isolate two main clusters of interest. Combined with the QC we were able to refine this dataset to about 1/4 of the size and reveal the trends that were not clear in the larger dataset.
 
 This marker driven QC and subsetting of data is another important step in dataset refinement. 
+
+## Sharing with non-coders
+
+As we mentioned in Session 1, there is an interactive interface for working with single cell 10X data called [Loupe Browser](https://rockefelleruniversity.github.io/LoupeBrowser/). This is a really useful software for interacting directly with the UMAP and can help get your data in the hands of people who do not code. 
+
+For scATAC you can get a cloupe file from the Cell Ranger output. For scRNAseq there also exists an option to export seurat objects into a cloupe file with [LoupeR](https://rockefelleruniversity.github.io/LoupeBrowser/presentations/singlepage/Session1.html#ImportExport) so your further processed objects can be reviewed. This does not work with ATAC as there is no functionality to export the peaks. That said it will work with Gene Activity.
+
 
 ## Time for an exercise!
 

@@ -512,6 +512,11 @@ ah <- AnnotationHub()
 
 rm_q <- query(ah, c("RepeatMasker", "hg38"))
 mcols(rm_q)[, c("title", "rdataclass", "sourceurl")]
+```
+
+```{r rmskDownload, eval=identical(Sys.getenv("SCATAC_REBUILD"), "true") || isTRUE(knitr::opts_knit$get("tangle"))}
+# Downloading the repeats is only needed to run AMULET, which the render loads
+# from a checkpoint (see below), so it only runs when rebuilding checkpoints.
 rmsk <- rm_q[[which(rm_q$rdataclass == "GRanges")[1]]]
 ```
 
@@ -519,7 +524,7 @@ rmsk <- rm_q[[which(rm_q$rdataclass == "GRanges")[1]]]
 
 Lets now create a combined set of exclusion ranges comprising of RepeatMasker, non-canonical chromosomes and the exclude ranges from ENCODE.
 
-```{r}
+```{r amuletExclusions, eval=identical(Sys.getenv("SCATAC_REBUILD"), "true") || isTRUE(knitr::opts_knit$get("tangle"))}
 
 plain <- function(gr) GRanges(as.character(seqnames(gr)), ranges(gr))
 

@@ -68,7 +68,7 @@ metadata <- read.csv(
   row.names = 1
 )
 
-counts <- Read10X_h5(filename = "data/atac_v1_E18_brain_flash_5k_filtered_peak_bc_matrix.h5", mode = "wb")
+counts <- Read10X_h5(filename = "data/atac_v1_E18_brain_flash_5k_filtered_peak_bc_matrix.h5")
 std_chr   <- paste0("chr", c(1:19, "X", "Y"))
 peak_chr  <- as.character(seqnames(StringToGRanges(rownames(counts), sep = c(":", "-"))))
 counts    <- counts[peak_chr %in% std_chr, ]

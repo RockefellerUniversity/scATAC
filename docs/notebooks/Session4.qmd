@@ -18,11 +18,12 @@ knitr::opts_chunk$set(echo = TRUE, tidy = FALSE)
 
 ## Overview
 
-- [Differential Accessibility Analysis](#da-analysis)
-- [FindMarkers for scATAC-seq](#findmarkers)
-- [Pseudobulk Approaches](#pseudobulk)
-- [Coverage Plots](#coverage-plots)
-- [Where to Go Next](#next-steps)
+- [Differential Accessibility Analysis](#differential-accessibility-analysis)
+- [FindMarkers for scATAC-seq](#findmarkers-for-scatac-seq)
+- [Visualizing regions of interest](#visualizing-regions-of-interest)
+- [QC and Markers](#qc-and-markers)
+- [Pseudobulk differential accessibility](#pseudobulk-differential-accessibility)
+- [Where to Go Next](#where-to-go-next)
 
 # Differential Accessibility Analysis {background-color="#23373B" .center .middle}
 

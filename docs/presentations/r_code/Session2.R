@@ -140,6 +140,9 @@ ah <- AnnotationHub()
 
 rm_q <- query(ah, c("RepeatMasker", "hg38"))
 mcols(rm_q)[, c("title", "rdataclass", "sourceurl")]
+
+# Downloading the repeats is only needed to run AMULET, which the render loads
+# from a checkpoint (see below), so it only runs when rebuilding checkpoints.
 rmsk <- rm_q[[which(rm_q$rdataclass == "GRanges")[1]]]
 
 

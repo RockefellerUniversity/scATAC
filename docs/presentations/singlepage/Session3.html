@@ -3147,6 +3147,7 @@ vertical-align: -.125em;
   <li><a href="#interpreting-low-confidence-predictions" id="toc-interpreting-low-confidence-predictions" class="nav-link" data-scroll-target="#interpreting-low-confidence-predictions">Interpreting low-confidence predictions</a></li>
   <li><a href="#in-our-data" id="toc-in-our-data" class="nav-link" data-scroll-target="#in-our-data">In our data</a></li>
   <li><a href="#example-known-markers-and-qc" id="toc-example-known-markers-and-qc" class="nav-link" data-scroll-target="#example-known-markers-and-qc">Example: Known markers and QC</a></li>
+  <li><a href="#sharing-with-non-coders" id="toc-sharing-with-non-coders" class="nav-link" data-scroll-target="#sharing-with-non-coders">Sharing with non-coders</a></li>
   <li><a href="#time-for-an-exercise" id="toc-time-for-an-exercise" class="nav-link" data-scroll-target="#time-for-an-exercise">Time for an exercise!</a></li>
   <li><a href="#answers-to-exercises" id="toc-answers-to-exercises" class="nav-link" data-scroll-target="#answers-to-exercises">Answers to exercises</a></li>
   <li><a href="#session-3-summary" id="toc-session-3-summary" class="nav-link" data-scroll-target="#session-3-summary">Session 3 Summary</a></li>
@@ -3390,16 +3391,16 @@ Important
 <span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed.use  =</span> <span class="dv">42</span></span>
 <span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>12:11:32 UMAP embedding parameters a = 0.9922 b = 1.112</code></pre>
+<pre><code>15:01:17 UMAP embedding parameters a = 0.9922 b = 1.112</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>12:11:32 Read 458 rows and found 29 numeric columns</code></pre>
+<pre><code>15:01:17 Read 458 rows and found 29 numeric columns</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>12:11:32 Using Annoy for neighbor search, n_neighbors = 30</code></pre>
+<pre><code>15:01:17 Using Annoy for neighbor search, n_neighbors = 30</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>12:11:32 Building Annoy index with metric = cosine, n_trees = 50</code></pre>
+<pre><code>15:01:17 Building Annoy index with metric = cosine, n_trees = 50</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>0%   10   20   30   40   50   60   70   80   90   100%</code></pre>
@@ -3409,14 +3410,14 @@ Important
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>**************************************************|
-12:11:32 Writing NN index file to temp file /tmp/RtmpLZwspD/file4942eb83825
-12:11:32 Searching Annoy index using 1 thread, search_k = 3000
-12:11:32 Annoy recall = 100%
-12:11:32 Commencing smooth kNN distance calibration using 1 thread with target n_neighbors = 30
-12:11:34 Initializing from normalized Laplacian + noise (using RSpectra)
-12:11:34 Commencing optimization for 500 epochs, with 16890 positive edges
-12:11:34 Using rng type: pcg
-12:11:35 Optimization finished</code></pre>
+15:01:17 Writing NN index file to temp file /tmp/RtmptK1aJi/file491231c9174
+15:01:17 Searching Annoy index using 1 thread, search_k = 3000
+15:01:17 Annoy recall = 100%
+15:01:17 Commencing smooth kNN distance calibration using 1 thread with target n_neighbors = 30
+15:01:19 Initializing from normalized Laplacian + noise (using RSpectra)
+15:01:19 Commencing optimization for 500 epochs, with 16890 positive edges
+15:01:19 Using rng type: pcg
+15:01:20 Optimization finished</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">DimPlot</span>(<span class="at">object =</span> pbmc, <span class="at">label =</span> <span class="cn">TRUE</span>) <span class="sc">+</span> <span class="fu">NoLegend</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
@@ -3446,16 +3447,16 @@ Important
 <span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed.use  =</span> <span class="dv">42</span></span>
 <span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>12:11:35 UMAP embedding parameters a = 0.9922 b = 1.112</code></pre>
+<pre><code>15:01:20 UMAP embedding parameters a = 0.9922 b = 1.112</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>12:11:35 Read 458 rows and found 30 numeric columns</code></pre>
+<pre><code>15:01:20 Read 458 rows and found 30 numeric columns</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>12:11:35 Using Annoy for neighbor search, n_neighbors = 30</code></pre>
+<pre><code>15:01:20 Using Annoy for neighbor search, n_neighbors = 30</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
-<pre><code>12:11:35 Building Annoy index with metric = cosine, n_trees = 50</code></pre>
+<pre><code>15:01:20 Building Annoy index with metric = cosine, n_trees = 50</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>0%   10   20   30   40   50   60   70   80   90   100%</code></pre>
@@ -3465,14 +3466,14 @@ Important
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>**************************************************|
-12:11:35 Writing NN index file to temp file /tmp/RtmpLZwspD/file4946fe21256
-12:11:35 Searching Annoy index using 1 thread, search_k = 3000
-12:11:35 Annoy recall = 100%
-12:11:36 Commencing smooth kNN distance calibration using 1 thread with target n_neighbors = 30
-12:11:37 Initializing from normalized Laplacian + noise (using RSpectra)
-12:11:37 Commencing optimization for 500 epochs, with 17048 positive edges
-12:11:37 Using rng type: pcg
-12:11:38 Optimization finished</code></pre>
+15:01:20 Writing NN index file to temp file /tmp/RtmptK1aJi/file4912a4d9299
+15:01:20 Searching Annoy index using 1 thread, search_k = 3000
+15:01:20 Annoy recall = 100%
+15:01:21 Commencing smooth kNN distance calibration using 1 thread with target n_neighbors = 30
+15:01:22 Initializing from normalized Laplacian + noise (using RSpectra)
+15:01:22 Commencing optimization for 500 epochs, with 17048 positive edges
+15:01:22 Using rng type: pcg
+15:01:23 Optimization finished</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">FeaturePlot</span>(pbmc2, <span class="at">features =</span> <span class="st">&quot;nCount_peaks&quot;</span>, <span class="at">max.cutoff =</span> <span class="st">&quot;q95&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
@@ -3570,6 +3571,8 @@ Elapsed time: 0 seconds</code></pre>
 </div>
 </div>
 </div>
+<p>On the first pass we will often just go with clusters that are relatively fine and separate QC metrics, markers and annotations effectively.</p>
+<p>Once you have settled on your final object we will do a more thorough clustering optimization, by reviewing clustering stability and again reviewing the data at multiple resolutions. We review how to do this in our <a href="https://rockefelleruniversity.github.io/SingleCell_Bootcamp/presentations/singlepage/Session2.html#Clustering">scRNAseq Bootcamp</a></p>
 </section>
 </section>
 <section id="qc-revisited" class="level1 center middle" data-background-color="#23373B">
@@ -4262,6 +4265,11 @@ results</code></pre>
 </div>
 <p>We used a combination of markers to isolate two main clusters of interest. Combined with the QC we were able to refine this dataset to about 1/4 of the size and reveal the trends that were not clear in the larger dataset.</p>
 <p>This marker driven QC and subsetting of data is another important step in dataset refinement.</p>
+</section>
+<section id="sharing-with-non-coders" class="level2">
+<h2 class="anchored" data-anchor-id="sharing-with-non-coders">Sharing with non-coders</h2>
+<p>As we mentioned in Session 1, there is an interactive interface for working with single cell 10X data called <a href="https://rockefelleruniversity.github.io/LoupeBrowser/">Loupe Browser</a>. This is a really useful software for interacting directly with the UMAP and can help get your data in the hands of people who do not code.</p>
+<p>For scATAC you can get a cloupe file from the Cell Ranger output. For scRNAseq there also exists an option to export seurat objects into a cloupe file with <a href="https://rockefelleruniversity.github.io/LoupeBrowser/presentations/singlepage/Session1.html#ImportExport">LoupeR</a> so your further processed objects can be reviewed. This does not work with ATAC as there is no functionality to export the peaks. That said it will work with Gene Activity.</p>
 </section>
 <section id="time-for-an-exercise" class="level2">
 <h2 class="anchored" data-anchor-id="time-for-an-exercise">Time for an exercise!</h2>

@@ -3112,7 +3112,7 @@ vertical-align: -.125em;
   <ul class="collapse">
   <li><a href="#the-problem-of-pseudoreplication" id="toc-the-problem-of-pseudoreplication" class="nav-link" data-scroll-target="#the-problem-of-pseudoreplication">The Problem of Pseudoreplication</a></li>
   <li><a href="#we-need-a-second-sample" id="toc-we-need-a-second-sample" class="nav-link" data-scroll-target="#we-need-a-second-sample">We Need a Second Sample</a></li>
-  <li><a href="#harmonising-cell-type-labels" id="toc-harmonising-cell-type-labels" class="nav-link" data-scroll-target="#harmonising-cell-type-labels">Harmonising Cell Type Labels</a></li>
+  <li><a href="#harmonizing-cell-type-labels" id="toc-harmonizing-cell-type-labels" class="nav-link" data-scroll-target="#harmonizing-cell-type-labels">Harmonizing Cell Type Labels</a></li>
   <li><a href="#building-a-shared-peak-set" id="toc-building-a-shared-peak-set" class="nav-link" data-scroll-target="#building-a-shared-peak-set">Building a Shared Peak Set</a></li>
   <li><a href="#re-counting-each-sample" id="toc-re-counting-each-sample" class="nav-link" data-scroll-target="#re-counting-each-sample">Re-counting Each Sample</a></li>
   <li><a href="#merging-the-samples" id="toc-merging-the-samples" class="nav-link" data-scroll-target="#merging-the-samples">Merging the Samples</a></li>
@@ -3133,7 +3133,7 @@ vertical-align: -.125em;
   </ul></li>
   <li><a href="#where-to-go-next" id="toc-where-to-go-next" class="nav-link" data-scroll-target="#where-to-go-next">Where to Go Next</a>
   <ul class="collapse">
-  <li><a href="#next-steps-peaks-and-motifs" id="toc-next-steps-peaks-and-motifs" class="nav-link" data-scroll-target="#next-steps-peaks-and-motifs">Next Steps: Peaks and Motifs</a></li>
+  <li><a href="#next-steps-motifs" id="toc-next-steps-motifs" class="nav-link" data-scroll-target="#next-steps-motifs">Next Steps: Motifs</a></li>
   <li><a href="#next-steps-regulation-and-beyond" id="toc-next-steps-regulation-and-beyond" class="nav-link" data-scroll-target="#next-steps-regulation-and-beyond">Next Steps: Regulation and Beyond</a></li>
   <li><a href="#course-summary" id="toc-course-summary" class="nav-link" data-scroll-target="#course-summary">Course Summary</a></li>
   <li><a href="#further-resources" id="toc-further-resources" class="nav-link" data-scroll-target="#further-resources">Further Resources</a></li>
@@ -3205,7 +3205,7 @@ Bioinformatics Resource Center - Rockefeller University<p></p>
 </section>
 <section id="considerations-for-da-testing-in-scatac-seq" class="level2">
 <h2 class="anchored" data-anchor-id="considerations-for-da-testing-in-scatac-seq">Considerations for DA Testing in scATAC-seq</h2>
-<p>DA testing in scATAC-seq is harder than in scRNA-seq, for simiilar reasons to what we have discussed already.</p>
+<p>DA testing in scATAC-seq is harder than in scRNA-seq, for similar reasons to what we have discussed already.</p>
 <table class="table">
 <colgroup>
 <col style="width: 50%">
@@ -3244,7 +3244,7 @@ Bioinformatics Resource Center - Rockefeller University<p></p>
 <section id="logistic-regression-with-depth-as-a-covariate" class="level2">
 <h2 class="anchored" data-anchor-id="logistic-regression-with-depth-as-a-covariate">Logistic Regression with Depth as a Covariate</h2>
 <p>Signac recommends <strong>logistic regression</strong> for single-cell DA testing.</p>
-<p>Accessibility is modelled as a binary outcome, with cell type as the predictor and <strong>sequencing depth as a latent variable</strong> to prevent depth confounding the result.</p>
+<p>Accessibility is modeled as a binary outcome, with cell type as the predictor and <strong>sequencing depth as a latent variable</strong> to prevent depth confounding the result.</p>
 </section>
 <section id="lets-grab-the-data" class="level2">
 <h2 class="anchored" data-anchor-id="lets-grab-the-data">Lets grab the data</h2>
@@ -3355,7 +3355,7 @@ ENSE00001048398       OSM     3740   chr22-30270592-30271507</code></pre>
 <section id="so-are-we-happy-with-this-data" class="level2">
 <h2 class="anchored" data-anchor-id="so-are-we-happy-with-this-data">So are we happy with this data?</h2>
 <p>The top accessible peaks are generally related to genes that are known to be associated with CD14+ Monocytes or more generally immune cell developmental genes.</p>
-<p>That said there is a peak/gene that sticks out: FAM174B. The peak is right at the gene so it’s likely to be a direct effect. A quick lit review suggests that its associated with golgi and stress. It could be relatively high because Monocytes do a lot of secretion. These cells are supposed to be from a healthy patient but maybe there is some immune activation.</p>
+<p>That said there is a peak/gene that sticks out: FAM174B. The peak is right at the gene so it’s likely to be a direct effect. A quick lit review suggests that its associated with Golgi and stress. It could be relatively high because Monocytes do a lot of secretion. These cells are supposed to be from a healthy patient but maybe there is some immune activation.</p>
 <p>Often there are a few peaks that could make sense, but require a little more thought. It is important to rationalize these markers and assess in the context of the all the QC and other markers.</p>
 <ul>
 <li>Do we have a lot of markers that do not make sense?</li>
@@ -3438,7 +3438,7 @@ ENSE00001048398       OSM     3740   chr22-30270592-30271507</code></pre>
 </section>
 <section id="lets-check-known-quantity" class="level2">
 <h2 class="anchored" data-anchor-id="lets-check-known-quantity">Lets check known quantity</h2>
-<p>For comparison lets check a known quantitiy: IL1B is a known to be highest in CD14+ Monocytes, but also CD16+ Monocytes and Dendritic cells. This matches the scATAC.</p>
+<p>For comparison lets check a known quantity: IL1B is a known to be highest in CD14+ Monocytes, but also CD16+ Monocytes and Dendritic cells. This matches the scATAC.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">CoveragePlot</span>(</span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">object           =</span> pbmc,</span>
@@ -3595,8 +3595,8 @@ Attaching package: &#39;dplyr&#39;</code></pre>
 <span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="harmonising-cell-type-labels" class="level2">
-<h2 class="anchored" data-anchor-id="harmonising-cell-type-labels">Harmonising Cell Type Labels</h2>
+<section id="harmonizing-cell-type-labels" class="level2">
+<h2 class="anchored" data-anchor-id="harmonizing-cell-type-labels">Harmonizing Cell Type Labels</h2>
 <p>The two samples were labelled with different references, so the same cells have different names, e.g. “CD14+ Monocytes” vs “CD14 Mono”. Pseudobulk compares the <strong>same cell type across samples</strong>, so we first map both onto one shared set of labels.</p>
 <p>We collapse to the level both references support, e.g. CD4 TCM, CD4 TEM and Treg all become “CD4 Memory”.</p>
 <p>Every label in either sample gets an entry. Labels with no counterpart in the other sample (HSPC, Plasma, Platelet) map to <code>NA</code> and are dropped.</p>
@@ -3749,7 +3749,7 @@ Active assay: peaks (106894 features, 0 variable features)
 </section>
 <section id="multiomic-data" class="level2">
 <h2 class="anchored" data-anchor-id="multiomic-data">Multiomic data</h2>
-<p>As a quick aside these datasets are not great replicates. Multiomic data is much poorer data in general, as you can see here. That said depsite these clear QC differnces the cell type signature is very strong.</p>
+<p>As a quick aside these datasets are not great replicates. Multiomic data is much poorer data in general, as you can see here. That said despite these clear QC differnces the cell type signature is very strong.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">VlnPlot</span>(pbmc_int, <span class="st">&quot;TSS.enrichment&quot;</span>, <span class="at">split.by =</span> <span class="st">&quot;sample&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
@@ -3771,7 +3771,7 @@ This message will be shown once per session.</code></pre>
 </section>
 <section id="integrating-with-reciprocal-lsi" class="level2">
 <h2 class="anchored" data-anchor-id="integrating-with-reciprocal-lsi">Integrating with Reciprocal LSI</h2>
-<p>Signac’s recommended approach projects each sample into the other’s LSI space to find <strong>anchors</strong>: pairs of matching cells across samples. These are then used to correct the shared LSI embedding. This is similat to what we do with label transfer, but is specific to the lsi space of scATAC.</p>
+<p>Signac’s recommended approach projects each sample into the others LSI space to find <strong>anchors</strong>: pairs of matching cells across samples. These are then used to correct the shared LSI embedding. This is similar to what we do with label transfer, but is specific to the lsi space of scATAC.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>obj_list <span class="ot">&lt;-</span> <span class="fu">SplitObject</span>(combined, <span class="at">split.by =</span> <span class="st">&quot;sample&quot;</span>)</span>
 <span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>obj_list <span class="ot">&lt;-</span> <span class="fu">lapply</span>(obj_list, <span class="cf">function</span>(x) {</span>
@@ -4078,7 +4078,7 @@ pDC_pbmc-multiome                         pDC pbmc-multiome       8
 pDC_pbmc500                               pDC       pbmc500       3</code></pre>
 </div>
 </div>
-<p>Now lets run DESeq2. We need to provide all the count and metadata information to create our DESeq object. We are also going to icnlude Sample as a covariate in our model. We know that Sample will have a big impact in this dataset, but in others this may not be necessary.</p>
+<p>Now lets run DESeq2. We need to provide all the count and metadata information to create our DESeq object. We are also going to include Sample as a covariate in our model. We know that Sample will have a big impact in this dataset, but in others this may not be necessary.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb94"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pseudobulks summed from only a few cells are mostly noise, and DESeq2 shares</span></span>
 <span id="cb94-2"><a href="#cb94-2" aria-hidden="true" tabindex="-1"></a><span class="co"># its variance estimates across all columns, so drop them before fitting</span></span>
@@ -4243,7 +4243,7 @@ This message will be shown once per session</code></pre>
 </section>
 <section id="findmarkers-vs-pseudobulk" class="level2">
 <h2 class="anchored" data-anchor-id="findmarkers-vs-pseudobulk">FindMarkers vs Pseudobulk</h2>
-<p>To recap there are key differences and restrictions for differntial methods.</p>
+<p>To recap there are key differences and restrictions for differential methods.</p>
 <table class="table">
 <colgroup>
 <col style="width: 33%">
@@ -4271,7 +4271,7 @@ This message will be shown once per session</code></pre>
 <tr class="odd">
 <td>Sample/donor effects</td>
 <td>Ignored</td>
-<td>Modelled (<code>~ sample + celltype</code>)</td>
+<td>Modeled (<code>~ sample + celltype</code>)</td>
 </tr>
 <tr class="even">
 <td>p-values</td>
@@ -4281,7 +4281,7 @@ This message will be shown once per session</code></pre>
 <tr class="odd">
 <td>Best for</td>
 <td>Exploring markers within one sample</td>
-<td>Comparisons you want to generalise beyond your samples</td>
+<td>Comparisons you want to generalize beyond your samples</td>
 </tr>
 </tbody>
 </table>
@@ -4309,17 +4309,13 @@ This message will be shown once per session</code></pre>
 </section>
 <section id="where-to-go-next" class="level1 center middle" data-background-color="#23373B">
 <h1 class="center middle" data-background-color="#23373B">Where to Go Next</h1>
-<section id="next-steps-peaks-and-motifs" class="level2">
-<h2 class="anchored" data-anchor-id="next-steps-peaks-and-motifs">Next Steps: Peaks and Motifs</h2>
+<section id="next-steps-motifs" class="level2">
+<h2 class="anchored" data-anchor-id="next-steps-motifs">Next Steps: Motifs</h2>
 <ul>
-<li><strong>Better peaks</strong>
-<ul>
-<li>Re-call peaks per cell type with MACS (<a href="https://stuartlab.org/signac/reference/callpeaks"><code>CallPeaks(group.by = ...)</code></a>) to capture peaks from rare cell types, then re-count before differential accessibility</li>
-</ul></li>
 <li><strong>Interpreting DA peaks</strong>
 <ul>
 <li>Annotate peaks to genes and genomic features with <a href="https://bioconductor.org/packages/ChIPseeker/">ChIPseeker</a></li>
-<li>Test for functional enrichment of nearby genes with <a href="https://bioconductor.org/packages/rGREAT/">rGREAT</a></li>
+<li>Test for functional enrichment of nearby genes with <a href="https://bioconductor.org/packages/rGREAT/">rGREAT</a> and <a href="https://bioconductor.org/packages/release/bioc/html/clusterProfiler.html">clusterProfiler</a></li>
 </ul></li>
 <li><strong>Motifs</strong>
 <ul>
@@ -4332,16 +4328,16 @@ This message will be shown once per session</code></pre>
 <section id="next-steps-regulation-and-beyond" class="level2">
 <h2 class="anchored" data-anchor-id="next-steps-regulation-and-beyond">Next Steps: Regulation and Beyond</h2>
 <ul>
-<li><strong>Gene regulation</strong>
-<ul>
-<li><a href="https://cole-trapnell-lab.github.io/cicero-release/">Cicero</a>: links regulatory regions (e.g. enhancers to promoters) by co-accessibility. Works on scATAC alone</li>
-<li><a href="https://bioconductor.org/packages/epiregulon/">Epiregulon</a>: TF activity per cell. Needs gene expression too, from multiome or from a separate scRNA-seq dataset integrated with your ATAC data</li>
-<li><a href="https://github.com/aertslab/scenicplus">SCENIC+</a>: regulatory networks from paired accessibility and expression (Python)</li>
-</ul></li>
 <li><strong>Multiome data</strong>
 <ul>
 <li>Seurat <a href="https://satijalab.org/seurat/articles/weighted_nearest_neighbor_analysis">WNN</a> (<code>FindMultiModalNeighbors()</code>): cluster using RNA and ATAC together</li>
 <li>Signac <a href="https://stuartlab.org/signac/articles/pbmc_multiomic"><code>LinkPeaks()</code></a>: link peaks to genes by correlating accessibility with expression in the same cells</li>
+</ul></li>
+<li><strong>Gene regulation</strong>
+<ul>
+<li><a href="https://cole-trapnell-lab.github.io/cicero-release/">Cicero</a>: links regulatory regions (e.g. enhancers to promoters) by co-accessibility. Works on scATAC alone</li>
+<li><a href="https://bioconductor.org/packages/epiregulon/">Epiregulon</a>: TF activity per cell. Needs gene expression too, from multiome or from a separate scRNA-seq dataset integrated with your ATAC data</li>
+<li><a href="https://github.com/aertslab/scenicplus">SCENIC+</a>: regulatory networks from paired accessibility and expression</li>
 </ul></li>
 <li><strong>Trajectories</strong>
 <ul>
@@ -4363,7 +4359,7 @@ This message will be shown once per session</code></pre>
 <ul>
 <li>TSS enrichment, nucleosome signal, FRiP, blacklist ratio</li>
 <li>Iterative threshold-setting and filtering</li>
-<li>TF-IDF normalisation; <code>FindTopFeatures()</code></li>
+<li>TF-IDF normalization; <code>FindTopFeatures()</code></li>
 </ul>
 </div><div class="column" style="width:50%;">
 <p><strong>Session 3 — Dimensionality Reduction &amp; Clustering</strong></p>
@@ -4372,7 +4368,7 @@ This message will be shown once per session</code></pre>
 <li>UMAP; graph-based clustering; tuning resolution</li>
 <li>QC as a cyclical process; gene activity; label transfer</li>
 </ul>
-<p><strong>Session 4 — Differential Accessibility &amp; Visualisation</strong></p>
+<p><strong>Session 4 — Differential Accessibility &amp; Visualization</strong></p>
 <ul>
 <li><code>FindMarkers()</code> with logistic regression + depth covariate</li>
 <li>Pseudobulk approaches with DESeq2/edgeR</li>

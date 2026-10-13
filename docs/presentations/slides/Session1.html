@@ -1274,7 +1274,7 @@ max-height: none;
 <p>or in the console.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href></a><span class="fu">setwd</span>(<span class="st">&quot;/PathToMyDownload/scATAC-master/docs&quot;</span>)</span>
-<span id="cb1-2"><a href></a><span class="co"># e.g. setwd(&#39;~/Downloads/scATAC-master/docs&#39;)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-2"><a href></a><span class="co"># e.g. setwd(&quot;~/Downloads/scATAC-master/docs&quot;)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="overview" class="slide level2">
@@ -2421,8 +2421,12 @@ chr1    10097   10333   TTCGATTCATCTCTCG-1  1   -</code></pre>
 <p>The <em>singlecell.csv</em> file is then read in as a dataframe that has the barcodes as rows and metadata categories as columns.</p>
 <p>This dataframe has metadata for all barcodes (not just called cells) and a ‘NO_BARCODE’ row showing the number of read pairs with no associated barcode.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href></a>metadata <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="at">file =</span> <span class="st">&quot;data/pbmc500_singlecell.csv&quot;</span>, <span class="at">header =</span> <span class="cn">TRUE</span>, <span class="at">row.names =</span> <span class="dv">1</span>)</span>
-<span id="cb13-2"><a href></a>metadata[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href></a>metadata <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(</span>
+<span id="cb13-2"><a href></a>  <span class="at">file =</span> <span class="st">&quot;data/pbmc500_singlecell.csv&quot;</span>,</span>
+<span id="cb13-3"><a href></a>  <span class="at">header =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb13-4"><a href></a>  <span class="at">row.names =</span> <span class="dv">1</span></span>
+<span id="cb13-5"><a href></a>)</span>
+<span id="cb13-6"><a href></a>metadata[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                    total duplicate chimeric unmapped
 NO_BARCODE         643435     78921      243    81496
@@ -2437,11 +2441,10 @@ AAACGAAAGAACGTTA-1      1         0        0        0</code></pre>
 <p>This creates a sparse matrix object with the peak counts.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href></a>counts <span class="ot">&lt;-</span> <span class="fu">Read10X_h5</span>(<span class="at">filename =</span> <span class="st">&quot;data/pbmc500_filtered_peak_bc_matrix.h5&quot;</span>)</span>
-<span id="cb15-2"><a href></a>std_chr <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;chr&quot;</span>, <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">22</span>, <span class="st">&quot;X&quot;</span>, <span class="st">&quot;Y&quot;</span>))</span>
-<span id="cb15-3"><a href></a>peak_chr <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="fu">seqnames</span>(<span class="fu">StringToGRanges</span>(<span class="fu">rownames</span>(counts), <span class="at">sep =</span> <span class="fu">c</span>(<span class="st">&quot;:&quot;</span>,</span>
-<span id="cb15-4"><a href></a>    <span class="st">&quot;-&quot;</span>))))</span>
-<span id="cb15-5"><a href></a>counts <span class="ot">&lt;-</span> counts[peak_chr <span class="sc">%in%</span> std_chr, ]</span>
-<span id="cb15-6"><a href></a>counts[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb15-2"><a href></a>std_chr   <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;chr&quot;</span>, <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">22</span>, <span class="st">&quot;X&quot;</span>, <span class="st">&quot;Y&quot;</span>))</span>
+<span id="cb15-3"><a href></a>peak_chr  <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="fu">seqnames</span>(<span class="fu">StringToGRanges</span>(<span class="fu">rownames</span>(counts), <span class="at">sep =</span> <span class="fu">c</span>(<span class="st">&quot;:&quot;</span>, <span class="st">&quot;-&quot;</span>))))</span>
+<span id="cb15-4"><a href></a>counts    <span class="ot">&lt;-</span> counts[peak_chr <span class="sc">%in%</span> std_chr, ]</span>
+<span id="cb15-5"><a href></a>counts[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>5 x 2 sparse Matrix of class &quot;dgCMatrix&quot;
                    AAACTGCAGACTCGGA-1 AAAGATGCACCTATTT-1
@@ -2458,10 +2461,15 @@ chr1:816914-817800                  .                  .</code></pre>
 <p>The counts and a path to the fragments file are provided to the <em>CreateChromatinAssay</em> function from Signac to create a <strong>ChromatinAssay</strong> object.</p>
 <p>We can set the ‘min.cells’ and ‘min.features’ arguments to filter out low quality peaks and cells.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href></a>chrom_assay <span class="ot">&lt;-</span> <span class="fu">CreateChromatinAssay</span>(<span class="at">counts =</span> counts, <span class="at">sep =</span> <span class="fu">c</span>(<span class="st">&quot;:&quot;</span>, <span class="st">&quot;-&quot;</span>), <span class="at">fragments =</span> <span class="st">&quot;data/pbmc500_fragments.tsv.gz&quot;</span>,</span>
-<span id="cb17-2"><a href></a>    <span class="at">min.cells =</span> <span class="dv">10</span>, <span class="at">min.features =</span> <span class="dv">200</span>)</span>
-<span id="cb17-3"><a href></a></span>
-<span id="cb17-4"><a href></a><span class="fu">class</span>(chrom_assay)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href></a>chrom_assay <span class="ot">&lt;-</span> <span class="fu">CreateChromatinAssay</span>(</span>
+<span id="cb17-2"><a href></a>  <span class="at">counts =</span> counts,</span>
+<span id="cb17-3"><a href></a>  <span class="at">sep =</span> <span class="fu">c</span>(<span class="st">&quot;:&quot;</span>, <span class="st">&quot;-&quot;</span>),</span>
+<span id="cb17-4"><a href></a>  <span class="at">fragments =</span> <span class="st">&quot;data/pbmc500_fragments.tsv.gz&quot;</span>,</span>
+<span id="cb17-5"><a href></a>  <span class="at">min.cells =</span> <span class="dv">10</span>,</span>
+<span id="cb17-6"><a href></a>  <span class="at">min.features =</span> <span class="dv">200</span></span>
+<span id="cb17-7"><a href></a>)</span>
+<span id="cb17-8"><a href></a></span>
+<span id="cb17-9"><a href></a><span class="fu">class</span>(chrom_assay)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
@@ -2476,9 +2484,13 @@ attr(,&quot;package&quot;)
 <p>Finally, the ChromatinAssay object and the metadata dataframe are used to create a Seurat object with an assay called ‘peaks’ that contains our peak counts.</p>
 <p>Only metadata from the cells in the <em>chrom_assay</em> object will be carried into the Seurat object.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href></a>pbmc <span class="ot">&lt;-</span> <span class="fu">CreateSeuratObject</span>(<span class="at">counts =</span> chrom_assay, <span class="at">assay =</span> <span class="st">&quot;peaks&quot;</span>, <span class="at">meta.data =</span> metadata)</span>
-<span id="cb19-2"><a href></a></span>
-<span id="cb19-3"><a href></a>pbmc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href></a>pbmc <span class="ot">&lt;-</span> <span class="fu">CreateSeuratObject</span>(</span>
+<span id="cb19-2"><a href></a>  <span class="at">counts =</span> chrom_assay,</span>
+<span id="cb19-3"><a href></a>  <span class="at">assay =</span> <span class="st">&quot;peaks&quot;</span>,</span>
+<span id="cb19-4"><a href></a>  <span class="at">meta.data =</span> metadata</span>
+<span id="cb19-5"><a href></a>)</span>
+<span id="cb19-6"><a href></a></span>
+<span id="cb19-7"><a href></a>pbmc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
@@ -2544,7 +2556,7 @@ Active assay: peaks (61638 features, 0 variable features)
 </ul>
 <p>These can be accessed with the <em>GetFragmentData</em> function.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href></a>frags <span class="ot">&lt;-</span> <span class="fu">Fragments</span>(pbmc)</span>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href></a>frags <span class="ot">&lt;-</span> <span class="fu">Fragments</span>(pbmc)  </span>
 <span id="cb29-2"><a href></a></span>
 <span id="cb29-3"><a href></a><span class="fu">GetFragmentData</span>(frags[[<span class="dv">1</span>]], <span class="st">&quot;path&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -2558,16 +2570,22 @@ Active assay: peaks (61638 features, 0 variable features)
 <p>Any function that requires access to the actual fragments will fail if the pointer is wrong (TSS enrichment, peak calling).</p>
 <p>You can download the <strong>fragments file and the index</strong> used in this course and update the path to align your object with your system (<a href="https://www.10xgenomics.com/datasets/500-peripheral-blood-mononuclear-cells-pbm-cs-from-a-healthy-donor-next-gem-v-1-1-1-1-standard-2-0-0" target="_blank">link to dataset files</a>).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href></a>frags_updated <span class="ot">&lt;-</span> <span class="fu">UpdatePath</span>(frags[[<span class="dv">1</span>]], <span class="at">new.path =</span> <span class="st">&quot;~/Downloads/atac_pbmc_500_nextgem_fragments.tsv.gz&quot;</span>)</span>
-<span id="cb31-2"><a href></a><span class="fu">Fragments</span>(pbmc) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb31-3"><a href></a><span class="fu">Fragments</span>(pbmc) <span class="ot">&lt;-</span> frags_updated</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href></a>frags_updated <span class="ot">&lt;-</span> <span class="fu">UpdatePath</span>(</span>
+<span id="cb31-2"><a href></a>  frags[[<span class="dv">1</span>]],</span>
+<span id="cb31-3"><a href></a>  <span class="at">new.path =</span> <span class="st">&quot;~/Downloads/atac_pbmc_500_nextgem_fragments.tsv.gz&quot;</span></span>
+<span id="cb31-4"><a href></a>)</span>
+<span id="cb31-5"><a href></a><span class="fu">Fragments</span>(pbmc) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb31-6"><a href></a><span class="fu">Fragments</span>(pbmc) <span class="ot">&lt;-</span> frags_updated</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="updating-the-fragments-path-1" class="slide level2">
 <h2>Updating the fragments path</h2>
 <p>The fragment object contains the md5 hash of the file, so if the file at the new path isn’t identical to the original, you will get an error.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href></a>frags_updated_bad <span class="ot">&lt;-</span> <span class="fu">UpdatePath</span>(frags[[<span class="dv">1</span>]], <span class="at">new.path =</span> <span class="st">&quot;~/Downloads/different_pbmc500_fragments.tsv.gz&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href></a>frags_updated_bad <span class="ot">&lt;-</span> <span class="fu">UpdatePath</span>(</span>
+<span id="cb32-2"><a href></a>  frags[[<span class="dv">1</span>]],</span>
+<span id="cb32-3"><a href></a>  <span class="at">new.path =</span> <span class="st">&quot;~/Downloads/different_pbmc500_fragments.tsv.gz&quot;</span></span>
+<span id="cb32-4"><a href></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="quarto-figure quarto-figure-left">
 <figure>

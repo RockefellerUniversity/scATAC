@@ -41,31 +41,34 @@ In this exercise we will be using a dataset of 5K flash frozen embryonic (E18) m
     -   Peak by cell matrix HDF5 (filtered)
     -   Per Barcode metrics (CSV): this is the singlecell.csv metadata file
 
-```{r,echo=toMessage, eval=F}
+```{r ex2_download,echo=toMessage, eval=FALSE}
+options(timeout = 3600)   # the fragment file is ~1.1 GB
+dir.create("data", showWarnings = FALSE)
 download.file("https://cf.10xgenomics.com/samples/cell-atac/1.2.0/atac_v1_E18_brain_flash_5k/atac_v1_E18_brain_flash_5k_fragments.tsv.gz",
-              destfile = "~/Downloads/atac_v1_E18_brain_flash_5k_fragments.tsv.gz")
+              destfile = "data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz", mode = "wb")
 
 download.file("https://cf.10xgenomics.com/samples/cell-atac/1.2.0/atac_v1_E18_brain_flash_5k/atac_v1_E18_brain_flash_5k_fragments.tsv.gz.tbi",
-              destfile = "~/Downloads/atac_v1_E18_brain_flash_5k_fragments.tsv.gz.tbi")
+              destfile = "data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz.tbi", mode = "wb")
 
 download.file("https://cf.10xgenomics.com/samples/cell-atac/1.2.0/atac_v1_E18_brain_flash_5k/atac_v1_E18_brain_flash_5k_filtered_peak_bc_matrix.h5",
-              destfile = "~/Downloads/atac_v1_E18_brain_flash_5k_filtered_peak_bc_matrix.h5")
+              destfile = "data/atac_v1_E18_brain_flash_5k_filtered_peak_bc_matrix.h5", mode = "wb")
 
 download.file("https://cf.10xgenomics.com/samples/cell-atac/1.2.0/atac_v1_E18_brain_flash_5k/atac_v1_E18_brain_flash_5k_singlecell.csv",
-              destfile = "~/Downloads/atac_v1_E18_brain_flash_5k_singlecell.csv")
+              destfile = "data/atac_v1_E18_brain_flash_5k_singlecell.csv", mode = "wb")
 ```
 
-```{r,echo=toMessage, eval=F}
+```{r ex2_object,echo=toMessage}
 library(Signac)
 library(Seurat)
+library(GenomicRanges)
 
 metadata <- read.csv(
-  file = "~/Downloads/atac_v1_E18_brain_flash_5k_singlecell.csv",
+  file = "data/atac_v1_E18_brain_flash_5k_singlecell.csv",
   header = TRUE,
   row.names = 1
 )
 
-counts <- Read10X_h5(filename = "~/Downloads/atac_v1_E18_brain_flash_5k_filtered_peak_bc_matrix.h5")
+counts <- Read10X_h5(filename = "data/atac_v1_E18_brain_flash_5k_filtered_peak_bc_matrix.h5", mode = "wb")
 std_chr   <- paste0("chr", c(1:19, "X", "Y"))
 peak_chr  <- as.character(seqnames(StringToGRanges(rownames(counts), sep = c(":", "-"))))
 counts    <- counts[peak_chr %in% std_chr, ]
@@ -73,7 +76,7 @@ counts    <- counts[peak_chr %in% std_chr, ]
 chrom_assay <- CreateChromatinAssay(
   counts = counts,
   sep = c(":", "-"),
-  fragments = "~/Downloads/atac_v1_E18_brain_flash_5k_fragments.tsv.gz",
+  fragments = "data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz",
   min.cells = 10,
   min.features = 200
 )
@@ -88,40 +91,28 @@ seu_obj <- CreateSeuratObject(
 seu_obj
 ```
 
-``` {.text code-line-numbers="false"}
-An object of class Seurat 
-53735 features across 3776 samples within 1 assay 
-Active assay: peaks (53735 features, 0 variable features)
- 2 layers present: counts, data
-```
 
 -   Print out the hash and the path of the fragment file from within the Seurat object
 
-```{r,echo=toMessage, eval=F}
+```{r ex2_hash,echo=toMessage}
 frags <- Fragments(seu_obj)  
 
 GetFragmentData(frags[[1]], "hash")
 
 ```
 
-``` {.text code-line-numbers="false"}
-[1] "81f260f61c7101de5d154449720b053b" "884aa46b4bb08be53234caf9d1c72519"
-```
 
-```{r,echo=toMessage, eval=F}
+```{r ex2_path,echo=toMessage}
 GetFragmentData(frags[[1]], "path")
 ```
 
-``` {.text code-line-numbers="false"}
-[1] "~/Downloads/atac_v1_E18_brain_flash_5k_fragments.tsv.gz"
-```
 
 -   Move the fragment file and its index to a different folder and update the path in the Seurat object.
 
-```{r,echo=toMessage, eval=F}
-file.rename("~/Downloads/atac_v1_E18_brain_flash_5k_fragments.tsv.gz", 
+```{r ex2_move,echo=toMessage, eval=FALSE}
+file.rename("data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz", 
             "~/Desktop/atac_v1_E18_brain_flash_5k_fragments.tsv.gz")
-file.rename("~/Downloads/atac_v1_E18_brain_flash_5k_fragments.tsv.gz.tbi", 
+file.rename("data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz.tbi", 
             "~/Desktop/atac_v1_E18_brain_flash_5k_fragments.tsv.gz.tbi")
 
 frags_updated <- UpdatePath(
@@ -141,35 +132,17 @@ GetFragmentData(Fragments(seu_obj)[[1]], "path")
 
 -   Look at the peaks that were called by Cell Ranger ATAC and are contained within this object.
 
-```{r,echo=toMessage, eval=F}
+```{r ex2_peaks,echo=toMessage}
 peaks_seu <- granges(seu_obj)
 peaks_seu
 ```
 
-``` {.text code-line-numbers="false"}
-GRanges object with 53735 ranges and 0 metadata columns:
-          seqnames            ranges strand
-             <Rle>         <IRanges>  <Rle>
-      [1]     chr1   3094695-3095385      *
-      [2]     chr1   3113726-3113758      *
-      [3]     chr1   3119494-3120746      *
-      [4]     chr1   3399933-3400232      *
-      [5]     chr1   3670396-3672728      *
-      ...      ...               ...    ...
-  [53731]     chrY 11858102-11858395      *
-  [53732]     chrY 90738949-90740716      *
-  [53733]     chrY 90741545-90741829      *
-  [53734]     chrY 90808741-90809028      *
-  [53735]     chrY 90810766-90810946      *
-  -------
-  seqinfo: 21 sequences from an unspecified genome; no seqlengths
-```
 
 -   Identify the peak with the highest total raw counts
 
     -   HINT: use the peak counts
 
-```{r,echo=toMessage, eval=F}
+```{r ex2_toppeak,echo=toMessage}
 counts_seu <- GetAssayData(seu_obj, assay = "peaks", layer = "counts")
 peak_sums <- rowSums(counts_seu)
 max_peak_index <- which.max(peak_sums)
@@ -177,21 +150,17 @@ names(max_peak_index)
 
 ```
 
-``` {.text code-line-numbers="false"}
-[1] "chr17-39842785-39849048"
-```
+
 
 -   Identify the cell barcode with the highest total raw counts in peaks
 
     -   HINT: cell barcode metadata can be accessed with the seu_obj\@meta.data
 
-```{r,echo=toMessage, eval=F}
+```{r ex2_topcell,echo=toMessage}
 meta_seu <- seu_obj@meta.data
 max_meta_index <- which.max(meta_seu$nCount_peaks)
 rownames(meta_seu)[max_meta_index]
 
 ```
 
-``` {.text code-line-numbers="false"}
-[1] "AACATCGGTTGGCTAT-1"
-```
+

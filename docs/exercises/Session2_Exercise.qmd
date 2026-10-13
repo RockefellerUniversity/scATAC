@@ -17,9 +17,6 @@ params:
 ```{r, setup,include=FALSE, purl=FALSE}
 toMessage <- ifelse(!is.null(params$toMessage),params$toMessage,FALSE)
 message(toMessage)
-## Temporarily skip all code in the exercises so the course renders quickly on
-## GitHub; solution code is still shown (echo) but not run. Remove to re-enable.
-knitr::opts_chunk$set(eval = FALSE)
 ```
 
 
@@ -252,7 +249,7 @@ brain$scDblFinder.class <- sce$scDblFinder.class
 ```
 
 - Build a set of regions for AMULET to exclude, using mouse resources: RepeatMasker for mm10, chrM, the sex chromosomes and the mm10 blacklist. Then run AMULET on your cells.
-```{r ex5_excl,echo=toMessage}
+```{r ex5_excl,echo=toMessage, eval=identical(Sys.getenv("SCATAC_REBUILD"), "true")}
 rm_q <- query(ah, c("RepeatMasker", "mm10"))
 mcols(rm_q)[, c("title", "rdataclass", "sourceurl")]
 rmsk <- rm_q[[which(rm_q$rdataclass == "GRanges")[1]]]
@@ -266,7 +263,7 @@ excl <- reduce(c(
 ))
 ```
 
-```{r ex5_amulet,echo=toMessage, eval=F}
+```{r ex5_amulet,echo=toMessage, eval=identical(Sys.getenv("SCATAC_REBUILD"), "true")}
 frag_path <- GetFragmentData(Fragments(brain)[[1]], slot = "path")
 
 amu <- amulet(
@@ -274,7 +271,20 @@ amu <- amulet(
   barcodes         = colnames(brain),
   regionsToExclude = excl
 )
+```
 
+```{r ex5_amulet_checkpoint, include=FALSE, purl=FALSE}
+# AMULET reads the whole 1.1 GB fragment file (~20 min), and exercises render
+# twice per build, so the render loads a saved result. Refresh it with
+# SCATAC_REBUILD=true (docker/rebuild_checkpoints.sh).
+if (identical(Sys.getenv("SCATAC_REBUILD"), "true")) {
+  saveRDS(amu, "data/amulet_brain_e18.rds")
+} else {
+  amu <- readRDS("data/amulet_brain_e18.rds")
+}
+```
+
+```{r ex5_amulet_add,echo=toMessage}
 amu <- amu[colnames(brain), ]
 brain$amulet.nAbove2 <- amu$nAbove2
 brain$amulet.q       <- amu$q.value
@@ -282,7 +292,7 @@ brain$amulet.class   <- ifelse(amu$q.value < 0.01, "Doublet", "Singlet")
 ```
 
 - Compare the two callers. How many doublets does each call, and how does that compare with what you expected? In the session AMULET over-called on the deep PBMC data. Is the same true here? Check the relationship with nCount_peaks and the typical value of nAbove2.
-```{r ex5_compare,echo=toMessage, eval=F}
+```{r ex5_compare,echo=toMessage}
 table(scDblFinder = brain$scDblFinder.class,
       amulet      = brain$amulet.class)
 
@@ -385,7 +395,13 @@ quantile(peak_counts, c(0.05, 0.25, 0.5, 0.75))
 hist(log10(peak_counts), breaks = 50, main = "Total counts per peak")
 ```
 
-```{r ex7_save,echo=FALSE,eval=FALSE,include=FALSE}
-## Checkpoint for the Session 3 exercise
+```{r ex7_save,echo=FALSE,include=FALSE,purl=FALSE}
+## Checkpoint for the Session 3 exercise. Store the fragment path relative to
+## the course docs/ folder, as students will have it. UpdatePath() would store
+## an absolute path from this machine, so set the slot directly.
+frag <- Fragments(brain)[[1]]
+slot(frag, "path") <- "data/atac_v1_E18_brain_flash_5k_fragments.tsv.gz"
+Fragments(brain) <- NULL
+Fragments(brain) <- frag
 saveRDS(brain, "data/brain_filtered_tfidf.rds")
 ```

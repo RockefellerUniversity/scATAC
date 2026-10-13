@@ -91,6 +91,7 @@ GetFragmentData(frags[[1]], "path")
 # )
 # Fragments(pbmc) <- NULL
 # Fragments(pbmc) <- frags_updated
+# 
 
 # frags_updated_bad <- UpdatePath(
 #   frags[[1]],

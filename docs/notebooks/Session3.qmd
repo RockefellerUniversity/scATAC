@@ -773,10 +773,18 @@ We have covered:
 # relative path is set directly on the Fragment object.
 save_for_students <- function(obj, file,
                               frag_path = "data/atac_pbmc_500_nextgem_fragments.tsv.gz") {
-  frag <- Fragments(obj)[[1]]
-  slot(frag, "path") <- frag_path
-  Fragments(obj) <- NULL
-  Fragments(obj) <- frag
+  # Update every chromatin assay (peaks, macs_peaks, ...) explicitly: by this
+  # point the default assay is the gene activity "RNA" assay, which has no
+  # fragments, so Fragments(obj) on the object would fail.
+  for (a in Assays(obj)) {
+    assay <- obj[[a]]
+    if (!inherits(assay, "ChromatinAssay") || length(Fragments(assay)) == 0) next
+    frag <- Fragments(assay)[[1]]
+    slot(frag, "path") <- frag_path
+    Fragments(assay) <- NULL
+    Fragments(assay) <- frag
+    obj[[a]] <- assay
+  }
   saveRDS(obj, file)
 }
 

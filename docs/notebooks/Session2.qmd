@@ -8,7 +8,7 @@ author:
 
 ```{r setup, include=FALSE}
 suppressPackageStartupMessages(require(knitr))
-knitr::opts_chunk$set(echo = TRUE, tidy = T)
+knitr::opts_chunk$set(echo = TRUE, tidy = FALSE)
 ```
 
 ::: {.content-hidden when-format="revealjs"}
@@ -25,9 +25,13 @@ knitr::opts_chunk$set(echo = TRUE, tidy = T)
 
 ## Recap
 
-?? Brief recap of Session 1 — the fragment file, the peak-by-cell matrix and the Signac ChromatinAssay inside a Seurat object. Link to the relevant Session 1 sections once they exist ??
+In [Session 1](Session1.html) we covered:
 
-- [Session 1](Session1.html)
+- How 10x scATAC-seq works, from Tn5 tagmentation in droplets to barcoded reads
+- Processing with Cell Ranger ATAC, and reviewing its web summary for QC red flags
+- The key Cell Ranger outputs: the **fragment file**, the **peak-by-cell count matrix** and the **per-cell metadata**
+- Reading these into R as a Signac **ChromatinAssay** inside a Seurat object
+- Keeping the object's pointer to the fragment file up to date with `UpdatePath()`
 
 # scATAC QC metrics {background-color="#23373B" .center .middle}
 
@@ -943,7 +947,7 @@ If you want to change the cutoffs, have a quick check of the counts distribution
 peak_counts <- rowSums(GetAssayData(pbmc, assay = "peaks", layer = "counts"))
 quantile(peak_counts, c(0.05, 0.25, 0.5, 0.75))
 hist(log10(peak_counts), breaks = 50, main = "Total counts per peak")
-abline(v = log10(22), col = "red", linetype = "dashed", lwd = 2)
+abline(v = log10(22), col = "red", lty = 2, lwd = 2)
 
 ```
 

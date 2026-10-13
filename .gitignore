@@ -33,3 +33,5 @@ docs/exercises/data/
 # Session 4 two-sample objects (~230 MB): downloaded in CI / built by dataset2_prep.R, never committed.
 docs/data/pbmc_integrated.rds
 docs/data/pbmc_multiome.rds
+# Local full-course renders for review, never committed.
+local_render/

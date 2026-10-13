@@ -8,7 +8,7 @@ author:
 
 ```{r setup, include=FALSE, purl=FALSE}
 suppressPackageStartupMessages(require(knitr))
-knitr::opts_chunk$set(echo = TRUE, tidy = T)
+knitr::opts_chunk$set(echo = TRUE, tidy = FALSE)
 ```
 
 
@@ -448,13 +448,13 @@ combined <- RunUMAP(combined, reduction = "lsi", dims = 2:30, seed.use = 42,
 
 Lets load the combined object and look at the UMAP before any integration. You can download it from [here](https://www.dropbox.com/scl/fi/qavpfxt969y4j9fl9e4x9/pbmc_integrated.rds?rlkey=bwwxg3s55a31o2o15yp1gx73g&st=25qa5j3z&dl=1)
 
-```{r loadIntegrated, eval=have_integrated}
+```{r loadIntegrated, eval=isTRUE(knitr::opts_knit$get("tangle")) || have_integrated}
 pbmc_int <- readRDS("data/pbmc_integrated.rds")
 pbmc_int
 table(pbmc_int$celltype, pbmc_int$sample)
 ```
 
-```{r repointIntegratedFragments, include=FALSE, purl=FALSE, eval=have_integrated}
+```{r repointIntegratedFragments, include=FALSE, purl=FALSE, eval=isTRUE(knitr::opts_knit$get("tangle")) || have_integrated}
 # The integrated object stores each sample's fragment file as an absolute path
 # on the machine that built it, which does not exist anywhere else. Point each
 # Fragment object at the file of the same name in data/, and only draw the
@@ -474,7 +474,7 @@ if (have_fragments) {
 
 Each cell type splits into two groups, one per sample. Differences between samples, here different 10x technologies, donors and processing, dominate the embedding.
 
-```{r umapUnintegrated, eval=have_integrated}
+```{r umapUnintegrated, eval=isTRUE(knitr::opts_knit$get("tangle")) || have_integrated}
 DimPlot(pbmc_int, reduction = "umap_unintegrated",
         group.by = c("sample", "celltype"), label = TRUE, repel = TRUE)
 ```
@@ -522,7 +522,7 @@ combined <- RunUMAP(combined, reduction = "integrated_lsi",
 
 The samples now overlap, and cells group by cell type rather than by sample.
 
-```{r umapIntegrated, eval=have_integrated}
+```{r umapIntegrated, eval=isTRUE(knitr::opts_knit$get("tangle")) || have_integrated}
 DimPlot(pbmc_int, reduction = "umap",
         group.by = c("sample", "celltype"), label = TRUE, repel = TRUE)
 ```
@@ -647,7 +647,7 @@ data.frame(
 
 That is not all the differences. 
 
-```{r coverageFMonly, eval=have_fragments}
+```{r coverageFMonly, eval=isTRUE(knitr::opts_knit$get("tangle")) || have_fragments}
 CoveragePlot(
   object            = pbmc_int,
   region            = "chr6-106702055-106703095",
@@ -663,7 +663,7 @@ Open in B cells in **both** samples, absent in monocytes. The per-cell test is v
 
 ## Example: Pseudobulk Only
 
-```{r coveragePBonly, eval=have_fragments}
+```{r coveragePBonly, eval=isTRUE(knitr::opts_knit$get("tangle")) || have_fragments}
 CoveragePlot(
   object            = pbmc_int,
   region            = "chr6-41934567-41943790",
@@ -740,14 +740,6 @@ For a benchmark of these methods on scATAC data, see [Teo, Squair & Courtine, 20
 * **Trajectories**
   - [Monocle 3](https://cole-trapnell-lab.github.io/monocle3/), which Cicero builds on, or [ArchR's trajectory tools](https://www.archrproject.com/bookdown/trajectory-analysis-with-archr.html), to order cells along a differentiation path
 
-
-## Time for an exercise!
-
-Session 4 exercises can be found [here](../../exercises/exercises/scATAC_Exercise4_exercise.html)
-
-## Answers to exercises
-
-Answers can be found [here](../../exercises/answers/scATAC_Exercise4_answers.html)
 
 ## Course Summary
 

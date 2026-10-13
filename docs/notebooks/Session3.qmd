@@ -8,7 +8,7 @@ author:
 
 ```{r setup, include=FALSE, purl=FALSE}
 suppressPackageStartupMessages(require(knitr))
-knitr::opts_chunk$set(echo = TRUE, tidy = T)
+knitr::opts_chunk$set(echo = TRUE, tidy = FALSE)
 ```
 
 ::: {.content-hidden when-format="revealjs"}
@@ -744,11 +744,11 @@ Practically you could also report these at a coarser level (“naive T”, or �
 
 ## Time for an exercise!
 
-Session 3 exercises can be found [here](../../exercises/exercises/scATAC_Exercise3_exercise.html)
+Session 3 exercises can be found [here](../../exercises/exercises/Session3_Exercise_exercise.html)
 
 ## Answers to exercises
 
-Answers can be found [here](../../exercises/answers/scATAC_Exercise3_answers.html)
+Answers can be found [here](../../exercises/answers/Session3_Exercise_answers.html)
 
 ## Session 3 Summary
 

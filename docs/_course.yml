@@ -6,8 +6,7 @@ Presentations:
     PresRmd: Session1.qmd
     PresOverviewRmd: Session1Overview.Rmd
     Exercises:
-      - MyExercise1.qmd
-      - MyExercise2.qmd
+      - Session1_Exercise.qmd
   - title: QC and Preprocessing
     PresRmd: Session2.qmd
     PresOverviewRmd: Session2Overview.Rmd
